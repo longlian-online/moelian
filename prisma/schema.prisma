@@ -1,0 +1,148 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../node_modules/_db"
+  previewFeatures = ["typedSql"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int       @id @default(autoincrement())
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime?
+  username   String    @unique
+  nickname   String
+  password   String
+  avatar_id  Int?      @unique
+  Avatar     Resource? @relation(fields: [avatar_id], references: [id])
+  status     Status    @default(Disable)
+  Work       Work[]
+  Chapters   Chapter[]
+  role       Role
+
+  @@index([username])
+}
+
+enum Role {
+  Normal
+  SuperAdmin
+}
+
+model Work {
+  id            Int          @id @default(autoincrement())
+  biz_no        String       @unique
+  title         String
+  type          WorkType?    @relation(fields: [type_id], references: [id])
+  type_id       Int?
+  content_type  ContentType
+  author        String
+  description   String
+  status        Status       @default(Disable)
+  serial_status SerialStatus @default(Serializing)
+  tags          Tag[]
+  length_type   LengthType
+  created_at    DateTime     @default(now())
+  updated_at    DateTime?    @updatedAt
+  deleted_at    DateTime?
+  creator_id    Int?
+  creator       User?        @relation(fields: [creator_id], references: [id])
+  Chapters      Chapter[]
+  Cover         Resource?    @relation(fields: [cover_id], references: [id])
+  cover_id      Int?         @unique
+}
+
+enum SerialStatus {
+  Serializing
+  Completed
+}
+
+enum Status {
+  Disable
+  Enable
+}
+
+enum LengthType {
+  Short
+  Medium
+  Long
+}
+
+enum ContentType {
+  Manga
+  Novel
+}
+
+model WorkType {
+  id    Int    @id @default(autoincrement())
+  label String
+  Work  Work[]
+}
+
+model Tag {
+  id      Int    @id @default(autoincrement())
+  label   String
+  Work    Work?  @relation(fields: [work_id], references: [id])
+  work_id Int?
+}
+
+model Chapter {
+  id           Int         @id @default(autoincrement())
+  biz_no       String      @unique
+  work_id      Int
+  no           Int
+  Work         Work        @relation(fields: [work_id], references: [id])
+  title        String
+  total_page   Int? // 总页数，漫画专用
+  product_id   Int?        @unique // 处理后的资源id,漫画解压后的资源
+  Product      Resource?   @relation("product", fields: [product_id], references: [id], map: "product_pk")
+  content_type ContentType
+  status       Status      @default(Disable)
+  uploader     User?       @relation(fields: [uploader_id], references: [id])
+  uploader_id  Int?
+  created_at   DateTime    @default(now())
+  updated_at   DateTime?   @updatedAt
+  deleted_at   DateTime?
+  content_id   Int?        @unique
+  Content      Resource?   @relation("content", fields: [content_id], references: [id], map: "content_pk")
+}
+
+enum ResourceType {
+  Avatar
+  Cover
+  Manga
+  Novel
+  ExtractManga
+}
+
+model Resource {
+  id         Int          @id @default(autoincrement())
+  type       ResourceType
+  key        String
+  name       String
+  ext        String
+  size       Int
+  created_at DateTime     @default(now())
+  updated_at DateTime     @updatedAt
+  status     Status       @default(Disable)
+  User       User?
+  Work       Work?
+  Chapter    Chapter?     @relation("content")
+  Product    Chapter?     @relation("product")
+}
+
+model DeadMessage {
+  id         Int      @id @default(autoincrement())
+  subject    String
+  created_at DateTime @default(now())
+  data       String
+}
