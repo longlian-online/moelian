@@ -6,7 +6,7 @@
 			<AdminDrawer></AdminDrawer>
 		</template>
 		<v-main>
-			<NuxtPage></NuxtPage>
+			<slot></slot>
 			<DesktopFooter></DesktopFooter>
 		</v-main>
 		<!-- 全局组件 -->
