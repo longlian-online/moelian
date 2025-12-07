@@ -5,7 +5,7 @@
 			<BaseNav v-if="!$route.meta.baseNav && isNavbarVisible"></BaseNav>
 		</Transition>
 		<v-main>
-			<NuxtPage></NuxtPage>
+			<slot></slot>
 		</v-main>
 		<!-- <MobileFooter v-if="isMobile"></MobileFooter> -->
 		<!-- 全局组件 -->

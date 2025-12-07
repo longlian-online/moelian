@@ -3,7 +3,7 @@
 		<Tip></Tip>
 		<MobileBar></MobileBar>
 		<v-main>
-			<NuxtPage></NuxtPage>
+			<slot></slot>
 		</v-main>
 		<DesktopFooter></DesktopFooter>
 	</v-app>
