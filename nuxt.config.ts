@@ -108,21 +108,6 @@ export default defineNuxtConfig({
 					href: '/favicon.png',
 				},
 			],
-			script: [
-				// 百度 hm 接入
-				{
-					innerHTML: `
-            var _hmt = _hmt || [];
-            (function() {
-              var hm = document.createElement("script");
-              hm.src = "https://hm.baidu.com/hm.js?b30d0290fa53d1997da3a5e8d77d7083";
-              var s = document.getElementsByTagName("script")[0]; 
-              s.parentNode.insertBefore(hm, s);
-            })();
-          `,
-					type: 'text/javascript',
-				},
-			],
 		},
 	},
 });
