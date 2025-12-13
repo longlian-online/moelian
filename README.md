@@ -77,7 +77,7 @@
 
 ### 开发工具
 
-- **包管理**: npm/pnpm
+- **包管理**: pnpm
 - **版本控制**: Git
 - **部署**: Docker + 云服务器
 - **CI/CD**: GitHub Actions
@@ -133,16 +133,16 @@
 git clone [项目地址]
 
 # 安装依赖
-npm install
+pnpm install
 
 # 生成数据库类型定义
 npx prisma generate
 
 # 启动开发服务器
-npm run dev
+pnpm dev
 
 # 构建生产版本
-npm run build
+pnpm build
 ```
 
 ## 📊 项目特色
