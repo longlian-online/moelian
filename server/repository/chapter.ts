@@ -84,7 +84,14 @@ export const listForAdmin = async (params: ListForAdminInput) => {
 		useDB().chapter.findMany({
 			where,
 			...pagination(params.pagination),
-			orderBy: { id: 'desc' },
+			orderBy:[
+				{
+					priority: 'desc',
+				},
+				{
+					id: 'desc',
+				}
+			]
 		}),
 	]);
 
@@ -101,6 +108,15 @@ export const listChapterForIndex = async (params: { workID: Work['id'] }) => {
 			status: Status.Enable,
 			deleted_at: { equals: null },
 		},
+		orderBy:[
+			{
+				priority: 'desc',
+			},
+			{
+				id: 'desc',
+			}
+		]
+
 	});
 };
 
@@ -286,4 +302,20 @@ export const novelCopyCompleted = async (
 			},
 		});
 	});
+};
+
+export const chapterUpdate = async (data: {
+	id: number,
+	priority: number,
+	title: string,
+}) => {
+	return await useDB().chapter.update({
+		where: {
+			id: data.id,
+		},
+		data: {
+			priority: data.priority,
+			title: data.title,
+		},
+	})
 };

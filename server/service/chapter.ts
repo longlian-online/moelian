@@ -270,3 +270,11 @@ const getNovelContent = async (resourceID: number | null, baseUrl: string) => {
 export const workHasChapter = async (workID: number) => {
 	return (await dao.count({ work_id: workID })) > 0;
 };
+
+export const chapterUpdate = async (data: {
+	id: number,
+	priority: number,
+	title: string,
+}) => {
+	return await dao.chapterUpdate(data)
+}

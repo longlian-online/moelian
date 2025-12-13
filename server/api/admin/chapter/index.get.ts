@@ -35,6 +35,7 @@ export default defineWrappedResponseHandler(
 					uploaderId: item.uploader_id,
 					createdAt: item.created_at,
 					productReady: productReady(item),
+					priority: item.priority,
 				};
 			}),
 			total,
