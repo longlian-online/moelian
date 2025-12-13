@@ -68,9 +68,6 @@ importers:
       pinia:
         specifier: ^3.0.3
         version: 3.0.4(typescript@5.9.3)(vue@3.5.25(typescript@5.9.3))
-      prisma:
-        specifier: ^6.16.2
-        version: 6.19.0(magicast@0.5.1)(typescript@5.9.3)
       radash:
         specifier: ^12.1.1
         version: 12.1.1
@@ -83,9 +80,6 @@ importers:
       vue-router:
         specifier: ^4.5.1
         version: 4.6.3(vue@3.5.25(typescript@5.9.3))
-      vue-tsc:
-        specifier: ^3.0.1
-        version: 3.1.5(typescript@5.9.3)
       vuetify:
         specifier: 3.10.0
         version: 3.10.0(typescript@5.9.3)(vite-plugin-vuetify@2.1.2)(vue@3.5.25(typescript@5.9.3))
@@ -114,6 +108,9 @@ importers:
       prettier:
         specifier: ^3.6.2
         version: 3.7.3
+      prisma:
+        specifier: ^6.16.2
+        version: 6.19.0(magicast@0.5.1)(typescript@5.9.3)
       prisma-zod-generator:
         specifier: ^1.18.8
         version: 1.32.2(magicast@0.5.1)(prisma@6.19.0(magicast@0.5.1)(typescript@5.9.3))(typescript@5.9.3)(zod@4.1.13)
@@ -126,6 +123,9 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.10.1)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jiti@2.6.1)(sass-embedded@1.93.3)(sass@1.93.3)(terser@5.44.1)(yaml@2.8.2)
+      vue-tsc:
+        specifier: ^3.0.1
+        version: 3.1.5(typescript@5.9.3)
 
 packages:
 
