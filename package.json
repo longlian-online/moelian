@@ -43,7 +43,9 @@
 		"vuetify": "3.10.0",
 		"vuetify-nuxt-module": "^0.16.1",
 		"winston": "^3.17.0",
-		"zod": "^4.0.5"
+		"zod": "^4.0.5",
+		"prisma": "^6.16.2",
+		"vue-tsc": "^3.0.1"
 	},
 	"devDependencies": {
 		"@nuxt/test-utils": "^3.19.2",
@@ -51,12 +53,10 @@
 		"@vitest/coverage-v8": "^3.2.4",
 		"happy-dom": "^18.0.1",
 		"prettier": "^3.6.2",
-		"prisma": "^6.16.2",
 		"prisma-zod-generator": "^1.18.8",
 		"sass-embedded": "^1.93.3",
 		"typescript": "^5.8.3",
-		"vitest": "^3.2.4",
-		"vue-tsc": "^3.0.1"
+		"vitest": "^3.2.4"
 	},
 	"volta": {
 		"node": "20.19.5"
