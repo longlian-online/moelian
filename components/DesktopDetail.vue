@@ -264,7 +264,7 @@ const sortedChapterList = computed(() => {
 	}
 	// 使用 slice() 创建数组副本，避免修改原始数据
 	// 3使用 sort() 根据 no 属性进行升序排序 (a.no - b.no)
-	return workDetail.chapterList.slice().sort((a, b) => a.no - b.no);
+	return workDetail.chapterList.slice();
 });
 
 // 根据排序后的数组长度生成分片信息：{ startIndex, endIndex, label }

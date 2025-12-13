@@ -33,6 +33,14 @@ export const UploadContentReq = z.object({
 	totalPage: z.number().optional(),
 });
 
+export const ChapterUpdateReq = z.object({
+	priority: z.number()
+		.min(1, '标题不能为空')
+		.max(128, '标题最多128个字符'),
+	title: z.string().min(1),
+})
+export type ChapterUpdateReq = z.infer<typeof ChapterUpdateReq>;
+
 export type ChapterAdminListItem = {
 	id: number;
 	bizNo: string;
@@ -44,6 +52,7 @@ export type ChapterAdminListItem = {
 	uploaderId: number | null;
 	createdAt: Date;
 	productReady: boolean;
+	priority: number;
 };
 export type ChapterAdminListRes = {
 	list: ChapterAdminListItem[];

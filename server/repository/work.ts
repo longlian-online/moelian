@@ -198,7 +198,7 @@ export const listForWeb = async (params: ListForWebInput) => {
 
 export const detailForWeb = async (id: Work['id']) => {
 	return useDB().work.findFirst({
-		where: { id, status: Status.Disable, deleted_at: { equals: null } },
+		where: { id, status: Status.Enable, deleted_at: { equals: null } },
 		include: {
 			Cover: true,
 		},

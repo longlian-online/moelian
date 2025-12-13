@@ -109,6 +109,7 @@
 
 					<template #[`item.actions`]="{ item }">
 						<div class="d-flex justify-center align-center">
+							<EditChapterMetaDialog :refresh="adminChapterStore.refreshList" :id="item.id" :priority="item.priority" :title="item.title"></EditChapterMetaDialog>
 							<!-- 发布 / 下架按钮 -->
 							<v-btn
 								v-if="item.status === 'Disable'"
@@ -144,6 +145,12 @@
 								@click="handleDeleteAction(item.id)"
 							>
 							</v-btn>
+						</div>
+					</template>
+
+					<template #[`item.priority`]="{item}">
+						<div>
+							{{item.priority/10}}
 						</div>
 					</template>
 
@@ -268,6 +275,10 @@ const headers = ref([
 	{
 		title: '资源状态',
 		value: 'productReady',
+	},
+	{
+		title: '顺序',
+		value: 'priority',
 	},
 	{ title: '操作', key: 'actions', sortable: false, align: 'center' },
 ] as const);
