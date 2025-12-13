@@ -111,13 +111,9 @@ export const listChapterForIndex = async (params: { workID: Work['id'] }) => {
 		},
 		orderBy:[
 			{
-				priority: 'desc',
+				priority: 'asc',
 			},
-			{
-				id: 'desc',
-			}
 		]
-
 	});
 };
 
