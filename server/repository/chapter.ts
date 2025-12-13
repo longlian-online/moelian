@@ -14,6 +14,7 @@ export const create = async (data: CreateChapterInput) => {
 		data: {
 			...data,
 			status: Status.Disable,
+			priority: data.no * 10
 		},
 	});
 };
