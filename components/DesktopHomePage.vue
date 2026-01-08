@@ -55,6 +55,15 @@
 											<template #placeholder>
 												<v-skeleton-loader type="image" class="fill-height" />
 											</template>
+											<template #error>
+												<v-img
+													cover
+													src="/error-default.jpg"
+													height="100%"
+													width="100%"
+													gradient="to bottom, rgba(0,0,0,.0), rgba(0,0,0,.4)"
+												/>
+											</template>
 											<v-card-title class="text-white">{{
 												card.title
 											}}</v-card-title>

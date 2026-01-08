@@ -3,7 +3,23 @@
 		<!-- 弹窗显示大图 -->
 		<v-dialog v-model="imageDialog" max-width="600px">
 			<v-card>
-				<v-img :src="currentImage" max-height="80vh" contain></v-img>
+				<v-img
+					:src="currentImage || '/error-default.jpg'"
+					min-height="400px"
+					max-height="80vh"
+					width="100%"
+					contain
+					class="bg-grey-lighten-2"
+				>
+					<template #error>
+						<v-img src="/error-default.jpg" cover height="100%" width="100%" />
+					</template>
+					<template #placeholder>
+						<div class="d-flex fill-height align-center justify-center">
+							<v-progress-circular indeterminate color="primary" />
+						</div>
+					</template>
+				</v-img>
 			</v-card>
 		</v-dialog>
 
@@ -180,13 +196,21 @@
 
 				<template #[`item.cover`]="{ item }">
 					<v-img
-						:src="item.cover"
+						:src="item.cover || '/error-default.jpg'"
 						width="70"
 						height="100"
 						cover
 						class="rounded cursor-pointer"
 						gradient="to bottom, rgba(0,0,0,.0), rgba(0,0,0,.3)"
 						@click="openImage(item.cover)"
+					>
+						<template #error>
+							<v-img
+								cover
+								src="/error-default.jpg"
+								height="100%"
+								width="100%"
+							/> </template
 					></v-img>
 				</template>
 				<!-- 类型 Manga和Novel -->

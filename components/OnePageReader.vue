@@ -18,8 +18,8 @@
 				min-height="200"
 				transition="fade-transition"
 			>
-				<v-img :src="imgUrl" width="100%"
-					><template #placeholder>
+				<v-img :src="imgUrl || '/error-default.jpg'" width="100%">
+					<template #placeholder>
 						<div class="d-flex fill-height align-center justify-center">
 							<v-skeleton-loader
 								class="fill-height fill-width position-absolute"
@@ -32,8 +32,31 @@
 								width="4"
 								style="z-index: 1"
 							/>
-						</div> </template></v-img
-			></v-lazy>
+						</div>
+					</template>
+					<template #error>
+						<v-img
+							src="/error-default.jpg"
+							width="100%"
+							aspect-ratio="16/9"
+							cover
+						>
+							<div
+								class="d-flex fill-height align-center justify-center bg-black-alpha-50"
+							>
+								<div class="text-center text-white">
+									<v-icon
+										icon="mdi-image-off-outline"
+										size="48"
+										class="mb-2"
+									></v-icon>
+									<div class="text-subtitle-1">图片加载失败</div>
+								</div>
+							</div>
+						</v-img>
+					</template>
+				</v-img>
+			</v-lazy>
 		</v-sheet>
 
 		<!-- 遮罩 -->

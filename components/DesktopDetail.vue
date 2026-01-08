@@ -14,7 +14,16 @@
 									height="384px"
 									class="my-2 mx-4"
 									cover
-								></v-img>
+								>
+									<template #error>
+										<v-img
+											cover
+											src="/error-default.jpg"
+											height="100%"
+											width="100%"
+										/>
+									</template>
+								</v-img>
 							</v-col>
 							<v-col cols="8" class="pa-0">
 								<v-card
@@ -162,6 +171,16 @@
 											height="132px"
 											:src="card.coverUrl"
 										>
+											<template #error>
+												<v-sheet
+													class="d-flex align-center justify-center fill-height"
+													color="#f5f5f5"
+												>
+													<v-icon size="56px" color="#b0b0b0"
+														>mdi-image-broken</v-icon
+													>
+												</v-sheet>
+											</template>
 										</v-img>
 									</v-col>
 
