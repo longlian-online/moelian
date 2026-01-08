@@ -5,6 +5,7 @@
 			v-model="overlay"
 			:progress="progress"
 			:speed="speed"
+			:message="overlayMessage"
 			@cancel="cancelUpload"
 		></UploadProgressOverlay>
 
@@ -116,6 +117,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { VForm } from 'vuetify/components';
+import mammoth from 'mammoth';
+
 definePageMeta({
 	layout: 'admin',
 });
@@ -128,6 +131,8 @@ const chapterId = ref<number | null>(null);
 const currentStep = ref(1);
 const chapterStore = useAdminChapterStore();
 const overlay = ref(false);
+// 自定义遮罩提示信息
+const overlayMessage = ref('');
 //进度条信息
 const progress = ref(0);
 const speed = ref('O MB/s');
@@ -236,6 +241,80 @@ async function uploadChapterContent(
 	});
 }
 
+// DOCX 内容项接口
+interface ChapterContentItem {
+	text: string | null;
+	resourceId: number | null;
+	file?: File | null;
+}
+
+// 解析 DOCX 文件
+async function processDocx(file: File): Promise<ChapterContentItem[]> {
+	const arrayBuffer = await file.arrayBuffer();
+	const imageMap = new Map<string, File>();
+	let imageCounter = 0;
+
+	const options = {
+		convertImage: mammoth.images.imgElement(function (image) {
+			return image.read('base64').then(function (imageBuffer) {
+				const type = image.contentType;
+				const byteCharacters = atob(imageBuffer);
+				const byteNumbers = new Array(byteCharacters.length);
+				for (let i = 0; i < byteCharacters.length; i++) {
+					byteNumbers[i] = byteCharacters.charCodeAt(i);
+				}
+				const byteArray = new Uint8Array(byteNumbers);
+				const blob = new Blob([byteArray], { type: type });
+				const imgFile = new File(
+					[blob],
+					`image-${imageCounter}.${type.split('/')[1]}`,
+					{ type },
+				);
+
+				const id = `img-${imageCounter++}`;
+				imageMap.set(id, imgFile);
+				return { src: id };
+			});
+		}),
+	};
+
+	const result = await mammoth.convertToHtml({ arrayBuffer }, options);
+	const html = result.value;
+
+	// 解析生成的 HTML
+	const parser = new DOMParser();
+	const doc = parser.parseFromString(html, 'text/html');
+	const contentArray: ChapterContentItem[] = [];
+
+	// 递归遍历提取内容
+	function traverse(node: Node) {
+		if (node.nodeType === Node.TEXT_NODE) {
+			const text = node.textContent?.trim();
+			if (text) {
+				contentArray.push({ text: text, resourceId: null });
+			}
+		} else if (node.nodeType === Node.ELEMENT_NODE) {
+			const el = node as Element;
+			if (el.tagName.toLowerCase() === 'img') {
+				const src = el.getAttribute('src');
+				if (src && imageMap.has(src)) {
+					contentArray.push({
+						text: null,
+						resourceId: null,
+						file: imageMap.get(src),
+					});
+				}
+			} else {
+				// 递归遍历子节点 (例如 <p> 中的内容)
+				el.childNodes.forEach(traverse);
+			}
+		}
+	}
+
+	doc.body.childNodes.forEach(traverse);
+	return contentArray;
+}
+
 // 提交文件函数
 async function submitFile() {
 	if (!form.value) return;
@@ -249,24 +328,85 @@ async function submitFile() {
 			const controller = new AbortController();
 			uploadController.value = controller;
 
-			const contentId = await uploadToCos(
-				chapterFile.value,
-				'/api/admin/resource',
-				selectedContentType.value,
-				({ percent, speed: s }) => {
-					progress.value = percent;
-					speed.value = s;
-				},
-				controller.signal,
-			);
+			const isDocx =
+				chapterFile.value.name.endsWith('.docx') ||
+				chapterFile.value.type ===
+					'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
-			await uploadChapterContent(chapterId.value!, contentId, 0);
-			await chapterStore.refreshList();
-			//timeout -1代表永远保留 需要手动关闭
-			$tip(`上传成功！`, {
-				timeout: -1,
-			});
-			router.push(`/admin/chapter/${id}`);
+			if (isDocx) {
+				// --- DOCX 处理流程 ---
+				overlayMessage.value = '正在解析文档...';
+				progress.value = 0;
+				speed.value = '';
+
+				// 1. 解析
+				const contentItems = await processDocx(chapterFile.value);
+
+				// 2. 顺序上传图片
+				const finalArray: ChapterContentItem[] = [];
+				const totalImages = contentItems.filter((item) => item.file).length;
+				let uploadedCount = 0;
+
+				for (const item of contentItems) {
+					// 检查是否取消
+					if (controller.signal.aborted) {
+						throw new Error('用户取消了上传');
+					}
+
+					if (item.file) {
+						uploadedCount++;
+						overlayMessage.value = `正在上传插画 (${uploadedCount}/${totalImages})...`;
+						progress.value = 0; // 重置单个文件的进度
+
+						const id = await uploadToCos(
+							item.file,
+							'/api/admin/resource',
+							selectedContentType.value,
+							({ percent, speed: s }) => {
+								progress.value = percent;
+								speed.value = s;
+							},
+							controller.signal,
+						);
+
+						finalArray.push({
+							text: null,
+							resourceId: id,
+							// file 对象不再需要保留
+						});
+					} else {
+						finalArray.push({
+							text: item.text,
+							resourceId: null,
+						});
+					}
+				}
+
+				// 3. 调试输出
+				console.log('Final Chapter Data:', finalArray);
+				$tip('解析完成，结果已输出到控制台', { icon: 'mdi-check-circle' });
+			} else {
+				// --- 原有 ZIP 处理流程 ---
+				overlayMessage.value = '正在上传文件...';
+				const contentId = await uploadToCos(
+					chapterFile.value,
+					'/api/admin/resource',
+					selectedContentType.value,
+					({ percent, speed: s }) => {
+						progress.value = percent;
+						speed.value = s;
+					},
+					controller.signal,
+				);
+
+				await uploadChapterContent(chapterId.value!, contentId, 0);
+				await chapterStore.refreshList();
+				//timeout -1代表永远保留 需要手动关闭
+				$tip(`上传成功！`, {
+					timeout: -1,
+				});
+				router.push(`/admin/chapter/${id}`);
+			}
 		} catch (err) {
 			//  捕获并静默处理用户取消的错误
 			if (err.message === '用户取消了上传') {
@@ -278,13 +418,14 @@ async function submitFile() {
 			}
 			//处理其他失败
 			console.error(err);
-			$tip('上传失败', {
+			$tip('上传失败: ' + (err.message || '未知错误'), {
 				color: 'error',
 				icon: 'mdi-alert-circle',
 				timeout: -1,
 			});
 		} finally {
 			overlay.value = false; // 关闭全局遮罩
+			overlayMessage.value = ''; // 重置消息
 			uploadController.value = null; // 清除 controller
 		}
 	} else {
@@ -300,6 +441,7 @@ function cancelUpload() {
 		overlay.value = false;
 		progress.value = 0;
 		speed.value = '0 MB/s';
+		overlayMessage.value = '';
 		uploadController.value = null; // 清除引用
 
 		$tip('上传操作已取消', {

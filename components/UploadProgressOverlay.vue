@@ -71,6 +71,11 @@ const props = defineProps({
 		type: String,
 		default: '0 MB/s',
 	},
+	/** 自定义状态文本 */
+	message: {
+		type: String,
+		default: '',
+	},
 });
 
 // 定义组件发出的事件 (Emits)
@@ -80,6 +85,9 @@ defineEmits([
 ]);
 
 const statusText = computed(() => {
+	if (props.message) {
+		return props.message;
+	}
 	if (props.progress >= 100) {
 		// 当进度达到 100% 时，表示文件传输已完成
 		// 此时的延迟是服务器在处理（校验、写入、索引）
