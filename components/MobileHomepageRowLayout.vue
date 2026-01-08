@@ -34,11 +34,17 @@
 							aspect-ratio="0.75"
 						>
 							<template #placeholder>
-								<v-skeleton-loader
-									type="image"
-									class="fill-height"
-								/> </template
-						></v-img>
+								<v-skeleton-loader type="image" class="fill-height" />
+							</template>
+							<template #error>
+								<v-img
+									cover
+									src="/error-default.jpg"
+									height="100%"
+									width="100%"
+								/>
+							</template>
+						</v-img>
 						<v-chip
 							v-if="card.serialType !== undefined"
 							color="white"

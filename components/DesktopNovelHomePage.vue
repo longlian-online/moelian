@@ -40,10 +40,26 @@
 						class="card-container d-flex justify-center align-center"
 						@click="gotoNovalId(card.id)"
 					>
-						<v-sheet class="img-wrapper" @click="gotoNovalId(card.id)">
-							<v-img :src="card.coverUrl" style="width: 100%">
+						<v-sheet
+							class="img-wrapper d-flex align-center justify-center fill-height"
+							@click="gotoNovalId(card.id)"
+						>
+							<v-img
+								:src="card.coverUrl"
+								style="width: 100%"
+								:aspect-ratio="3 / 4"
+							>
 								<template #placeholder>
 									<v-skeleton-loader type="image" class="fill-height" />
+								</template>
+								<template #error>
+									<v-img
+										cover
+										src="/error-default.jpg"
+										height="100%"
+										width="100%"
+										gradient="to bottom, rgba(0,0,0,.0), rgba(0,0,0,.4)"
+									/>
 								</template>
 							</v-img>
 						</v-sheet>

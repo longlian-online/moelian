@@ -28,7 +28,7 @@
 							max-width="100%"
 							contain
 							class="pa-0 h-100 w-100"
-							:src="getPageImage(i)"
+							:src="getPageImage(i) || '/error-default.jpg'"
 						>
 							<template #placeholder>
 								<div class="d-flex fill-height align-center justify-center">
@@ -43,8 +43,25 @@
 										width="4"
 										style="z-index: 1"
 									/>
-								</div> </template
-						></v-img>
+								</div>
+							</template>
+							<template #error>
+								<v-img src="/error-default.jpg" width="100%" cover>
+									<div
+										class="d-flex fill-height align-center justify-center bg-black-alpha-50"
+									>
+										<div class="text-center text-white">
+											<v-icon
+												icon="mdi-image-off-outline"
+												size="48"
+												class="mb-2"
+											></v-icon>
+											<div class="text-subtitle-1">图片加载失败</div>
+										</div>
+									</div>
+								</v-img>
+							</template>
+						</v-img>
 					</div>
 				</v-window-item>
 			</v-window>

@@ -35,18 +35,45 @@ definePageMeta({
 });
 const route = useRoute();
 const chapterId = computed(() => Number(route.params.id));
-const { data } = await useApiFetch<WorkContentRes>(
+const { data, error: apiError } = await useApiFetch<WorkContentRes>(
 	`/api/web/work/chapter/${chapterId.value}/content`,
 	{
 		method: 'GET',
 	},
 );
+
+if (apiError.value) {
+	const statusCode =
+		'statusCode' in apiError.value
+			? (apiError.value.statusCode as number)
+			: 500;
+	throw createError({
+		statusCode,
+		statusMessage: '获取章节内容失败',
+		fatal: true,
+	});
+}
+
 const chapterList = ref<string[]>();
 
 const rawChapters = ref<WorkDetailChapterItem[]>();
-if (data.value) {
+if (data.value && data.value.data) {
+	// 检查漫画链接列表是否为空
+	if (!data.value.data.manga.urls || data.value.data.manga.urls.length === 0) {
+		throw createError({
+			statusCode: 404,
+			statusMessage: '该章节暂无内容',
+			fatal: true,
+		});
+	}
 	chapterList.value = data.value.data.manga.urls;
 	rawChapters.value = data.value.data.chapters;
+} else {
+	throw createError({
+		statusCode: 404,
+		statusMessage: '章节内容不存在',
+		fatal: true,
+	});
 }
 
 //排序章节

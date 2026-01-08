@@ -44,6 +44,14 @@
 						>
 							<template #placeholder>
 								<v-skeleton-loader type="image" class="fill-height" />
+							</template>
+							<template #error>
+								<v-img
+									cover
+									src="/error-default.jpg"
+									height="100%"
+									width="100%"
+								/>
 							</template> </v-img
 					></v-lazy>
 				</v-col>
