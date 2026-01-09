@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import type { NuxtError } from '#app';
-
+const NOT_FOUND_MESSAGE =
+	'呜诶？不行不行！ 这里根本什么都没有啊！\n 就像我原本就不存在的社交计划一样彻底消失了……';
+const ERROR_MESSAGE =
+	'出错了！\n 可能是网络问题，或者是服务器开小差。' +
+	'\n' +
+	'不过别担心，玲奈子会陪你一起度过这个难关的！';
 defineProps({
 	error: {
 		type: Object as () => NuxtError,
@@ -20,26 +25,23 @@ const handleError = () => clearError({ redirect: '/' });
 					sm="10"
 					md="8"
 					lg="6"
-					class="text-center position-relative"
+					class="text-center position-relative d-flex flex-column align-center"
 				>
-					<!-- 核心插画：玲奈子 -->
-					<div class="renako-container mb-4">
+					<!-- 插画-->
+					<div class="renako-container">
 						<v-img
-							src="/error.jpg"
+							src="/error.png"
 							alt="404 Error"
 							max-height="400"
+							width="400"
 							contain
-							class="mx-auto renako-img"
+							class="mx-auto"
 						></v-img>
 					</div>
 
 					<!-- 错误标题 -->
-					<h1 class="error-title mb-4">
-						{{
-							error?.statusCode === 404
-								? '呜诶？不行不行！ 这里根本什么都没有啊！\n 就像我原本就不存在的社交计划一样彻底消失了……'
-								: 'ERROR - 出错了！'
-						}}
+					<h1 class="error-title">
+						{{ error?.statusCode === 404 ? NOT_FOUND_MESSAGE : ERROR_MESSAGE }}
 					</h1>
 
 					<!-- 按钮 -->
@@ -47,7 +49,7 @@ const handleError = () => clearError({ redirect: '/' });
 						color="pink-accent-2"
 						size="x-large"
 						rounded="pill"
-						class="home-btn mt-4 px-10"
+						class="home-btn mt-10 px-10"
 						elevation="4"
 						@click="handleError"
 					>
@@ -68,66 +70,24 @@ const handleError = () => clearError({ redirect: '/' });
 	overflow: hidden;
 }
 
-.bg-deco-text {
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-	font-size: 20rem;
-	font-weight: 900;
-	color: rgba(255, 133, 179, 0.1);
-	z-index: 0;
-	user-select: none;
-	font-family: 'Arial Black', sans-serif;
-}
-
 .renako-container {
 	position: relative;
 	z-index: 1;
-}
-
-.speech-bubble {
-	position: absolute;
-	right: -10%;
-	top: 10%;
-	background: white;
-	border-radius: 20px;
-	padding: 16px 24px;
-	box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-	max-width: 250px;
-	text-align: left;
-	font-size: 0.95rem;
-	color: #d81b60;
-	border: 3px solid #f06292;
-}
-
-.speech-bubble::after {
-	content: '';
-	position: absolute;
-	left: -20px;
-	top: 30px;
-	border-width: 10px 20px 10px 0;
-	border-style: solid;
-	border-color: transparent white transparent transparent;
-}
-
-.speech-bubble::before {
-	content: '';
-	position: absolute;
-	left: -24px;
-	top: 29px;
-	border-width: 11px 22px 11px 0;
-	border-style: solid;
-	border-color: transparent #f06292 transparent transparent;
+	/* 移除所有底部边距 */
+	margin-bottom: 0;
 }
 
 .error-title {
-	font-size: 2rem;
+	font-size: 1.5rem;
 	font-weight: 800;
 	color: #ad1457;
 	text-shadow: 2px 2px 0px rgba(240, 98, 146, 0.3);
 	position: relative;
 	z-index: 1;
+	white-space: pre-line;
+	line-height: 1.4;
+	/* 减小与上方图片的间距 */
+	margin-top: -10px;
 }
 
 .home-btn {
@@ -142,20 +102,9 @@ const handleError = () => clearError({ redirect: '/' });
 }
 
 @media (max-width: 600px) {
-	.bg-deco-text {
-		font-size: 10rem;
-	}
-	.speech-bubble {
-		position: static;
-		margin: 20px auto;
-		max-width: 90%;
-	}
-	.speech-bubble::before,
-	.speech-bubble::after {
-		display: none;
-	}
 	.error-title {
-		font-size: 1.8rem;
+		font-size: 1.2rem;
+		margin-top: 0;
 	}
 }
 </style>
