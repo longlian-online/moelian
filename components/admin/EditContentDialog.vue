@@ -165,7 +165,10 @@
 
 <script lang="ts" setup>
 import { VForm } from 'vuetify/components';
-import type { WorkAdminListItem, WorkPutReq } from '../shared/dto/admin/work';
+import type {
+	WorkAdminListItem,
+	WorkPutReq,
+} from '../../shared/dto/admin/work';
 import { useCoverCanvas } from '@/composables/useCoverCanvas';
 import defaultCover from '~/public/default.jpg';
 

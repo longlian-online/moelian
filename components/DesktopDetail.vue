@@ -172,14 +172,12 @@
 											:src="card.coverUrl"
 										>
 											<template #error>
-												<v-sheet
-													class="d-flex align-center justify-center fill-height"
-													color="#f5f5f5"
-												>
-													<v-icon size="56px" color="#b0b0b0"
-														>mdi-image-broken</v-icon
-													>
-												</v-sheet>
+												<v-img
+													cover
+													src="/error-default.jpg"
+													height="100%"
+													width="100%"
+												/>
 											</template>
 										</v-img>
 									</v-col>
