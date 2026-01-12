@@ -310,11 +310,6 @@ import { useAdminWorkStore } from '~/stores/admin-work';
 import dayjs from 'dayjs';
 import { useClipboard } from '~/utils/useClipboard';
 
-//挂载时候刷新页面
-onMounted(async () => {
-	await useAdminWorkStore().refreshList();
-});
-
 const { copyText } = useClipboard();
 const overlay = ref(false);
 const imageDialog = ref(false);
