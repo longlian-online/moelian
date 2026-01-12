@@ -39,35 +39,48 @@
 								lg="3"
 								xl="3"
 							>
-								<v-card :to="`/manga/${card.id}`" ripple class="my-card">
+								<v-card ripple class="my-card">
 									<v-lazy
 										v-model="isVisible"
 										:options="{ threshold: 0.5 }"
 										min-height="200"
 										transition="fade-transition"
-										><v-img
-											:src="card.coverUrl"
-											:alt="card.title ? `封面图片：${card.title}` : '卡片封面'"
-											class="align-end"
-											gradient="to bottom, rgba(0,0,0,.0), rgba(0,0,0,.4)"
-											height="400px"
-										>
-											<template #placeholder>
-												<v-skeleton-loader type="image" class="fill-height" />
-											</template>
-											<template #error>
+									>
+										<div class="manga-card-wrapper" style="position: relative">
+											<NuxtLink :to="`/manga/${card.id}`" class="d-block">
 												<v-img
-													cover
-													src="/error-default.jpg"
-													height="100%"
-													width="100%"
+													:src="card.coverUrl"
+													:alt="
+														card.title ? `封面图片：${card.title}` : '卡片封面'
+													"
+													class="align-end"
 													gradient="to bottom, rgba(0,0,0,.0), rgba(0,0,0,.4)"
-												/>
-											</template>
-											<v-card-title class="text-white">{{
-												card.title
-											}}</v-card-title>
-										</v-img>
+													height="400px"
+													cover
+												>
+													<template #placeholder>
+														<v-skeleton-loader
+															type="image"
+															class="fill-height"
+														/>
+													</template>
+													<template #error>
+														<v-img
+															cover
+															src="/error-default.jpg"
+															height="100%"
+															width="100%"
+															gradient="to bottom, rgba(0,0,0,.0), rgba(0,0,0,.4)"
+														/>
+													</template>
+												</v-img>
+											</NuxtLink>
+											<div class="manga-title-overlay" @click.stop>
+												<span v-copy="card.title" v-tooltip="'右键复制标题'">
+													{{ card.title }}
+												</span>
+											</div>
+										</div>
 									</v-lazy>
 
 									<v-card-actions>
@@ -78,8 +91,18 @@
 													size="small"
 													color="#C9C1AB"
 												></v-icon>
-												<v-chip size="small" variant="text" class="px-0 ms-2">
-													{{ card.author }}
+												<v-chip
+													size="small"
+													variant="text"
+													class="px-0 ms-2 author-chip"
+													@click="handleAuthorClick(card.author)"
+												>
+													<span
+														v-copy="card.author"
+														v-tooltip="'点击搜索作者/右键复制'"
+													>
+														{{ card.author }}
+													</span>
 												</v-chip>
 											</v-col>
 
@@ -154,6 +177,11 @@ const page = computed({
 });
 const cards = computed<WorkItemType[]>(() => webWorkStore.mangaList);
 
+const handleAuthorClick = (author: string) => {
+	webWorkStore.mangaInputKey = author;
+	webWorkStore.triggerMangaSearch();
+};
+
 const isVisible = ref(false);
 const { error } = useAsyncData(
 	'manga-list-data',
@@ -190,7 +218,34 @@ if (error.value) {
 	min-height: 400px !important;
 }
 
-.text-white:hover {
+.author-chip {
+	cursor: pointer;
+	transition: color 0.3s ease;
+}
+
+.author-chip:hover {
+	color: #c00000;
+	font-weight: bold;
+}
+
+.manga-title-overlay {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	padding: 16px;
+	color: white;
+	font-size: 1.25rem;
+	font-weight: 500;
+	z-index: 2;
+	user-select: text !important;
+	-webkit-user-select: text !important;
+	cursor: text;
+	background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
+	transition: all 0.3s ease;
+}
+
+.manga-title-overlay:hover {
 	font-weight: bold;
 	/* 渐变文字 */
 	background: linear-gradient(to bottom, #c00000 30%, #000 100%);

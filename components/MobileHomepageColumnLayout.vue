@@ -22,10 +22,6 @@
 			:elevation="0"
 			class="mb-2 pa-0"
 			:class="['mt-2', { 'mt-2': index === 0 }]"
-			ripple
-			hover
-			link
-			@click.prevent="handleCardClick(card.id)"
 		>
 			<v-row no-gutters>
 				<v-col cols="3">
@@ -36,11 +32,13 @@
 						transition="fade-transition"
 						height="100%"
 						><v-img
+							:alt="card.title ? `卡片封面：${card.title}` : '卡片封面'"
 							cover
 							:src="card.coverUrl"
 							height="100%"
 							width="100%"
-							:alt="card.title ? `卡片封面：${card.title}` : '卡片封面'"
+							style="cursor: pointer"
+							@click="handleCardClick(card.id)"
 						>
 							<template #placeholder>
 								<v-skeleton-loader type="image" class="fill-height" />
@@ -57,7 +55,7 @@
 				</v-col>
 
 				<v-col cols="8" class="pa-2">
-					<v-card-title class="pa-0 text-4">
+					<v-card-title v-copy="card.title" class="pa-0 text-4">
 						{{ card.title }}
 					</v-card-title>
 
@@ -71,9 +69,12 @@
 								></v-icon>
 							</v-col>
 							<v-col>
-								<span class="text-body-2 card-detail-text">{{
-									card.author
-								}}</span>
+								<span
+									v-copy="card.author"
+									class="text-body-2 card-detail-text author-link"
+									@click.stop="handleAuthorClick(card.author)"
+									>{{ card.author }}</span
+								>
 							</v-col>
 						</v-row>
 
@@ -178,6 +179,12 @@ const page = computed({
 });
 const isVisible = ref(false);
 
+const handleAuthorClick = (author: string) => {
+	const typeKey = props.workType.toLowerCase();
+	webWorkStore[`${typeKey}InputKey`] = author;
+	webWorkStore[`trigger${props.workType}Search`]();
+};
+
 const { error } = await useAsyncData(
 	'work-list-data-' + props.workType,
 	async () => {
@@ -261,5 +268,12 @@ function getMinNoChapterId(chapterList): number | undefined {
 }
 .card-detail-text {
 	color: rgba(77, 77, 77, 1);
+}
+.author-link {
+	cursor: pointer;
+}
+.author-link:active {
+	opacity: 0.7;
+	color: #c00000;
 }
 </style>

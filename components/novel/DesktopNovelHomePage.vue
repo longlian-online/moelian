@@ -38,7 +38,6 @@
 						v-for="(card, cardIndex) in pair"
 						:key="`card-${index}-${cardIndex}`"
 						class="card-container d-flex justify-center align-center"
-						@click="gotoNovalId(card.id)"
 					>
 						<v-sheet
 							class="img-wrapper d-flex align-center justify-center fill-height"
@@ -64,10 +63,21 @@
 							</v-img>
 						</v-sheet>
 						<div class="content-wrapper d-flex flex-column">
-							<v-card-title>{{ card.title }}</v-card-title>
-							<v-card-subtitle
-								><strong>作者：</strong>{{ card.author }}</v-card-subtitle
-							>
+							<v-card-title @click.stop>
+								<span v-copy="card.title" v-tooltip="'右键复制标题'">{{
+									card.title
+								}}</span>
+							</v-card-title>
+							<v-card-subtitle @click.stop>
+								<span
+									v-copy="card.author"
+									v-tooltip="'点击搜索作者/右键复制'"
+									class="author-link"
+									@click="handleAuthorClick(card.author)"
+								>
+									<strong>作者：</strong>{{ card.author }}
+								</span>
+							</v-card-subtitle>
 							<v-card-subtitle
 								><strong>篇幅：</strong>
 								<span v-if="card.lengthType === 'Short'">短篇</span>
@@ -87,7 +97,12 @@
 								class="flex-grow-1"
 							>
 								<div class="clamp-text">
-									<strong>简介：</strong>{{ card.description }}
+									<strong>简介：</strong
+									><span
+										v-copy="card.description"
+										v-tooltip="card.description"
+										>{{ card.description }}</span
+									>
 								</div>
 							</v-card-text>
 							<div style="color: #fabcd1; padding: 4px 16px" class="fancy-text">
@@ -154,6 +169,11 @@ const router = useRouter();
 const gotoNovalId = (id: number) => {
 	router.push(`/novel/${id}`);
 };
+
+const handleAuthorClick = (author: string) => {
+	webWorkStore.novelInputKey = author;
+	webWorkStore.triggerNovelSearch();
+};
 </script>
 
 <style scoped>
@@ -161,11 +181,11 @@ const gotoNovalId = (id: number) => {
 	width: 50%;
 	height: 200px;
 	padding: 16px;
-	cursor: pointer;
 }
 .img-wrapper {
 	width: 25%;
 	height: 100%;
+	cursor: pointer;
 }
 .content-wrapper {
 	width: 75%;
@@ -184,6 +204,17 @@ const gotoNovalId = (id: number) => {
 	/* 外发光 */
 	text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
 }
+
+.author-link {
+	cursor: pointer;
+	transition: color 0.3s ease;
+}
+
+.author-link:hover {
+	color: #c00000;
+	font-weight: bold;
+}
+
 .clamp-text {
 	display: -webkit-box;
 	-webkit-box-orient: vertical;

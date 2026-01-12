@@ -23,15 +23,13 @@
 					:key="card.id"
 					class="card-container"
 					style="width: 30%"
-					@click="handleCardClick(card.id)"
 				>
 					<div class="img-container">
 						<v-img
 							:src="card.coverUrl"
-							style="width: 100%; margin-bottom: 8px"
-							rounded="lg"
-							cover
-							aspect-ratio="0.75"
+							style="width: 100%; margin-bottom: 8px; cursor: pointer"
+							ß
+							@click="handleCardClick(card.id)"
 						>
 							<template #placeholder>
 								<v-skeleton-loader type="image" class="fill-height" />
@@ -63,7 +61,7 @@
 						</v-chip>
 					</div>
 					<div>
-						<div class="clamp-text" style="width: 100%">
+						<div v-copy="card.title" class="clamp-text" style="width: 100%">
 							{{ card.title }}
 						</div>
 					</div>
@@ -71,7 +69,12 @@
 						class="d-flex justify-space-between align-center"
 						style="width: 100%"
 					>
-						<div style="color: gray; font-size: 12px">
+						<div
+							v-copy="card.author"
+							style="color: gray; font-size: 12px"
+							class="author-link"
+							@click.stop="handleAuthorClick(card.author)"
+						>
 							{{ card.author }}
 						</div>
 						<v-btn
@@ -224,6 +227,12 @@ function getMinNoChapterId(chapterList): number | undefined {
 	// 返回这个最小章节的 id
 	return minNoChapter.id;
 }
+
+const handleAuthorClick = (author: string) => {
+	const typeKey = props.workType.toLowerCase();
+	webWorkStore[`${typeKey}InputKey`] = author;
+	webWorkStore[`trigger${props.workType}Search`]();
+};
 </script>
 
 <style scoped>
@@ -246,5 +255,12 @@ function getMinNoChapterId(chapterList): number | undefined {
 	-webkit-box-orient: vertical;
 	-webkit-line-clamp: 2; /* 依然保留多行截断效果 */
 	line-clamp: 2;
+}
+.author-link {
+	cursor: pointer;
+}
+.author-link:active {
+	opacity: 0.7;
+	color: #c00000;
 }
 </style>

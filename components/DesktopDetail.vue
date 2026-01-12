@@ -31,12 +31,19 @@
 									elevation="0"
 									height="100%"
 								>
-									<v-card-title class="text-h4 py-2">{{
-										workDetail.title
-									}}</v-card-title>
+									<v-card-title class="text-h4 py-2"
+										><span v-tooltip="'右键复制标题'" v-copy="workDetail">{{
+											workDetail.title
+										}}</span></v-card-title
+									>
 
 									<v-card-subtitle class="text-body-1">
-										<strong>作者:</strong> {{ workDetail.author }}
+										<strong>作者:</strong>
+										<span
+											v-tooltip="'右键复制作者'"
+											v-copy="workDetail.author"
+											>{{ workDetail.author }}</span
+										>
 									</v-card-subtitle>
 
 									<v-card-subtitle class="text-body-1">
@@ -67,7 +74,11 @@
 											<span style="color: gray">
 												<strong>简介：</strong>
 											</span>
-											{{ workDetail.description }}
+											<span
+												v-tooltip="workDetail.description"
+												v-copy="workDetail.description"
+												>{{ workDetail.description }}</span
+											>
 										</div>
 									</div>
 
