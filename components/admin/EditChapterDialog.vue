@@ -70,6 +70,7 @@
 		v-model="overlay"
 		:progress="progress"
 		:speed="speed"
+		:message="overlayMessage"
 		@cancel="cancelUpload"
 	></UploadProgressOverlay>
 </template>
@@ -77,6 +78,15 @@
 <script lang="ts" setup>
 import { VForm } from 'vuetify/components';
 import type { ChapterAdminListItem } from '~/shared/dto/admin/chapter';
+import mammoth from 'mammoth';
+import JSZip from 'jszip';
+
+// DOCX 内容项接口
+interface ChapterContentItem {
+	text: string | null;
+	resourceId: number | null;
+	file?: File | null;
+}
 const props = defineProps<{
 	itemData: ChapterAdminListItem;
 }>();
@@ -86,6 +96,8 @@ const chapterStore = useAdminChapterStore();
 const { $tip } = useNuxtApp();
 const chapterFile = ref<File | null>(null);
 const overlay = ref(false);
+// 自定义遮罩提示信息
+const overlayMessage = ref('');
 //进度条信息
 const progress = ref(0);
 const speed = ref('O MB/s');
@@ -126,6 +138,73 @@ async function uploadChapterContent(
 	});
 }
 
+// 解析 DOCX 文件
+async function processDocx(file: File): Promise<ChapterContentItem[]> {
+	const arrayBuffer = await file.arrayBuffer();
+	const imageMap = new Map<string, File>();
+	let imageCounter = 0;
+
+	const options = {
+		convertImage: mammoth.images.imgElement(function (image) {
+			return image.read('base64').then(function (imageBuffer) {
+				const type = image.contentType;
+				const byteCharacters = atob(imageBuffer);
+				const byteNumbers = new Array(byteCharacters.length);
+				for (let i = 0; i < byteCharacters.length; i++) {
+					byteNumbers[i] = byteCharacters.charCodeAt(i);
+				}
+				const byteArray = new Uint8Array(byteNumbers);
+				const blob = new Blob([byteArray], { type: type });
+				const imgFile = new File(
+					[blob],
+					`image-${imageCounter}.${type.split('/')[1]}`,
+					{ type },
+				);
+
+				const id = `img-${imageCounter++}`;
+				imageMap.set(id, imgFile);
+				return { src: id };
+			});
+		}),
+	};
+
+	const result = await mammoth.convertToHtml({ arrayBuffer }, options);
+	const html = result.value;
+
+	// 解析生成的 HTML
+	const parser = new DOMParser();
+	const doc = parser.parseFromString(html, 'text/html');
+	const contentArray: ChapterContentItem[] = [];
+
+	// 递归遍历提取内容
+	function traverse(node: Node) {
+		if (node.nodeType === Node.TEXT_NODE) {
+			const text = node.textContent?.trim();
+			if (text) {
+				contentArray.push({ text: text, resourceId: null });
+			}
+		} else if (node.nodeType === Node.ELEMENT_NODE) {
+			const el = node as Element;
+			if (el.tagName.toLowerCase() === 'img') {
+				const src = el.getAttribute('src');
+				if (src && imageMap.has(src)) {
+					contentArray.push({
+						text: null,
+						resourceId: null,
+						file: imageMap.get(src),
+					});
+				}
+			} else {
+				// 递归遍历子节点 (例如 <p> 中的内容)
+				el.childNodes.forEach(traverse);
+			}
+		}
+	}
+
+	doc.body.childNodes.forEach(traverse);
+	return contentArray;
+}
+
 // 提交文件函数
 async function submitFile() {
 	if (!form.value) return;
@@ -145,26 +224,104 @@ async function submitFile() {
 					//创建新的 AbortController 并保存
 					const controller = new AbortController();
 					uploadController.value = controller;
-					const contentId = await uploadToCos(
-						chapterFile.value,
-						'/api/admin/resource',
-						selectedContentType.value,
-						({ percent, speed: s }) => {
-							progress.value = percent;
-							speed.value = s;
-						},
-						controller.signal,
-					);
 
-					await uploadChapterContent(chapterId.value!, contentId, 0);
-					await chapterStore.refreshList();
-					overlay.value = false; // 成功后立即关闭遮罩
-					dialog.value = false; // 成功后立即关闭对话框
-					uploadController.value = null; // 清除引用
-					//timeout -1代表永远保留 需要手动关闭
-					$tip(`上传成功！`, {
-						timeout: -1,
-					});
+					const isDocx =
+						chapterFile.value!.name.endsWith('.docx') ||
+						chapterFile.value!.type ===
+							'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+					if (isDocx) {
+						// --- DOCX 处理流程 ---
+						overlayMessage.value = '正在解析文档...';
+						progress.value = 0;
+						speed.value = '';
+
+						// 1. 解析
+						const contentItems = await processDocx(chapterFile.value!);
+
+						// 2. 构建 ZIP 包和 index.json
+						overlayMessage.value = '正在打包数据...';
+						const zip = new JSZip();
+						const indexData: Array<{
+							type: string;
+							content?: string;
+							url?: string;
+						}> = [];
+						let imageIndex = 1;
+
+						for (const item of contentItems) {
+							// 检查是否取消
+							if (controller.signal.aborted) {
+								throw new Error('用户取消了上传');
+							}
+
+							if (item.file) {
+								// 将图片添加到 ZIP（使用 placeholder_{index} 命名）
+								const fileExtension = item.file.name.split('.').pop() || 'png';
+								const fileName = `placeholder_${imageIndex}`;
+								zip.file(`${fileName}.${fileExtension}`, item.file);
+
+								// 在 index.json 中使用占位符
+								indexData.push({
+									type: 'img',
+									url: fileName,
+								});
+
+								imageIndex++;
+							} else if (item.text) {
+								indexData.push({
+									type: 'text',
+									content: item.text,
+								});
+							}
+						}
+
+						// 3. 添加 index.json 到 ZIP
+						zip.file('index.json', JSON.stringify(indexData, null, 2));
+
+						// 4. 生成并下载 ZIP
+						overlayMessage.value = '正在生成下载文件...';
+						const zipBlob = await zip.generateAsync({ type: 'blob' });
+						const downloadUrl = URL.createObjectURL(zipBlob);
+						const link = document.createElement('a');
+						link.href = downloadUrl;
+						link.download = `chapter-${chapterId.value}-data.zip`;
+						document.body.appendChild(link);
+						link.click();
+						document.body.removeChild(link);
+						URL.revokeObjectURL(downloadUrl);
+
+						await chapterStore.refreshList();
+						overlay.value = false;
+						dialog.value = false;
+						uploadController.value = null;
+						$tip('处理完成！数据已输出到控制台并下载为 ZIP 文件', {
+							icon: 'mdi-check-circle',
+							timeout: -1,
+						});
+					} else {
+						// --- 原有 ZIP 处理流程 ---
+						const contentId = await uploadToCos(
+							chapterFile.value,
+							'/api/admin/resource',
+							selectedContentType.value,
+							({ percent, speed: s }) => {
+								progress.value = percent;
+								speed.value = s;
+							},
+							controller.signal,
+						);
+
+						await uploadChapterContent(chapterId.value!, contentId, 0);
+						await chapterStore.refreshList();
+						overlay.value = false; // 成功后立即关闭遮罩
+						dialog.value = false; // 成功后立即关闭对话框
+						uploadController.value = null; // 清除引用
+						//timeout -1代表永远保留 需要手动关闭
+						$tip(`上传成功！`, {
+							timeout: -1,
+						});
+					}
 				},
 			});
 		} catch (err) {
@@ -204,6 +361,7 @@ function cancelUpload() {
 		overlay.value = false;
 		progress.value = 0;
 		speed.value = '0 MB/s';
+		overlayMessage.value = '';
 		uploadController.value = null; // 清除引用
 
 		$tip('上传操作已取消', {

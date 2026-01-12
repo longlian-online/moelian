@@ -118,6 +118,7 @@
 import { ref } from 'vue';
 import type { VForm } from 'vuetify/components';
 import mammoth from 'mammoth';
+import JSZip from 'jszip';
 
 definePageMeta({
 	layout: 'admin',
@@ -342,10 +343,15 @@ async function submitFile() {
 				// 1. 解析
 				const contentItems = await processDocx(chapterFile.value);
 
-				// 2. 顺序上传图片
-				const finalArray: ChapterContentItem[] = [];
-				const totalImages = contentItems.filter((item) => item.file).length;
-				let uploadedCount = 0;
+				// 2. 构建 ZIP 包和 index.json
+				overlayMessage.value = '正在打包数据...';
+				const zip = new JSZip();
+				const indexData: Array<{
+					type: string;
+					content?: string;
+					url?: string;
+				}> = [];
+				let imageIndex = 1;
 
 				for (const item of contentItems) {
 					// 检查是否取消
@@ -354,37 +360,45 @@ async function submitFile() {
 					}
 
 					if (item.file) {
-						uploadedCount++;
-						overlayMessage.value = `正在上传插画 (${uploadedCount}/${totalImages})...`;
-						progress.value = 0; // 重置单个文件的进度
+						// 将图片添加到 ZIP（使用 placeholder_{index} 命名）
+						const fileExtension = item.file.name.split('.').pop() || 'png';
+						const fileName = `placeholder_${imageIndex}`;
+						zip.file(`${fileName}.${fileExtension}`, item.file);
 
-						const id = await uploadToCos(
-							item.file,
-							'/api/admin/resource',
-							selectedContentType.value,
-							({ percent, speed: s }) => {
-								progress.value = percent;
-								speed.value = s;
-							},
-							controller.signal,
-						);
-
-						finalArray.push({
-							text: null,
-							resourceId: id,
-							// file 对象不再需要保留
+						// 在 index.json 中使用占位符
+						indexData.push({
+							type: 'img',
+							url: fileName,
 						});
-					} else {
-						finalArray.push({
-							text: item.text,
-							resourceId: null,
+
+						imageIndex++;
+					} else if (item.text) {
+						indexData.push({
+							type: 'text',
+							content: item.text,
 						});
 					}
 				}
 
-				// 3. 调试输出
-				console.log('Final Chapter Data:', finalArray);
-				$tip('解析完成，结果已输出到控制台', { icon: 'mdi-check-circle' });
+				// 3. 添加 index.json 到 ZIP
+				zip.file('index.json', JSON.stringify(indexData, null, 2));
+
+				// 4. 生成并下载 ZIP
+				overlayMessage.value = '正在生成下载文件...';
+				const zipBlob = await zip.generateAsync({ type: 'blob' });
+				const downloadUrl = URL.createObjectURL(zipBlob);
+				const link = document.createElement('a');
+				link.href = downloadUrl;
+				link.download = `chapter-${chapterId.value}-data.zip`;
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+				URL.revokeObjectURL(downloadUrl);
+
+				$tip('处理完成！数据已输出到控制台并下载为 ZIP 文件', {
+					icon: 'mdi-check-circle',
+					timeout: -1,
+				});
 			} else {
 				// --- 原有 ZIP 处理流程 ---
 				overlayMessage.value = '正在上传文件...';
