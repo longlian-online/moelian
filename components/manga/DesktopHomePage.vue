@@ -58,7 +58,7 @@
 										transition="fade-transition"
 									>
 										<div class="book-3d-container">
-											<div 
+											<div
 												class="book-3d-wrapper"
 												:style="{ width: (bookWidths[card.id] || 260) + 'px' }"
 											>
@@ -72,7 +72,8 @@
 														<div
 															class="book-spine"
 															:style="{
-																backgroundImage: `url(${card.coverUrl})`,
+																backgroundColor:
+																	spineColors[card.id] || '#2c3e50',
 															}"
 														>
 															<div class="book-spine-content">
@@ -83,7 +84,6 @@
 																	<span class="author-name">{{
 																		card.author
 																	}}</span>
-																	<span class="author-tag">著</span>
 																</div>
 															</div>
 														</div>
@@ -212,6 +212,7 @@
 
 <script setup lang="ts">
 import type { WorkListRes } from '~/shared/dto/web/work';
+import { useGetAverageRGB } from '~/utils/useGetAverageRGB';
 export type WorkItemType = WorkListRes['list'][number];
 
 const webWorkStore = useWebWorkStore();
@@ -226,22 +227,69 @@ const cards = computed<WorkItemType[]>(() => webWorkStore.mangaList);
 
 // 存储每本书根据比例计算出的动态宽度
 const bookWidths = ref<Record<number, number>>({});
+// 存储书脊的动态背景色
+const spineColors = ref<Record<number, string>>({});
+// 记录已经处理过的 ID，防止重复提取
+const processingIds = new Set<number>();
 
-// 当封面图加载完成时，计算其物理比例
-const handleImageLoad = (event: any, bookId: number) => {
-	const img = event.target;
-	if (img && img.naturalWidth && img.naturalHeight) {
-		const height = 400; // 固定的显示高度
-		const spineWidth = 45; // 固定的书脊宽度
-		
-		// 计算图片在 400px 高度下的总宽度
+// 核心：提取颜色并计算宽度的统一处理函数
+const processBookMetadata = async (card: WorkItemType, index: number) => {
+	if (processingIds.has(card.id)) return;
+	processingIds.add(card.id);
+
+	// 1. 提取颜色：严格仅限列表前 4 张
+	if (index < 4) {
+		try {
+			const [r, g, b] = await useGetAverageRGB(card.coverUrl);
+
+			spineColors.value[card.id] = `rgb(${Math.floor(r)}, ${Math.floor(
+				g,
+			)}, ${Math.floor(b)})`;
+		} catch (err) {
+			// 前四张提取失败的兜底：使用高级百合橘
+			spineColors.value[card.id] = '#FF9E5E';
+		}
+	}
+
+	// 2. 预计算书本宽度
+	const img = new Image();
+	img.onload = () => {
+		const height = 400;
 		const totalWidth = (img.naturalWidth / img.naturalHeight) * height;
-		
-		// 书本封面部分的显示宽度 = 总宽度 - 书脊宽度
-		// 设定一个合理的范围限制，防止极端比例
-		const calculatedWidth = Math.max(150, Math.min(320, totalWidth - spineWidth));
-		
-		bookWidths.value[bookId] = calculatedWidth;
+		bookWidths.value[card.id] = Math.max(150, Math.min(300, totalWidth));
+	};
+	img.src = card.coverUrl;
+};
+
+// 关键：监听列表变化，主动遍历处理
+watch(
+	() => webWorkStore.mangaList,
+	async (newList) => {
+		if (newList && newList.length > 0) {
+			for (let i = 0; i < newList.length; i++) {
+				const card = newList[i];
+				if (!processingIds.has(card.id)) {
+					await processBookMetadata(card, i);
+					// 只有前 4 张需要提取颜色时才进行串行等待，其余快速处理
+					if (i < 4) {
+						await new Promise((resolve) => setTimeout(resolve, 300));
+					}
+				}
+			}
+		}
+	},
+	{ immediate: true },
+);
+
+/**
+ * handleImageLoad 兜底处理
+ */
+const handleImageLoad = (payload: any, bookId: number) => {
+	if (processingIds.has(bookId)) return;
+	const index = webWorkStore.mangaList.findIndex((c) => c.id === bookId);
+	const card = webWorkStore.mangaList[index];
+	if (card) {
+		processBookMetadata(card, index);
 	}
 };
 
@@ -296,8 +344,7 @@ if (error.value) {
 }
 
 .book-3d-wrapper {
-	width: 280px; /* 固定的展示宽度，使布局整齐 */
-	height: 100%;
+	width: 400px;
 	transform-style: preserve-3d;
 	position: relative;
 }
@@ -325,31 +372,44 @@ if (error.value) {
 /* 书脊 - 物理上垂直于封面 */
 .book-spine {
 	position: absolute;
-	/* 关键修改：高度补偿 1px，位置上移 0.5px，消除旋转带来的子像素间隙 */
 	top: -0.5px;
 	height: calc(100% + 1px);
 	left: 0;
 	width: var(--spine-width);
 	z-index: 5;
-	/* 关键：旋转轴在右边缘，向左转 90 度 */
 	transform-origin: right center;
 	transform: translateX(calc(-1 * var(--spine-width))) rotateY(-90deg);
-	
-	background-size: auto 100%;
-	background-position: left center;
-	background-repeat: no-repeat;
-	box-shadow: inset -3px 0 10px rgba(0, 0, 0, 0.5);
+
+	/* 基础质感：使用稍微加深的主色调，并添加微弱的纸张纹理 */
+	background-blend-mode: multiply;
+	background-image: repeating-linear-gradient(
+		45deg,
+		rgba(0, 0, 0, 0.03) 0px,
+		rgba(0, 0, 0, 0.03) 1px,
+		transparent 1px,
+		transparent 2px
+	);
+	box-shadow: inset -2px 0 8px rgba(0, 0, 0, 0.3);
 	overflow: hidden;
-	/* 防止闪烁 */
 	backface-visibility: hidden;
 }
 
-/* 书脊遮罩 */
+/* 书脊遮罩：设计出“圆润”且有光泽的 3D 模拟效果 */
 .book-spine::after {
 	content: '';
 	position: absolute;
 	inset: 0;
-	background: rgba(0, 0, 0, 0.3);
+	/* 关键：通过多层渐变模拟书脊的圆弧光影 */
+	background: linear-gradient(
+		to right,
+		rgba(0, 0, 0, 0.4) 0%,
+		/* 左边缘折叠影 */ rgba(0, 0, 0, 0.1) 10%,
+		transparent 30%,
+		rgba(255, 255, 255, 0.2) 50%,
+		/* 中心高光，模拟书脊弧度 */ transparent 70%,
+		rgba(0, 0, 0, 0.1) 90%,
+		rgba(0, 0, 0, 0.3) 100% /* 右边缘（与封面交界）深影 */
+	);
 	z-index: 1;
 }
 
@@ -359,57 +419,56 @@ if (error.value) {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	justify-content: center; /* 整体垂直居中 */
+	justify-content: center;
 	height: 100%;
-	padding: 30px 4px; /* 增加上下边距，更像真实书脊 */
+	padding: 25px 0;
 	box-sizing: border-box;
+	width: 100%;
+	white-space: nowrap;
 }
 
 .book-spine-title {
 	color: #ffffff;
-	font-size: 19px; /* 增大字号 */
-	font-weight: 800; /* 显著加粗，提升冲击力 */
-	font-style: italic; /* 添加斜体 */
+	font-size: 20px;
+	font-weight: 800;
 	writing-mode: vertical-rl;
 	text-orientation: upright;
-	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9); /* 强化阴影，解决白色文字在浅色背景下的可读性 */
-	max-height: calc(100% - 110px); /* 动态限制高度，确保不挤压作者 */
-	letter-spacing: 2px;
+	display: -webkit-box;
+	-webkit-line-clamp: 8;
+	-webkit-box-orient: vertical;
+	max-height: 220px;
+	margin-bottom: 15px;
+	letter-spacing: 3px;
+	text-align: center;
+	/* 增强对比度，确保在任何颜色背景下都清晰 */
+	text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+	filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.3));
 }
 
+/* 作者容器 */
 .book-spine-author {
-	color: #ffffff;
-	font-size: 13px; /* 稍微增大 */
-	font-weight: 700; /* 加粗 */
-	font-style: italic; /* 添加斜体 */
+	color: rgba(255, 255, 255, 0.9);
+	font-size: 15px;
+	font-weight: 700;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	margin-top: 15px;
-	text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+	text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .author-name {
 	writing-mode: vertical-rl;
 	text-orientation: upright;
-	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	max-height: 70px;
-	margin-bottom: 6px;
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	max-height: 80px;
 	letter-spacing: 1px;
-}
-
-.author-tag {
-	border: 1.5px solid #ffffff; /* 加粗边框 */
-	border-radius: 3px;
-	font-size: 11px;
-	font-weight: 900;
-	padding: 1px 3px;
-	background: rgba(0, 0, 0, 0.3); /* 稍微加深背景，提升印章感 */
+	text-align: center;
 }
 
 /* 封面主体 */
@@ -426,13 +485,10 @@ if (error.value) {
 
 /* 封面图片：关键位移逻辑 */
 :deep(.book-cover-image .v-img__img) {
-	/* 强制增加宽度以容纳书脊部分的像素 */
-	width: calc(100% + var(--spine-width)) !important;
-	/* 向左偏移，跳过书脊展示的像素 */
-	left: calc(-1 * var(--spine-width)) !important;
-	/* 关键修改：使用 fill，因为容器宽度已经按比例算好了，fill 此时就是 100% 原生比例 */
-	object-fit: fill !important;
-	object-position: left center !important;
+	width: 100% !important;
+	left: 0 !important;
+	object-fit: cover !important;
+	object-position: center !important;
 }
 
 /* 折痕处的高光阴影过渡 */
@@ -444,12 +500,6 @@ if (error.value) {
 	width: 15px;
 	height: 100%;
 	z-index: 10;
-	background: linear-gradient(
-		to right,
-		rgba(0, 0, 0, 0.4) 0%,
-		rgba(0, 0, 0, 0.1) 20%,
-		transparent 100%
-	);
 	pointer-events: none;
 }
 
@@ -475,8 +525,11 @@ if (error.value) {
 	padding: 16px 12px;
 	color: white;
 	font-weight: 600;
-	background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+	background: linear-gradient(transparent, rgba(0, 0, 0, 0.5));
 	z-index: 15;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .author-chip {
