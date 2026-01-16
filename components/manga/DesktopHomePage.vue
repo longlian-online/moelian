@@ -58,7 +58,7 @@
 										transition="fade-transition"
 									>
 										<div class="book-3d-container">
-											<div 
+											<div
 												class="book-3d-wrapper"
 												:style="{ width: (bookWidths[card.id] || 260) + 'px' }"
 											>
@@ -83,7 +83,6 @@
 																	<span class="author-name">{{
 																		card.author
 																	}}</span>
-																	<span class="author-tag">著</span>
 																</div>
 															</div>
 														</div>
@@ -114,6 +113,10 @@
 																	/>
 																</template>
 															</v-img>
+															<!-- 左上角标签 -->
+															<AnimeTags
+																:tags="['百合', '校园', '治愈', '推理', '科幻']"
+															/>
 															<div class="manga-title-overlay" @click.stop>
 																<span
 																	v-copy="card.title"
@@ -129,7 +132,7 @@
 										</div>
 									</v-lazy>
 
-									<v-card-actions>
+									<!-- <v-card-actions>
 										<v-row dense class="pa-0 my-custom-actions-row">
 											<v-col cols="6" class="py-0 d-flex align-center">
 												<v-icon
@@ -195,7 +198,7 @@
 												</v-chip>
 											</v-col>
 										</v-row>
-									</v-card-actions>
+									</v-card-actions> -->
 								</v-card>
 							</v-col>
 						</v-row>
@@ -232,15 +235,18 @@ const handleImageLoad = (event: any, bookId: number) => {
 	const img = event.target;
 	if (img && img.naturalWidth && img.naturalHeight) {
 		const height = 400; // 固定的显示高度
-		const spineWidth = 45; // 固定的书脊宽度
-		
+		const spineWidth = 50; // 固定的书脊宽度
+
 		// 计算图片在 400px 高度下的总宽度
 		const totalWidth = (img.naturalWidth / img.naturalHeight) * height;
-		
+
 		// 书本封面部分的显示宽度 = 总宽度 - 书脊宽度
 		// 设定一个合理的范围限制，防止极端比例
-		const calculatedWidth = Math.max(150, Math.min(320, totalWidth - spineWidth));
-		
+		const calculatedWidth = Math.max(
+			150,
+			Math.min(320, totalWidth - spineWidth),
+		);
+
 		bookWidths.value[bookId] = calculatedWidth;
 	}
 };
@@ -284,7 +290,7 @@ if (error.value) {
 
 /* 3D 舞台环境 */
 .book-3d-container {
-	--spine-width: 45px;
+	--spine-width: 50px;
 	perspective: 1200px;
 	perspective-origin: center center;
 	width: 100%;
@@ -325,16 +331,15 @@ if (error.value) {
 /* 书脊 - 物理上垂直于封面 */
 .book-spine {
 	position: absolute;
-	/* 关键修改：高度补偿 1px，位置上移 0.5px，消除旋转带来的子像素间隙 */
-	top: -0.5px;
-	height: calc(100% + 1px);
+	top: 0px;
+	height: 100%;
 	left: 0;
 	width: var(--spine-width);
 	z-index: 5;
-	/* 关键：旋转轴在右边缘，向左转 90 度 */
+	/* 旋转轴在右边缘，向左转 90 度 */
 	transform-origin: right center;
 	transform: translateX(calc(-1 * var(--spine-width))) rotateY(-90deg);
-	
+
 	background-size: auto 100%;
 	background-position: left center;
 	background-repeat: no-repeat;
@@ -349,7 +354,7 @@ if (error.value) {
 	content: '';
 	position: absolute;
 	inset: 0;
-	background: rgba(0, 0, 0, 0.3);
+	background: rgba(0, 0, 0, 0.15);
 	z-index: 1;
 }
 
@@ -403,15 +408,6 @@ if (error.value) {
 	letter-spacing: 1px;
 }
 
-.author-tag {
-	border: 1.5px solid #ffffff; /* 加粗边框 */
-	border-radius: 3px;
-	font-size: 11px;
-	font-weight: 900;
-	padding: 1px 3px;
-	background: rgba(0, 0, 0, 0.3); /* 稍微加深背景，提升印章感 */
-}
-
 /* 封面主体 */
 .book-cover-main {
 	position: relative;
@@ -422,6 +418,27 @@ if (error.value) {
 	box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.3);
 	/* 关键：封面稍微向前推 0.1px，确保盖住书脊的边缘 */
 	transform: translateZ(0.1px);
+}
+
+/* 书脊与封面交界处的白色装订线 */
+.book-cover-main::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 2px;
+	height: 100%;
+	background: linear-gradient(
+		to bottom,
+		rgba(255, 255, 255, 0.5) 20%,
+		rgba(255, 255, 255, 0.65) 50%,
+		rgba(200, 200, 200, 0.4) 80%
+	);
+	z-index: 20;
+	pointer-events: none;
+	box-shadow:
+		1px 0 1px rgba(255, 255, 255, 0.4),
+		-1px 0 2px rgba(0, 0, 0, 0.2);
 }
 
 /* 封面图片：关键位移逻辑 */
@@ -467,6 +484,67 @@ if (error.value) {
 	z-index: -1;
 }
 
+/* 左上角标签 - 二次元风格 */
+.book-tag {
+	position: absolute;
+	top: 8px;
+	left: 8px;
+	z-index: 25;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 6px 12px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	border-radius: 20px;
+	border: 2px solid rgba(255, 255, 255, 0.9);
+	box-shadow:
+		0 4px 15px rgba(102, 126, 234, 0.4),
+		0 0 20px rgba(118, 75, 162, 0.3),
+		inset 0 1px 0 rgba(255, 255, 255, 0.5);
+	backdrop-filter: blur(4px);
+	font-weight: 700;
+	font-size: 13px;
+	color: #ffffff;
+	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	cursor: default;
+	animation: tagGlow 2s ease-in-out infinite;
+}
+
+.book-tag:hover {
+	transform: scale(1.05);
+	box-shadow:
+		0 6px 20px rgba(102, 126, 234, 0.6),
+		0 0 30px rgba(118, 75, 162, 0.5),
+		inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.tag-icon {
+	font-size: 14px;
+	filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+.tag-text {
+	font-weight: 700;
+	letter-spacing: 0.5px;
+}
+
+@keyframes tagGlow {
+	0%,
+	100% {
+		box-shadow:
+			0 4px 15px rgba(102, 126, 234, 0.4),
+			0 0 20px rgba(118, 75, 162, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.5);
+	}
+	50% {
+		box-shadow:
+			0 4px 15px rgba(102, 126, 234, 0.6),
+			0 0 25px rgba(118, 75, 162, 0.5),
+			inset 0 1px 0 rgba(255, 255, 255, 0.6);
+	}
+}
+
 /* 标题覆盖层 */
 .manga-title-overlay {
 	position: absolute;
@@ -475,7 +553,7 @@ if (error.value) {
 	padding: 16px 12px;
 	color: white;
 	font-weight: 600;
-	background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+	background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
 	z-index: 15;
 }
 
