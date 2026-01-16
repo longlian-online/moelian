@@ -17,7 +17,11 @@
 							sm="6"
 							md="3"
 						>
-							<v-skeleton-loader type="image, text, text" height="400" />
+							<v-skeleton-loader
+								type="image"
+								:height="400"
+								class="skeleton-book"
+							/>
 						</v-col>
 					</div>
 				</template>
@@ -57,79 +61,20 @@
 										min-height="400"
 										transition="fade-transition"
 									>
-										<div class="book-3d-container">
-											<div
-												class="book-3d-wrapper"
-												:style="{ width: (bookWidths[card.id] || 260) + 'px' }"
-											>
-												<div
-													class="book-cover-link"
-													@click="handleBookClick(card.id)"
-												>
-													<!-- 整个书体 -->
-													<div class="book-body">
-														<!-- 书脊（侧封） -->
-														<div
-															class="book-spine"
-															:style="{
-																backgroundImage: `url(${card.coverUrl})`,
-															}"
-														>
-															<div class="book-spine-content">
-																<div class="book-spine-title">
-																	{{ card.title }}
-																</div>
-																<div class="book-spine-author">
-																	<span class="author-name">{{
-																		card.author
-																	}}</span>
-																</div>
-															</div>
-														</div>
-														<!-- 封面（正面） -->
-														<div class="book-cover-main">
-															<v-img
-																:src="card.coverUrl"
-																:alt="card.title"
-																class="book-cover-image"
-																height="400px"
-																cover
-																eager
-																@load="handleImageLoad($event, card.id)"
-															>
-																<template #placeholder>
-																	<v-skeleton-loader
-																		type="image"
-																		class="fill-height"
-																	/>
-																</template>
-																<template #error>
-																	<v-img
-																		cover
-																		src="/error-default.jpg"
-																		height="100%"
-																		width="100%"
-																		gradient="to bottom, rgba(0,0,0,.0), rgba(0,0,0,.4)"
-																	/>
-																</template>
-															</v-img>
-															<!-- 左上角标签 -->
-															<AnimeTags
-																:tags="['百合', '校园', '治愈', '推理', '科幻']"
-															/>
-															<div class="manga-title-overlay" @click.stop>
-																<span
-																	v-copy="card.title"
-																	v-tooltip="'右键复制标题'"
-																>
-																	{{ card.title }}
-																</span>
-															</div>
-														</div>
-													</div>
-												</div>
-											</div>
-										</div>
+										<Book3D
+											:cover-url="card.coverUrl"
+											:title="card.title"
+											:author="card.author"
+											:height="400"
+											:width="260"
+											:spine-width="50"
+											@click="handleBookClick(card.id)"
+										>
+											<template #overlay>
+												<!-- 左上角分类标签 -->
+												<AnimeTags :tags="['校园']" />
+											</template>
+										</Book3D>
 									</v-lazy>
 
 									<!-- <v-card-actions>
@@ -227,35 +172,6 @@ const page = computed({
 });
 const cards = computed<WorkItemType[]>(() => webWorkStore.mangaList);
 
-// 存储每本书根据比例计算出的动态宽度
-const bookWidths = ref<Record<number, number>>({});
-
-// 当封面图加载完成时，计算其物理比例
-const handleImageLoad = (event: any, bookId: number) => {
-	const img = event.target;
-	if (img && img.naturalWidth && img.naturalHeight) {
-		const height = 400; // 固定的显示高度
-		const spineWidth = 50; // 固定的书脊宽度
-
-		// 计算图片在 400px 高度下的总宽度
-		const totalWidth = (img.naturalWidth / img.naturalHeight) * height;
-
-		// 书本封面部分的显示宽度 = 总宽度 - 书脊宽度
-		// 设定一个合理的范围限制，防止极端比例
-		const calculatedWidth = Math.max(
-			150,
-			Math.min(320, totalWidth - spineWidth),
-		);
-
-		bookWidths.value[bookId] = calculatedWidth;
-	}
-};
-
-const handleAuthorClick = (author: string) => {
-	webWorkStore.mangaInputKey = author;
-	webWorkStore.triggerMangaSearch();
-};
-
 const handleBookClick = (bookId: number) => {
 	router.push(`/manga/${bookId}`);
 };
@@ -277,6 +193,13 @@ if (error.value) {
 </script>
 
 <style scoped>
+/* 骨架屏样式 - 强制覆盖 */
+.skeleton-book :deep(.v-skeleton-loader__bone.v-skeleton-loader__image) {
+	height: 400px !important;
+	min-height: 400px !important;
+	max-height: 400px !important;
+}
+
 /* 基础容器 */
 .my-card-container {
 	padding: 0 !important;
@@ -287,292 +210,17 @@ if (error.value) {
 	box-shadow: none !important;
 	overflow: visible !important;
 }
+</style>
 
-/* 3D 舞台环境 */
-.book-3d-container {
-	--spine-width: 50px;
-	perspective: 1200px;
-	perspective-origin: center center;
-	width: 100%;
-	height: 400px;
-	margin: 20px 0;
-	display: flex;
-	justify-content: center;
-	align-items: center;
+<style>
+/* 全局样式 - 强制骨架屏高度 */
+.skeleton-book .v-skeleton-loader__bone.v-skeleton-loader__image {
+	height: 400px !important;
+	min-height: 400px !important;
+	max-height: 400px !important;
 }
 
-.book-3d-wrapper {
-	width: 280px; /* 固定的展示宽度，使布局整齐 */
-	height: 100%;
-	transform-style: preserve-3d;
-	position: relative;
-}
-
-.book-cover-link {
-	display: block;
-	width: 100%;
-	height: 100%;
-}
-
-/* 书体组合 - 绕交界线旋转 */
-.book-body {
-	position: relative;
-	width: 100%;
-	height: 100%;
-	transform-style: preserve-3d;
-	/* 关键：整个书向右侧倾斜，露出左边的书脊 */
-	transform: rotateY(35deg);
-	transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-	will-change: transform;
-	/* 强制开启 GPU 高精度渲染 */
-	-webkit-font-smoothing: antialiased;
-}
-
-/* 书脊 - 物理上垂直于封面 */
-.book-spine {
-	position: absolute;
-	top: 0px;
-	height: 100%;
-	left: 0;
-	width: var(--spine-width);
-	z-index: 5;
-	/* 旋转轴在右边缘，向左转 90 度 */
-	transform-origin: right center;
-	transform: translateX(calc(-1 * var(--spine-width))) rotateY(-90deg);
-
-	background-size: auto 100%;
-	background-position: left center;
-	background-repeat: no-repeat;
-	box-shadow: inset -3px 0 10px rgba(0, 0, 0, 0.5);
-	overflow: hidden;
-	/* 防止闪烁 */
-	backface-visibility: hidden;
-}
-
-/* 书脊遮罩 */
-.book-spine::after {
-	content: '';
-	position: absolute;
-	inset: 0;
-	background: rgba(0, 0, 0, 0.15);
-	z-index: 1;
-}
-
-.book-spine-content {
-	position: relative;
-	z-index: 2;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center; /* 整体垂直居中 */
-	height: 100%;
-	padding: 30px 4px; /* 增加上下边距，更像真实书脊 */
-	box-sizing: border-box;
-}
-
-.book-spine-title {
-	color: #ffffff;
-	font-size: 19px; /* 增大字号 */
-	font-weight: 800; /* 显著加粗，提升冲击力 */
-	font-style: italic; /* 添加斜体 */
-	writing-mode: vertical-rl;
-	text-orientation: upright;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9); /* 强化阴影，解决白色文字在浅色背景下的可读性 */
-	max-height: calc(100% - 110px); /* 动态限制高度，确保不挤压作者 */
-	letter-spacing: 2px;
-}
-
-.book-spine-author {
-	color: #ffffff;
-	font-size: 13px; /* 稍微增大 */
-	font-weight: 700; /* 加粗 */
-	font-style: italic; /* 添加斜体 */
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	margin-top: 15px;
-	text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
-}
-
-.author-name {
-	writing-mode: vertical-rl;
-	text-orientation: upright;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	max-height: 70px;
-	margin-bottom: 6px;
-	letter-spacing: 1px;
-}
-
-/* 封面主体 */
-.book-cover-main {
-	position: relative;
-	width: 100%;
-	height: 100%;
-	overflow: hidden;
-	background: #222;
-	box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.3);
-	/* 关键：封面稍微向前推 0.1px，确保盖住书脊的边缘 */
-	transform: translateZ(0.1px);
-}
-
-/* 书脊与封面交界处的白色装订线 */
-.book-cover-main::before {
-	content: '';
-	position: absolute;
-	top: 0;
-	left: 0;
-	width: 2px;
-	height: 100%;
-	background: linear-gradient(
-		to bottom,
-		rgba(255, 255, 255, 0.5) 20%,
-		rgba(255, 255, 255, 0.65) 50%,
-		rgba(200, 200, 200, 0.4) 80%
-	);
-	z-index: 20;
-	pointer-events: none;
-	box-shadow:
-		1px 0 1px rgba(255, 255, 255, 0.4),
-		-1px 0 2px rgba(0, 0, 0, 0.2);
-}
-
-/* 封面图片：关键位移逻辑 */
-:deep(.book-cover-image .v-img__img) {
-	/* 强制增加宽度以容纳书脊部分的像素 */
-	width: calc(100% + var(--spine-width)) !important;
-	/* 向左偏移，跳过书脊展示的像素 */
-	left: calc(-1 * var(--spine-width)) !important;
-	/* 关键修改：使用 fill，因为容器宽度已经按比例算好了，fill 此时就是 100% 原生比例 */
-	object-fit: fill !important;
-	object-position: left center !important;
-}
-
-/* 折痕处的高光阴影过渡 */
-.book-cover-main::after {
-	content: '';
-	position: absolute;
-	top: 0;
-	left: 0;
-	width: 15px;
-	height: 100%;
-	z-index: 10;
-	background: linear-gradient(
-		to right,
-		rgba(0, 0, 0, 0.4) 0%,
-		rgba(0, 0, 0, 0.1) 20%,
-		transparent 100%
-	);
-	pointer-events: none;
-}
-
-/* 底部投影 */
-.book-body::before {
-	content: '';
-	position: absolute;
-	bottom: -15px;
-	left: -5px;
-	width: calc(100% + 10px);
-	height: 30px;
-	background: rgba(0, 0, 0, 0.4);
-	filter: blur(12px);
-	transform: rotateX(90deg) translateZ(-10px);
-	z-index: -1;
-}
-
-/* 左上角标签 - 二次元风格 */
-.book-tag {
-	position: absolute;
-	top: 8px;
-	left: 8px;
-	z-index: 25;
-	display: flex;
-	align-items: center;
-	gap: 4px;
-	padding: 6px 12px;
-	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-	border-radius: 20px;
-	border: 2px solid rgba(255, 255, 255, 0.9);
-	box-shadow:
-		0 4px 15px rgba(102, 126, 234, 0.4),
-		0 0 20px rgba(118, 75, 162, 0.3),
-		inset 0 1px 0 rgba(255, 255, 255, 0.5);
-	backdrop-filter: blur(4px);
-	font-weight: 700;
-	font-size: 13px;
-	color: #ffffff;
-	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-	cursor: default;
-	animation: tagGlow 2s ease-in-out infinite;
-}
-
-.book-tag:hover {
-	transform: scale(1.05);
-	box-shadow:
-		0 6px 20px rgba(102, 126, 234, 0.6),
-		0 0 30px rgba(118, 75, 162, 0.5),
-		inset 0 1px 0 rgba(255, 255, 255, 0.6);
-}
-
-.tag-icon {
-	font-size: 14px;
-	filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
-}
-
-.tag-text {
-	font-weight: 700;
-	letter-spacing: 0.5px;
-}
-
-@keyframes tagGlow {
-	0%,
-	100% {
-		box-shadow:
-			0 4px 15px rgba(102, 126, 234, 0.4),
-			0 0 20px rgba(118, 75, 162, 0.3),
-			inset 0 1px 0 rgba(255, 255, 255, 0.5);
-	}
-	50% {
-		box-shadow:
-			0 4px 15px rgba(102, 126, 234, 0.6),
-			0 0 25px rgba(118, 75, 162, 0.5),
-			inset 0 1px 0 rgba(255, 255, 255, 0.6);
-	}
-}
-
-/* 标题覆盖层 */
-.manga-title-overlay {
-	position: absolute;
-	bottom: 0;
-	inset-inline: 0;
-	padding: 16px 12px;
-	color: white;
-	font-weight: 600;
-	background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
-	z-index: 15;
-}
-
-.author-chip {
-	cursor: pointer;
-	transition: color 0.3s;
-}
-
-.author-chip:hover {
-	color: #c00000;
-	font-weight: bold;
-}
-
-@media (max-width: 960px) {
-	.book-3d-wrapper {
-		width: 220px;
-	}
-	.book-3d-container {
-		--spine-width: 35px;
-	}
+.skeleton-book .v-skeleton-loader__bone {
+	height: 400px !important;
 }
 </style>

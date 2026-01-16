@@ -39,29 +39,19 @@
 						:key="`card-${index}-${cardIndex}`"
 						class="card-container d-flex justify-center align-center"
 					>
-						<v-sheet
-							class="img-wrapper d-flex align-center justify-center fill-height"
-							@click="gotoNovalId(card.id)"
-						>
-							<v-img
-								:src="card.coverUrl"
-								style="width: 100%"
-								:aspect-ratio="3 / 4"
-							>
-								<template #placeholder>
-									<v-skeleton-loader type="image" class="fill-height" />
-								</template>
-								<template #error>
-									<v-img
-										cover
-										src="/error-default.jpg"
-										height="100%"
-										width="100%"
-										gradient="to bottom, rgba(0,0,0,.0), rgba(0,0,0,.4)"
-									/>
-								</template>
-							</v-img>
-						</v-sheet>
+						<div class="book-wrapper">
+							<Book3D
+								:cover-url="card.coverUrl"
+								:title="card.title"
+								:author="card.author"
+								:height="168"
+								:width="120"
+								:spine-width="25"
+								:show-title="false"
+								:show-spine-text="false"
+								@click="gotoNovalId(card.id)"
+							/>
+						</div>
 						<div class="content-wrapper d-flex flex-column">
 							<v-card-title @click.stop>
 								<span v-copy="card.title" v-tooltip="'右键复制标题'">{{
@@ -182,10 +172,12 @@ const handleAuthorClick = (author: string) => {
 	height: 200px;
 	padding: 16px;
 }
-.img-wrapper {
+.book-wrapper {
 	width: 25%;
 	height: 100%;
-	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 .content-wrapper {
 	width: 75%;

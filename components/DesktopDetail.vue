@@ -32,7 +32,7 @@
 									height="100%"
 								>
 									<v-card-title class="text-h4 py-2"
-										><span v-tooltip="'右键复制标题'" v-copy="workDetail">{{
+										><span v-tooltip="'右键复制标题'" v-copy="workDetail.title">{{
 											workDetail.title
 										}}</span></v-card-title
 									>
