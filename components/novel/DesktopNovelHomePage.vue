@@ -50,11 +50,20 @@
 								:show-title="false"
 								:show-spine-text="false"
 								@click="gotoNovalId(card.id)"
-							/>
+							>
+								<template #overlay>
+									<!-- 左上角分类标签 -->
+									<AnimeTags
+										:tags="['校园']"
+										size="small"
+										position="bottom-left"
+									/>
+								</template>
+							</Book3D>
 						</div>
 						<div class="content-wrapper d-flex flex-column">
 							<v-card-title @click.stop>
-								<span v-copy="card.title" v-tooltip="'右键复制标题'">{{
+								<span v-copy="card.title" v-tooltip="card.title">{{
 									card.title
 								}}</span>
 							</v-card-title>

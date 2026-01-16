@@ -97,15 +97,32 @@ const wrapperStyle = computed(() => ({
 }));
 
 // 当封面图加载完成时，计算其物理比例
-const handleImageLoad = (event: Event) => {
-	const img = event.target as HTMLImageElement;
+const handleImageLoad = (src: string | Event) => {
+	// v-img 的 load 事件可能传递 src 字符串或 Event 对象
+	let img: HTMLImageElement | null = null;
+
+	if (typeof src === 'string') {
+		// 如果是字符串，需要找到对应的图片元素
+		const imgElement = document.querySelector(
+			`.book-cover-image img[src="${src}"]`,
+		) as HTMLImageElement;
+		if (imgElement) {
+			img = imgElement;
+		}
+	} else if (src instanceof Event) {
+		img = src.target as HTMLImageElement;
+	}
+
 	if (img && img.naturalWidth && img.naturalHeight) {
 		// 计算图片在指定高度下的总宽度
 		const totalWidth = (img.naturalWidth / img.naturalHeight) * props.height;
 
 		// 书本封面部分的显示宽度 = 总宽度 - 书脊宽度
 		// 设定一个合理的范围限制，防止极端比例
-		const newWidth = Math.max(150, Math.min(320, totalWidth - props.spineWidth));
+		const newWidth = Math.max(
+			150,
+			Math.min(320, totalWidth - props.spineWidth),
+		);
 
 		calculatedWidth.value = newWidth;
 		emit('imageLoad', newWidth);
