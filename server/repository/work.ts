@@ -279,7 +279,10 @@ export const deleteWorkAndResource = async (
 /**
  * 清空指定作品的所有标签绑定
  */
-export const clearWorkTags = async (workId: number, tx = useDB()) => {
+export const clearWorkTags = async (
+	workId: number,
+	tx: Prisma.TransactionClient = useDB()
+) => {
 	return tx.work_tags.deleteMany({
 		where: { work_id: workId },
 	});
@@ -291,9 +294,9 @@ export const clearWorkTags = async (workId: number, tx = useDB()) => {
 export const batchBindWorkTags = async (
 	workId: number,
 	tagIds: number[],
-	tx = useDB(),
+	tx: Prisma.TransactionClient = useDB()
 ) => {
-	if (tagIds.length === 0) return { count: 0 }
+	if (tagIds.length === 0) return { count: 0 };
 	const now = new Date();
 	return tx.work_tags.createMany({
 		data: tagIds.map((tagId) => ({
