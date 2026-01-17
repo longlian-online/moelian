@@ -43,6 +43,7 @@ export const WorkAdminListReq = z.strictObject({
 		.min(1, '标题不能为空')
 		.max(64, '标题最多64个字符')
 		.optional(),
+	tagIds: z.array(z.coerce.number().positive('标签ID必须为正整数')).optional(),
 	...PageRequestSchema.shape,
 });
 
@@ -66,6 +67,10 @@ export type WorkAdminListRes = {
 	total: number;
 };
 
+export const WorkUpdateTagsReq = z.object({
+	tag_ids: z
+		.array(z.coerce.number().positive('标签ID必须为正整数'))
+});
 export type WorkCreateReq = z.infer<typeof WorkCreateReq>;
 export type WorkPutReq = z.infer<typeof WorkPutReq>;
 export type WorkCoverPatchReq = z.infer<typeof WorkCoverPatchReq>;

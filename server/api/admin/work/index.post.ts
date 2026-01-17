@@ -19,6 +19,7 @@ export default defineWrappedResponseHandler(async (event):Promise<WorkCreateRes>
 		status: Status.Disable,
 		serial_status: SerialStatus.Serializing,
 		creator_id: user.id,
+		tagId: null,
 	});
 
 	return {

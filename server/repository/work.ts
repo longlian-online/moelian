@@ -44,6 +44,7 @@ export type ListForAdminInput = {
 		>
 	>;
 	like?: Partial<Pick<Work, 'author' | 'title'>>;
+	tagIds?: number[];
 	pagination: PageRequestSchema;
 };
 export const listForAdmin = async (params: ListForAdminInput) => {
@@ -59,7 +60,44 @@ export const listForAdmin = async (params: ListForAdminInput) => {
 			equals: null,
 		},
 	};
+	const { tagIds } = params;
+	if (tagIds && tagIds.length > 0) {
+		const tagCount = tagIds.length;
+		// 查询匹配所有标签的作品ID集合
+		const matchWorkIds = await useDB().work_tags.findMany({
+			select: { work_id: true },
+			where: {
+				tag_id: { in: tagIds },
+				work: { deleted_at: null },
+			},
+			distinct: ['work_id', 'tag_id'],
+			orderBy: { work_id: 'asc' },
+		});
+		// 分组统计每个作品匹配的标签数量
+		const workTagCountMap = new Map<number, number>();
+		matchWorkIds.forEach((item) => {
+			workTagCountMap.set(
+				item.work_id,
+				(workTagCountMap.get(item.work_id) || 0) + 1,
+			);
+		});
+		// 保留同时拥有所有选中标签的作品ID
+		const workIds = Array.from(workTagCountMap.entries())
+			.filter(([_, count]) => count === tagCount)
+			.map(([id]) => id);
 
+		// 用匹配到的作品ID做筛选
+		const [total, list] = await Promise.all([
+			useDB().work.count({ where: { ...where, id: { in: workIds } } }),
+			useDB().work.findMany({
+				include: { Cover: true },
+				where: { ...where, id: { in: workIds } },
+				...pagination(params.pagination),
+				orderBy: { id: 'desc' },
+			}),
+		]);
+		return { total, list };
+	}
 	const [total, list] = await Promise.all([
 		useDB().work.count({
 			where,
@@ -236,4 +274,33 @@ export const deleteWorkAndResource = async (
 		);
 	}
 	return useDB().$transaction(sql);
+};
+
+/**
+ * 清空指定作品的所有标签绑定
+ */
+export const clearWorkTags = async (workId: number, tx = useDB()) => {
+	return tx.work_tags.deleteMany({
+		where: { work_id: workId },
+	});
+};
+
+/**
+ * 给作品批量绑定新标签
+ */
+export const batchBindWorkTags = async (
+	workId: number,
+	tagIds: number[],
+	tx = useDB(),
+) => {
+	if (tagIds.length === 0) return { count: 0 }
+	const now = new Date();
+	return tx.work_tags.createMany({
+		data: tagIds.map((tagId) => ({
+			work_id: workId,
+			tag_id: tagId,
+			created_at: now,
+		})),
+		skipDuplicates: true,
+	});
 };
