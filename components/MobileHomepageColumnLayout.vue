@@ -211,7 +211,7 @@ const handleCardClick = async (cardId: number) => {
 
 		if (chapterList && chapterList.length > 0) {
 			// 2. 获取最小章节号对应的章节ID (即第一章的ID)
-			const minNoChapterId = getMinNoChapterId(chapterList);
+			const minNoChapterId = chapterList[0].id;
 
 			if (minNoChapterId !== undefined) {
 				// 3. 触发跳转回调
@@ -237,21 +237,6 @@ const handleCardClick = async (cardId: number) => {
 	}
 };
 
-// 寻找最小id的章节————第一章
-function getMinNoChapterId(chapterList): number | undefined {
-	if (!chapterList || chapterList.length === 0) {
-		return undefined;
-	}
-
-	const minNoChapter = chapterList.reduce((minChapter, currentChapter) => {
-		if (currentChapter.no < minChapter.no) {
-			return currentChapter;
-		}
-		return minChapter;
-	}, chapterList[0]);
-
-	return minNoChapter.id;
-}
 </script>
 
 <style scoped>
