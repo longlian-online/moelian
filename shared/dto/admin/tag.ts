@@ -8,7 +8,7 @@ export const TagAdminListReq = PageRequestSchema.extend({
 
 export const TagSaveReq = z.object({
 	content: z.string().min(1, '标签名称不能为空'),
-	img: z.string().optional(),
+	cover_id: z.coerce.number().positive('封面图资源ID必须为正整数').optional(),
 });
 
 export const TagUpdateReq = TagSaveReq.extend({

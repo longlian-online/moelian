@@ -64,7 +64,7 @@ export const listForAdmin = async (params: ListForAdminInput) => {
 	if (tagIds && tagIds.length > 0) {
 		const tagCount = tagIds.length;
 		// 查询匹配所有标签的作品ID集合
-		const matchWorkIds = await useDB().work_tags.findMany({
+		const matchWorkIds = await useDB().workTags.findMany({
 			select: { work_id: true },
 			where: {
 				tag_id: { in: tagIds },
@@ -283,7 +283,7 @@ export const clearWorkTags = async (
 	workId: number,
 	tx: Prisma.TransactionClient = useDB()
 ) => {
-	return tx.work_tags.deleteMany({
+	return tx.workTags.deleteMany({
 		where: { work_id: workId },
 	});
 };
@@ -298,7 +298,7 @@ export const batchBindWorkTags = async (
 ) => {
 	if (tagIds.length === 0) return { count: 0 };
 	const now = new Date();
-	return tx.work_tags.createMany({
+	return tx.workTags.createMany({
 		data: tagIds.map((tagId) => ({
 			work_id: workId,
 			tag_id: tagId,

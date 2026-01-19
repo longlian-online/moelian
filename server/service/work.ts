@@ -160,7 +160,6 @@ export const createWorkFormConsumer = async (
 			serial_status: MessageSerialStatusMap[data.serial_status],
 			length_type: MessageLengthTypeMap[data.length_type],
 			creator_id: null,
-			tagId: null,
 		});
 	} catch (e) {
 		if (e instanceof TITLE_REPEAT) {
@@ -223,5 +222,4 @@ export const updateWorkTags = async (workId: number, tagIds: number[]) => {
 		await dao.clearWorkTags(workId, tx);
 		await dao.batchBindWorkTags(workId, tagIds, tx);
 	});
-	return true;
 };

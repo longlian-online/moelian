@@ -1,14 +1,18 @@
-import type { Prisma, Tag } from '_db';
+import type { Prisma, Tag, Resource } from '_db';
 import type { PageRequestSchema } from '#shared/dto';
 import { pagination, useDB } from '~/server/utils/db';
+import dayjs from 'dayjs';
+import { Status } from '_db';
 
 export type ListForAdminInput = {
 	equals: Partial<Pick<Tag, 'id'>>;
 	like: Partial<Pick<Tag, 'content'>>;
 	pagination: PageRequestSchema;
 };
-export type CreateTagInput = Pick<Tag, 'content'> & { img: Tag['img'] };
-export type UpdateTagInput = Partial<Pick<Tag, 'content' | 'img'>>;
+export type CreateTagInput = Pick<Tag, 'content'> & {
+	cover_id: Tag['cover_id'];
+};
+export type UpdateTagInput = Partial<Pick<Tag, 'content' | 'cover_id'>>;
 
 /**
  * 标签分页列表查询
@@ -26,6 +30,7 @@ export const listForAdmin = async (params: ListForAdminInput) => {
 		useDB().tag.count({ where }),
 		useDB().tag.findMany({
 			where,
+			include: { Cover: true },
 			...pagination(params.pagination),
 			orderBy: [{ id: 'desc' }, { content: 'asc' }],
 		}),
@@ -37,7 +42,7 @@ export const listForAdmin = async (params: ListForAdminInput) => {
  * 新增标签
  */
 export const create = async (data: CreateTagInput) => {
-	const now = new Date();
+	const now = dayjs().toDate();
 	return useDB().tag.create({
 		data: {
 			...data,
@@ -55,7 +60,7 @@ export const update = async (id: Tag['id'], data: UpdateTagInput) => {
 		where: { id },
 		data: {
 			...data,
-			updated_at: new Date(),
+			updated_at: dayjs().toDate(),
 		},
 	});
 };
@@ -64,16 +69,36 @@ export const update = async (id: Tag['id'], data: UpdateTagInput) => {
  * 根据ID查询标签详情
  */
 export const getById = async (id: Tag['id']) => {
-	return useDB().tag.findFirst({ where: { id, deleted_at: null } });
+	return useDB().tag.findFirst({
+		where: { id, deleted_at: null },
+		include: { Cover: true },
+	});
 };
 
-/**
- * 删除标签
- */
+export const deleteTagWithResource = async (
+	id: Tag['id'],
+	coverId: Resource['id'] | null,
+) => {
+	const sql: Prisma.PrismaPromise<unknown>[] = [
+		useDB().tag.update({
+			where: { id },
+			data: { deleted_at: dayjs().toDate() },
+		}),
+	];
+	if (coverId) {
+		sql.push(
+			useDB().resource.update({
+				where: { id: coverId },
+				data: { status: Status.Disable },
+			}),
+		);
+	}
+	return useDB().$transaction(sql);
+};
 export const deleteTag = async (id: Tag['id']) => {
 	return useDB().tag.update({
 		where: { id },
-		data: { deleted_at: new Date() },
+		data: { deleted_at: dayjs().toDate() },
 	});
 };
 
@@ -88,7 +113,7 @@ export const getByContent = async (content: string) => {
  * 查询标签是否被作品绑定
  */
 export const countTagBindWork = async (id: Tag['id']) => {
-	return useDB().work_tags.count({
+	return useDB().workTags.count({
 		where: {
 			tag_id: id,
 			tag: { deleted_at: null },

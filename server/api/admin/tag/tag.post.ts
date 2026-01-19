@@ -6,7 +6,7 @@ export default defineWrappedResponseHandler(async (event) => {
 	const validateBody = TagSaveReq.parse(body);
 	await create({
 		content: validateBody.content,
-		img: validateBody.img ?? null,
+		cover_id: validateBody.cover_id ?? null,
 	});
 	return { code: 0, message: '标签创建成功' };
 });

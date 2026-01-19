@@ -41,5 +41,5 @@ export const deleteById = async (id: Tag['id']) => {
 	if (bindCount > 0) {
 		throw new UNAUTHORIZED_OPERATION();
 	}
-	return await dao.deleteTag(id);
+	return await dao.deleteTagWithResource(id, tag.cover_id);
 };

@@ -58,9 +58,7 @@ model Work {
   Chapters      Chapter[]
   Cover         Resource?    @relation(fields: [cover_id], references: [id])
   cover_id      Int?         @unique
-  workTags      Work_tags[]
-  tag           Tag?         @relation(fields: [tagId], references: [id])
-  tagId         Int?
+  workTags      WorkTags[]
 }
 
 enum SerialStatus {
@@ -91,17 +89,17 @@ model WorkType {
 }
 
 model Tag {
-  id         Int         @id @default(autoincrement())
-  content    String      @unique // 标签名唯一
-  img        String? // 封面URL
-  created_at DateTime    @default(now())
+  id         Int        @id @default(autoincrement())
+  content    String     @unique // 标签名唯一
+  cover_id   Int?
+  Cover      Resource?  @relation(fields: [cover_id], references: [id]) // 关联Resource表
+  created_at DateTime   @default(now())
   updated_at DateTime?
   deleted_at DateTime?
-  works      Work[]
-  workTags   Work_tags[]
+  workTags   WorkTags[]
 }
 
-model Work_tags {
+model WorkTags {
   id         Int      @id @default(autoincrement())
   work_id    Int
   tag_id     Int
@@ -157,6 +155,7 @@ model Resource {
   Work       Work?
   Chapter    Chapter?     @relation("content")
   Product    Chapter?     @relation("product")
+  tags       Tag[]
 }
 
 model DeadMessage {

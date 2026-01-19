@@ -21,7 +21,6 @@ describe('作品', () => {
 				serial_status: 'Serializing',
 				length_type: 'Short',
 				creator_id: 0,
-				tagId: null,
 			});
 		});
 
@@ -40,7 +39,6 @@ describe('作品', () => {
 				serial_status: 'Serializing',
 				length_type: 'Short',
 				creator_id: 0,
-				tagId: null,
 			});
 			await expect(p).rejects.toThrowError();
 		});
@@ -79,7 +77,6 @@ describe('作品', () => {
 				updated_at: undefined,
 				deleted_at: undefined,
 				cover_id: 0,
-				tagId: null,
 			});
 			await updateByID(1, {
 				serial_status: undefined,
