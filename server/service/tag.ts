@@ -43,3 +43,7 @@ export const deleteById = async (id: Tag['id']) => {
 	}
 	return await dao.deleteTagWithResource(id, tag.cover_id);
 };
+// 标签全量查询
+export const listAll = async () => {
+	return await dao.listAll();
+};

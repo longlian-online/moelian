@@ -132,3 +132,13 @@ export const countValidTagsByIds = async (ids: number[]) => {
 		},
 	});
 };
+/**
+ * 标签全量查询
+ */
+export const listAll = async () => {
+	return useDB().tag.findMany({
+		where: { deleted_at: null },
+		include: { Cover: true },
+		orderBy: [{ id: 'desc' }],
+	});
+};
