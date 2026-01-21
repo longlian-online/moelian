@@ -8,5 +8,4 @@ export default defineWrappedResponseHandler(async (event) => {
 		content: validateBody.content,
 		cover_id: validateBody.cover_id ?? null,
 	});
-	return { code: 0, message: '标签创建成功' };
 });
