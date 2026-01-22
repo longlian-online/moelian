@@ -179,12 +179,12 @@ const handleCardClick = async (cardId: number) => {
 		const chapterList = response.data.chapterList;
 
 		if (chapterList && chapterList.length > 0) {
-			// 2. 获取最小章节号对应的章节ID (即第一章的ID)
-			const minNoChapterId = getMinNoChapterId(chapterList);
+			// 2. 获取第一章节号对应的章节ID (即第一章的ID)
+			const firstChapterId = chapterList[0].id;
 
-			if (minNoChapterId !== undefined) {
+			if (firstChapterId !== undefined) {
 				// 3. 触发跳转回调
-				props.onCardClick(minNoChapterId);
+				props.onCardClick(firstChapterId);
 			} else {
 				$tip(`${props.workType} ID ${cardId} 没有找到章节内容。`, {
 					color: 'error',

@@ -34,11 +34,11 @@ export const UploadContentReq = z.object({
 });
 
 export const ChapterUpdateReq = z.object({
-	priority: z.number()
+	priority: z.number().min(1),
+	title: z.string()
 		.min(1, '标题不能为空')
 		.max(128, '标题最多128个字符'),
-	title: z.string().min(1),
-})
+});
 export type ChapterUpdateReq = z.infer<typeof ChapterUpdateReq>;
 
 export type ChapterAdminListItem = {
