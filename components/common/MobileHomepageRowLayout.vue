@@ -1,99 +1,117 @@
 <template>
-	<v-container>
-		<template v-if="currentWork.totalItems === 0">
-			<v-alert
-				type="info"
-				icon="mdi-magnify-remove-outline"
-				variant="tonal"
-				class="mt-10 pa-6"
-			>
-				<h3 class="text-h6 mb-2">抱歉，没有找到相关作品 🥺</h3>
-				<p>
-					请尝试更换关键词 **「{{ currentWork.searchKey }}」**
-					或清除搜索内容后再次查找。
-				</p>
-			</v-alert>
-		</template>
+	<template v-if="currentWork.totalItems === 0">
+		<v-alert
+			type="info"
+			icon="mdi-magnify-remove-outline"
+			variant="tonal"
+			class="mt-10 pa-6"
+		>
+			<h3 class="text-h6 mb-2">抱歉，没有找到相关作品 🥺</h3>
+			<p>
+				请尝试更换关键词 **「{{ currentWork.searchKey }}」**
+				或清除搜索内容后再次查找。
+			</p>
+		</v-alert>
+	</template>
 
-		<template v-else>
-			<v-sheet width="100%" class="d-flex flex-wrap ga-4">
-				<!-- 传入最小的章节id -->
-				<div
-					v-for="card in cards"
-					:key="card.id"
-					class="card-container"
-					style="width: 30%"
-				>
-					<div class="img-container">
-						<v-img
-							:src="card.coverUrl"
-							style="width: 100%; margin-bottom: 8px; cursor: pointer"
-							ß
-							@click="handleCardClick(card.id)"
+	<template v-else>
+		<!-- 3 列网格容器 -->
+		<div class="yuri-grid-container">
+			<template
+				v-for="card in cards"
+				:key="card.id"
+			>
+				<div class="yuri-grid-card" @click="handleCardClick(card.id)">
+					<!-- 封面容器：使用 Book3D -->
+					<div class="cover-wrapper">
+						<Book3D
+							:cover-url="card.coverUrl"
+							:title="card.title"
+							:author="card.author"
+							:height="180"
+							:width="130"
+							:spine-width="25"
+							:show-title="false"
+							:show-spine-text="false"
+							@click.stop
 						>
-							<template #placeholder>
-								<v-skeleton-loader type="image" class="fill-height" />
-							</template>
-							<template #error>
-								<v-img
-									cover
-									src="/error-default.jpg"
-									height="100%"
-									width="100%"
+							<template #overlay>
+								<!-- 左下角分类标签 -->
+								<AnimeTags
+									:tags="['校园']"
+									size="small"
+									position="bottom-left"
 								/>
 							</template>
-						</v-img>
-						<v-chip
-							v-if="card.serialType !== undefined"
-							color="white"
-							size="small"
-							class="px-1"
-							style="position: absolute; top: 4px; right: 8px; z-index: 10"
-							:style="{
-								backgroundColor:
-									card.serialType === 'Serializing' ? '#FF6B20' : '#4CAF50',
-							}"
-						>
-							<template v-if="card.serialType === 'Serializing'"
-								>连载中</template
-							>
-							<template v-if="card.serialType === 'Completed'">已完结</template>
-						</v-chip>
-					</div>
-					<div>
-						<div v-copy="card.title" class="clamp-text" style="width: 100%">
-							{{ card.title }}
-						</div>
-					</div>
-					<div
-						class="d-flex justify-space-between align-center"
-						style="width: 100%"
-					>
+						</Book3D>
+						<!-- 状态角标 (连载/完结) -->
 						<div
-							v-copy="card.author"
-							style="color: gray; font-size: 12px"
-							class="author-link"
-							@click.stop="handleAuthorClick(card.author)"
+							class="status-chip"
+							:class="
+								card.serialType === 'Serializing'
+									? 'status-serializing'
+									: 'status-completed'
+							"
 						>
-							{{ card.author }}
+							{{
+								card.serialType === 'Serializing' ? '连载中' : '已完结'
+							}}
 						</div>
-						<v-btn
-							icon="mdi-dots-vertical"
-							variant="text"
-							size="x-small"
-							class="pa-0"
-						></v-btn>
+					</div>
+
+					<!-- 信息展示区 -->
+					<div class="card-info">
+						<!-- 标题：强制 2 行 -->
+						<h3
+							v-copy="card.title"
+							v-tooltip="card.title"
+							class="yuri-title"
+							@click.stop
+						>
+							{{ card.title }}
+						</h3>
+
+						<!-- 作者展示：保留 BY 和渐变下划线 -->
+						<div class="yuri-author-row">
+							<div class="author-box">
+								<span class="by-text">BY</span>
+								<span
+									v-copy="card.author"
+									v-tooltip="'点击搜索作者/右键复制'"
+									class="author-name"
+									@click.stop="handleAuthorClick(card.author)"
+								>
+									{{ card.author }}
+								</span>
+								<div class="mini-underline"></div>
+							</div>
+							<!-- 更多按钮：极简圆点 -->
+							<div class="more-dots" @click.stop>
+								<svg
+									width="12"
+									height="12"
+									fill="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path
+										d="M12 16a2 2 0 110 4 2 2 0 010-4zm0-6a2 2 0 110 4 2 2 0 010-4zm0-6a2 2 0 110 4 2 2 0 010-4z"
+									/>
+								</svg>
+							</div>
+						</div>
 					</div>
 				</div>
-			</v-sheet>
-			<div class="mt-4">
-				<v-pagination
-					v-model="page"
-					:length="currentWork.pageCount"
-				></v-pagination>
-			</div>
-		</template>
-	</v-container>
+			</template>
+		</div>
+
+		<!-- 分页器 -->
+		<div class="mt-4">
+			<v-pagination
+				v-model="page"
+				:length="currentWork.pageCount"
+			></v-pagination>
+		</div>
+	</template>
 </template>
 
 <script setup lang="ts">
@@ -236,31 +254,176 @@ const handleAuthorClick = (author: string) => {
 </script>
 
 <style scoped>
-.v-btn :deep(.v-icon) {
-	color: gray;
+/* 3 列网格容器 */
+.yuri-grid-container {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 12px;
+	padding: 12px;
+	width: 100%;
+	box-sizing: border-box;
 }
 
-.img-container {
+/* 极简网格卡片 */
+.yuri-grid-card {
+	display: flex;
+	flex-direction: column;
+	background: transparent;
+	transition: transform 0.2s;
+	cursor: pointer;
+	min-width: 0;
 	width: 100%;
-	position: relative;
-	box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+	overflow: hidden;
 }
-.clamp-text {
-	font-size: 18px;
-	line-height: 1.5em; /* 确保一行的高度 */
-	height: 3em; /* 2行 * 1.5em 行高 = 3em 高度 */
+
+.yuri-grid-card:active {
+	transform: scale(0.96);
+}
+
+/* 封面容器：圆润且有立体感 */
+.cover-wrapper {
+	position: relative;
+	width: 100%;
+	height: 180px; /* 固定高度匹配 Book3D */
+	border-radius: 12px;
+	overflow: hidden; /* 裁剪超出部分 */
+	box-shadow: 0 6px 12px rgba(125, 90, 90, 0.15);
+	margin-bottom: 8px;
+	border: 1px solid #f2ece6;
+	min-width: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: #f5f5f5; /* 添加背景色，避免黑块 */
+}
+
+/* Book3D 组件样式覆盖 - 保持 3D 效果 */
+.cover-wrapper :deep(.book-3d-container) {
+	width: 100% !important;
+	height: 180px !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	overflow: visible !important; /* 允许 3D 效果 */
+	box-sizing: border-box;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	background: transparent !important;
+}
+
+.cover-wrapper :deep(.book-3d-wrapper) {
+	height: 180px !important;
+	overflow: visible !important; /* 允许 3D 效果 */
+	box-sizing: border-box;
+}
+
+.cover-wrapper :deep(.book-body) {
+	overflow: visible !important; /* 允许 3D 效果 */
+}
+
+.cover-wrapper :deep(.book-cover-link) {
+	background: transparent !important;
+}
+
+/* 状态角标 (连载/完结) */
+.status-chip {
+	position: absolute;
+	top: 4px;
+	right: 4px;
+	font-size: 8px;
+	font-weight: 900;
+	color: white;
+	padding: 1px 6px;
+	border-radius: 4px;
+	z-index: 10;
+}
+
+.status-serializing {
+	background-color: #ff6b20;
+}
+
+.status-completed {
+	background-color: #4caf50;
+}
+
+/* 信息展示区 */
+.card-info {
+	padding: 0 2px;
+	width: 100%;
+	min-width: 0;
+	overflow: hidden;
+}
+
+/* 标题：强制 2 行，圆润字体感 */
+.yuri-title {
+	font-size: 13px;
+	font-weight: 900;
+	color: #5a463d;
+	line-height: 1.3;
+	height: 2.6em; /* 刚好两行 */
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	margin-bottom: 4px;
+}
+
+/* 作者展示：保留 BY 和渐变下划线 */
+.yuri-author-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	position: relative;
+	padding-bottom: 2px;
+}
+
+.author-box {
+	display: flex;
+	align-items: baseline;
+	gap: 2px;
+	max-width: 80%;
+	position: relative;
+}
+
+.by-text {
+	font-size: 7px;
+	font-weight: 900;
+	color: #ff9a9e;
+	text-transform: uppercase;
+}
+
+.author-name {
+	font-size: 10px;
+	font-weight: 700;
+	color: #9a8471;
+	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	display: -webkit-box;
-	-webkit-box-orient: vertical;
-	-webkit-line-clamp: 2; /* 依然保留多行截断效果 */
-	line-clamp: 2;
-}
-.author-link {
 	cursor: pointer;
+	transition: color 0.2s ease;
 }
-.author-link:active {
-	opacity: 0.7;
-	color: #c00000;
+
+.author-name:hover {
+	color: #ff758c;
+}
+
+/* 迷你渐变下划线 */
+.mini-underline {
+	position: absolute;
+	bottom: -1px;
+	left: 0;
+	width: 100%;
+	height: 1.5px;
+	background: linear-gradient(to right, #ff9a9e, transparent);
+	border-radius: 999px;
+}
+
+/* 更多按钮：极简圆点 */
+.more-dots {
+	color: #c9c1ab;
+	display: flex;
+	align-items: center;
+	cursor: pointer;
 }
 </style>
