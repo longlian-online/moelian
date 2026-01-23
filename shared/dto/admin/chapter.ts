@@ -36,7 +36,7 @@ export const UploadContentReq = z.object({
 export const ChapterUpdateReq = z.object({
 	priority: z.number(),
 	title: z.string().min(1),
-})
+});
 export type ChapterUpdateReq = z.infer<typeof ChapterUpdateReq>;
 
 export type ChapterAdminListItem = {

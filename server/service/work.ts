@@ -1,7 +1,9 @@
 import type { Resource, Work } from '_db';
 import * as dao from '../repository/work';
+import * as tagDao from '~/server/repository/tag';
 import {
 	DATA_NOT_EXISTS,
+	PARAMS_ERROR,
 	TITLE_REPEAT,
 	WORK_HAS_CHAPTER,
 } from '../types/business_exception';
@@ -205,4 +207,19 @@ export const deleteWorkFromConsumer = async (
 		return;
 	}
 	await dao.deleteWorkAndResource({ bizNo: data.biz_no }, work.cover_id);
+};
+
+/**
+ * 逻辑：1.校验作品是否存在 2.清空旧标签 3.绑定新标签
+ */
+export const updateWorkTags = async (workId: number, tagIds: number[]) => {
+	const work = await dao.getWorkByID(workId);
+	if (!work) throw new DATA_NOT_EXISTS();
+	//校验 tagIds 是否存在且未删除
+	const validCount = await tagDao.countValidTagsByIds(tagIds);
+	if (validCount !== tagIds.length) throw new PARAMS_ERROR();
+	await useDB().$transaction(async (tx) => {
+		await dao.clearWorkTags(workId, tx);
+		await dao.batchBindWorkTags(workId, tagIds, tx);
+	});
 };

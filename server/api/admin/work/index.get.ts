@@ -13,23 +13,24 @@ export default defineWrappedResponseHandler(
     const query = getQuery(event);
     const data = WorkAdminListReq.parse(query);
     const { list, total } = await listForAdmin({
-      equals: {
-        id: data.id,
-        content_type: data.contentType,
-        length_type: data.lengthType,
-        status: data.status,
-        type_id: data.typeId,
-        serial_status: data.serialStatus,
-      },
-      like: {
-        author: data.author,
-        title: data.title,
-      },
-      pagination: {
-        page: data.page,
-        limit: data.limit,
-      },
-    });
+			equals: {
+				id: data.id,
+				content_type: data.contentType,
+				length_type: data.lengthType,
+				status: data.status,
+				type_id: data.typeId,
+				serial_status: data.serialStatus,
+			},
+			like: {
+				author: data.author,
+				title: data.title,
+			},
+			tagIds: data.tagIds,
+			pagination: {
+				page: data.page,
+				limit: data.limit,
+			},
+		});
 
     const baseUrl = useRuntimeConfig(event).storage.cos.url;
     return {
