@@ -36,22 +36,26 @@ export default defineWrappedResponseHandler(
     return {
       total: total,
       list: await map(list, async (item): Promise<WorkAdminListItem> => {
-        return {
-          ...pick(item, [
-            "id",
-            "created_at",
-            "author",
-            "content_type",
-            "length_type",
-            "serial_status",
-            "title",
-            "status",
-              'description',
-              'biz_no'
-          ]),
-          cover: getResourceURL(item.Cover, baseUrl, ResourceType.Cover),
-        };
-      }),
+				const tags = item.workTags
+					.map((workTag) => workTag.tag?.content)
+					.filter((content) => content !== undefined);
+				return {
+					...pick(item, [
+						'id',
+						'created_at',
+						'author',
+						'content_type',
+						'length_type',
+						'serial_status',
+						'title',
+						'status',
+						'description',
+						'biz_no',
+					]),
+					cover: getResourceURL(item.Cover, baseUrl, ResourceType.Cover),
+					tags: tags,
+				};
+			}),
     };
   }
 );
