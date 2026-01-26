@@ -23,6 +23,14 @@
 		></v-list-item>
 
 		<v-divider></v-divider>
+		<v-list-item
+			link
+			title="标签管理"
+			prepend-icon="mdi-tag-multiple"
+			to="/admin/tag"
+		></v-list-item>
+
+		<v-divider></v-divider>
 	</v-navigation-drawer>
 </template>
 
