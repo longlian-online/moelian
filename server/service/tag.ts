@@ -1,9 +1,9 @@
 import type { Tag } from '_db';
 import * as dao from '~/server/repository/tag';
 import {
-	DATA_NOT_EXISTS,
-	TITLE_REPEAT,
-	UNAUTHORIZED_OPERATION,
+	TAG_NOT_EXISTS,
+	TAG_REPEAT,
+	TAG_HAS_WORK,
 } from '~/server/types/business_exception';
 
 export type ListForAdminInput = dao.ListForAdminInput;
@@ -16,16 +16,16 @@ export const listForAdmin = async (params: ListForAdminInput) => {
 
 export const create = async (data: CreateTagInput) => {
 	const existTag = await dao.getByContent(data.content);
-	if (existTag) throw new TITLE_REPEAT();
+	if (existTag) throw new TAG_REPEAT();
 	return await dao.create(data);
 };
 
 export const updateById = async (id: Tag['id'], data: UpdateTagInput) => {
 	const tag = await dao.getById(id);
-	if (!tag) throw new DATA_NOT_EXISTS();
+	if (!tag) throw new TAG_NOT_EXISTS();
 	if (data.content && data.content !== tag.content) {
 		const existTag = await dao.getByContent(data.content);
-		if (existTag) throw new TITLE_REPEAT();
+		if (existTag) throw new TAG_REPEAT();
 	}
 	return await dao.update(id, data);
 };
@@ -35,11 +35,11 @@ export const updateById = async (id: Tag['id'], data: UpdateTagInput) => {
  */
 export const deleteById = async (id: Tag['id']) => {
 	const tag = await dao.getById(id);
-	if (!tag) throw new DATA_NOT_EXISTS();
+	if (!tag) throw new TAG_NOT_EXISTS();
 
 	const bindCount = await dao.countTagBindWork(id);
 	if (bindCount > 0) {
-		throw new UNAUTHORIZED_OPERATION();
+		throw new TAG_HAS_WORK();
 	}
 	return await dao.deleteTagWithResource(id, tag.cover_id);
 };

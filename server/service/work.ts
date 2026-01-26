@@ -6,6 +6,7 @@ import {
 	PARAMS_ERROR,
 	TITLE_REPEAT,
 	WORK_HAS_CHAPTER,
+	TAG_NOT_EXISTS,
 } from '../types/business_exception';
 import {
 	getLastChapterByWorkID,
@@ -214,7 +215,7 @@ export const deleteWorkFromConsumer = async (
  */
 export const updateWorkTags = async (workId: number, tagIds: number[]) => {
 	const work = await dao.getWorkByID(workId);
-	if (!work) throw new DATA_NOT_EXISTS();
+	if (!work) throw new TAG_NOT_EXISTS();
 	//校验 tagIds 是否存在且未删除
 	const validCount = await tagDao.countValidTagsByIds(tagIds);
 	if (validCount !== tagIds.length) throw new PARAMS_ERROR();
