@@ -96,6 +96,30 @@
 								:rules="rules.description"
 							></v-textarea>
 						</v-col>
+
+						<v-col cols="12">
+							<v-combobox
+								v-model="selectedTagNames"
+								:items="allTagItems"
+								label="选择标签"
+								prepend-icon="mdi-tag-multiple"
+								variant="outlined"
+								chips
+								clearable
+								closable-chips
+								multiple
+								:return-object="false"
+								:menu-props="{ maxHeight: '300' }"
+								no-data-text="没有可用的标签"
+								placeholder="选择已有标签"
+							>
+								<template v-slot:chip="{ props: chipProps, item }">
+									<v-chip v-bind="chipProps" color="primary" variant="tonal">
+										<strong>{{ item.raw }}</strong>
+									</v-chip>
+								</template>
+							</v-combobox>
+						</v-col>
 					</v-row>
 				</v-card-text>
 
@@ -214,14 +238,6 @@ const rules = {
 	],
 };
 
-watch(dialog, (newValue) => {
-	if (newValue) {
-		formData.value = JSON.parse(JSON.stringify(props.itemData));
-		// 使用可选链调用方法，并使用非空断言来满足类型检查
-		form.value?.resetValidation();
-	}
-});
-
 const handleSaveClick = async () => {
 	// 使用可选链和非空断言来调用方法
 	const { valid } = (await form.value?.validate()) || { valid: false };
@@ -232,6 +248,44 @@ const handleSaveClick = async () => {
 };
 
 const adminWorkStore = useAdminWorkStore();
+
+// 获取所有标签列表
+const { data: allTagsData } = useApiFetch<
+	Array<{
+		id: number;
+		content: string;
+		cover: string;
+		created_at: string;
+	}>
+>('/api/admin/tag/all');
+
+// 所有标签选项（用于 combobox）
+const allTagItems = computed(() => {
+	return allTagsData.value?.data?.map((tag) => tag.content) || [];
+});
+
+// 标签名称到 ID 的映射
+const tagNameToIdMap = computed(() => {
+	const map = new Map<string, number>();
+	allTagsData.value?.data?.forEach((tag) => {
+		map.set(tag.content, tag.id);
+	});
+	return map;
+});
+
+// 选中的标签名称
+const selectedTagNames = ref<string[]>([]);
+
+// 监听 dialog 打开，初始化选中的标签
+watch(dialog, (newValue) => {
+	if (newValue) {
+		formData.value = JSON.parse(JSON.stringify(props.itemData));
+		// 初始化选中的标签名称
+		selectedTagNames.value = [...(props.itemData.tags || [])];
+		// 使用可选链调用方法，并使用非空断言来满足类型检查
+		form.value?.resetValidation();
+	}
+});
 
 const confirmSave = async () => {
 	showConfirm({
@@ -244,23 +298,72 @@ const confirmSave = async () => {
 			const original = props.itemData;
 			const current = JSON.parse(JSON.stringify(formData.value));
 
-			// 判断有没有变化
-			if (JSON.stringify(original) === JSON.stringify(current)) {
+			// 检查标签是否有变化
+			const originalTagNames = original.tags || [];
+			const currentTagNames = selectedTagNames.value || [];
+			const originalTagNamesSorted = [...originalTagNames].sort().join(',');
+			const currentTagNamesSorted = [...currentTagNames].sort().join(',');
+
+			// 判断有没有变化（包括标签）
+			const hasFormDataChanged =
+				JSON.stringify(original) !== JSON.stringify(current);
+			const hasTagsChanged = originalTagNamesSorted !== currentTagNamesSorted;
+
+			if (!hasFormDataChanged && !hasTagsChanged) {
 				$tip('没有任何修改', { color: 'warning', icon: 'mdi-alert-circle' });
 				return;
 			}
 
-			// payload 严格按 WorkPutReq
-			const payload: WorkPutReq = {
-				title: current.title,
-				author: current.author,
-				description: current.description,
-				lengthType: current.length_type,
-				contentType: current.content_type,
-				serialStatus: current.serial_status,
-			};
+			// 如果有表单数据变化，更新作品信息
+			if (hasFormDataChanged) {
+				// payload 严格按 WorkPutReq
+				const payload: WorkPutReq = {
+					title: current.title,
+					author: current.author,
+					description: current.description,
+					lengthType: current.length_type,
+					contentType: current.content_type,
+					serialStatus: current.serial_status,
+				};
 
-			await adminWorkStore.updateWork(original.id, payload);
+				await adminWorkStore.updateWork(original.id, payload);
+			}
+
+			// 更新标签（如果有变化）
+			if (hasTagsChanged) {
+				// 过滤掉不在已有标签列表中的标签名称
+				const validTagNames = currentTagNames.filter((name) =>
+					tagNameToIdMap.value.has(name),
+				);
+
+				// 如果有无效的标签，提示用户
+				if (validTagNames.length !== currentTagNames.length) {
+					const invalidTags = currentTagNames.filter(
+						(name) => !tagNameToIdMap.value.has(name),
+					);
+					$tip(`以下标签不存在，已自动移除：${invalidTags.join(', ')}`, {
+						color: 'warning',
+						icon: 'mdi-alert-circle',
+					});
+				}
+
+				// 将标签名称转换为标签 ID
+				const tagIds = validTagNames
+					.map((name) => tagNameToIdMap.value.get(name))
+					.filter((id): id is number => id !== undefined);
+
+				const { error } = await useApiFetch(`/api/admin/work/${original.id}/tags`, {
+					method: 'PATCH',
+					body: {
+						tag_ids: tagIds,
+					},
+				});
+
+				if (error.value) {
+					return;
+				}
+			}
+
 			dialog.value = false;
 		},
 	});
