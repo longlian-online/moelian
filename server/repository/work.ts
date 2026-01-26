@@ -61,9 +61,22 @@ export const listForAdmin = async (params: ListForAdminInput) => {
 		},
 	};
 	const { tagIds } = params;
+	const includeConfig = {
+		Cover: true,
+		workTags: {
+			where: {
+				tag: { deleted_at: null },
+			},
+			select: {
+				tag: {
+					select: { content: true },
+				},
+			},
+		},
+	};
+
 	if (tagIds && tagIds.length > 0) {
 		const tagCount = tagIds.length;
-		// 查询匹配所有标签的作品ID集合
 		const matchWorkIds = await useDB().workTags.findMany({
 			select: { work_id: true },
 			where: {
@@ -73,7 +86,6 @@ export const listForAdmin = async (params: ListForAdminInput) => {
 			distinct: ['work_id', 'tag_id'],
 			orderBy: { work_id: 'asc' },
 		});
-		// 分组统计每个作品匹配的标签数量
 		const workTagCountMap = new Map<number, number>();
 		matchWorkIds.forEach((item) => {
 			workTagCountMap.set(
@@ -81,16 +93,14 @@ export const listForAdmin = async (params: ListForAdminInput) => {
 				(workTagCountMap.get(item.work_id) || 0) + 1,
 			);
 		});
-		// 保留同时拥有所有选中标签的作品ID
 		const workIds = Array.from(workTagCountMap.entries())
 			.filter(([_, count]) => count === tagCount)
 			.map(([id]) => id);
 
-		// 用匹配到的作品ID做筛选
 		const [total, list] = await Promise.all([
 			useDB().work.count({ where: { ...where, id: { in: workIds } } }),
 			useDB().work.findMany({
-				include: { Cover: true },
+				include: includeConfig,
 				where: { ...where, id: { in: workIds } },
 				...pagination(params.pagination),
 				orderBy: { id: 'desc' },
@@ -103,9 +113,7 @@ export const listForAdmin = async (params: ListForAdminInput) => {
 			where,
 		}),
 		useDB().work.findMany({
-			include: {
-				Cover: true,
-			},
+			include: includeConfig,
 			where,
 			...pagination(params.pagination),
 			orderBy: {

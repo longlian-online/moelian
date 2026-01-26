@@ -61,7 +61,10 @@ export type WorkAdminListItem = Pick<
 	| 'status'
 	| 'description'
 	| 'biz_no'
-> & { cover: string };
+> & {
+	cover: string;
+	tags: string[];
+};
 export type WorkAdminListRes = {
 	list: WorkAdminListItem[];
 	total: number;
