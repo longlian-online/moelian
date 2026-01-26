@@ -21,17 +21,23 @@ export default defineWrappedResponseHandler(
 		const baseUrl = useRuntimeConfig(event).storage.cos.url;
 		return {
 			total,
-			list: await map(list, async (item) => ({
-				id: item.id,
-				title: item.title,
-				coverUrl: getResourceURL(item.Cover, baseUrl, ResourceType.Cover),
-				author: item.author,
-				lengthType: item.length_type,
-				serialType: item.serial_status,
-				lastNo: item.lastNo,
-				description: item.description,
-				chapterUpdatedAt: item.chapterUpdatedAt,
-			})),
+			list: await map(list, async (item) => {
+				const tags = item.workTags
+					.map((workTag) => workTag.tag?.content)
+					.filter((content) => content !== undefined);
+				return {
+					id: item.id,
+					title: item.title,
+					coverUrl: getResourceURL(item.Cover, baseUrl, ResourceType.Cover),
+					author: item.author,
+					lengthType: item.length_type,
+					serialType: item.serial_status,
+					lastNo: item.lastNo,
+					description: item.description,
+					chapterUpdatedAt: item.chapterUpdatedAt,
+					tags: tags,
+				};
+			}),
 		};
 	},
 );

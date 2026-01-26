@@ -9,6 +9,9 @@ export default defineWrappedResponseHandler(
 		const { work, lastChapter, chapters } = await detailForWeb(id);
 
 		const baseUrl = useRuntimeConfig(event).storage.cos.url;
+		const tags = work.workTags
+			.map((workTag) => workTag.tag?.content)
+			.filter((content) => content !== undefined);
 		return {
 			author: work.author,
 			chapterList: chapters.map((item) => ({
@@ -25,6 +28,7 @@ export default defineWrappedResponseHandler(
 			lengthType: work.length_type,
 			serialType: work.serial_status,
 			title: work.title,
+			tags: tags,
 		};
 	},
 );
