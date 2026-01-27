@@ -6,6 +6,10 @@ export const WorkListReq = z.object({
 	page: WebPage,
 	type: z.enum(ContentType),
 	key: z.string().max(100).optional(),
+	tags: z.preprocess((val) => {
+		if (!val) return undefined;
+		return Array.isArray(val) ? val : [val];
+	}, z.array(z.string()).optional()),
 });
 
 /**

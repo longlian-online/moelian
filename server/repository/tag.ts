@@ -133,12 +133,23 @@ export const countValidTagsByIds = async (ids: number[]) => {
 	});
 };
 /**
- * 标签全量查询
+ * 标签全量查询（新增作品数量统计）
  */
 export const listAll = async () => {
 	return useDB().tag.findMany({
 		where: { deleted_at: null },
-		include: { Cover: true },
+		include: {
+			Cover: true,
+			workTags: {
+				where: {
+					work: {
+						deleted_at: null,
+						status: 'Enable'
+					}
+				},
+				select: { id: true }
+			}
+		},
 		orderBy: [{ id: 'desc' }],
 	});
 };

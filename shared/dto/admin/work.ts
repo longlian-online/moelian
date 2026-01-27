@@ -43,7 +43,10 @@ export const WorkAdminListReq = z.strictObject({
 		.min(1, '标题不能为空')
 		.max(64, '标题最多64个字符')
 		.optional(),
-	tagIds: z.array(z.coerce.number().positive('标签ID必须为正整数')).optional(),
+	tags: z.preprocess((val) => {
+		if (!val) return undefined;
+		return Array.isArray(val) ? val : [val];
+	}, z.array(z.string()).optional()),
 	...PageRequestSchema.shape,
 });
 
