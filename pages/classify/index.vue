@@ -131,8 +131,7 @@ watch(
 
 // 处理标签点击
 const handleTagClick = (tag) => {
-	// navigateTo(`/category/${tag.id}`);
-	console.log('Clicked tag:', tag);
+	navigateTo(`/classify/${tag.id}`);
 };
 </script>
 

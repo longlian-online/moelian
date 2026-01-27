@@ -20,7 +20,7 @@
 					</v-tab>
 					<v-tab value="index" to="/manga">漫画</v-tab>
 					<v-tab value="update" to="/novel">小说</v-tab>
-					<v-tab value="category" to="/category">分类</v-tab>
+					<v-tab value="classify" to="/classify">分类</v-tab>
 					<!-- <v-tab value="classify" to="/classify">分类</v-tab>
 					<v-tab value="timeline" to="/timeline">时间表</v-tab>
 					<v-tab value="admin" to="/admin">管理端</v-tab> -->
