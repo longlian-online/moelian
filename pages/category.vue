@@ -3,91 +3,91 @@
 		<div class="gallery-container">
 			<!-- 页面顶部 -->
 			<header class="page-header">
+				<!-- <span class="page-subtitle">Collection Categories</span> -->
 				<h1 class="page-title">作品分类</h1>
 			</header>
 
 			<!-- 分类列表 -->
-			<div v-if="isPending" class="loading-container">
-				<v-progress-circular
-					indeterminate
-					color="primary"
-				></v-progress-circular>
-			</div>
+			<ClientOnly>
+				<div v-if="isPending" class="loading-container">
+					<v-progress-circular
+						indeterminate
+						color="primary"
+					></v-progress-circular>
+				</div>
 
-			<div v-else-if="tagList.length === 0" class="empty-container">
-				<v-icon icon="mdi-tag-off" size="64" color="grey"></v-icon>
-				<p class="empty-text">暂无分类</p>
-			</div>
+				<div v-else-if="tagList.length === 0" class="empty-container">
+					<v-icon icon="mdi-tag-off" size="64" color="grey"></v-icon>
+					<p class="empty-text">暂无分类</p>
+				</div>
 
-			<div v-else class="tag-grid">
-				<div
-					v-for="tag in tagList"
-					:key="tag.id"
-					class="tag-card"
-					@click="handleTagClick(tag)"
-				>
-					<div class="tag-cover-box">
-						<v-img
-							v-if="tag.cover"
-							:src="tag.cover"
-							:alt="tag.content"
-							class="tag-cover-img"
-							cover
-						>
-							<template #placeholder>
-								<div
-									class="d-flex align-center justify-center fill-height bg-grey-lighten-2"
-								>
-									<v-progress-circular
-										indeterminate
-										size="24"
-										color="primary"
-									></v-progress-circular>
-								</div>
-							</template>
-							<template #error>
-								<div
-									class="d-flex align-center justify-center fill-height bg-grey-lighten-2"
-								>
-									<v-icon
-										icon="mdi-image-off-outline"
-										size="48"
-										color="grey"
-									></v-icon>
-								</div>
-							</template>
-						</v-img>
-						<div v-else class="tag-cover-placeholder">
-							<v-icon
-								icon="mdi-image-off-outline"
-								size="48"
-								color="grey"
-							></v-icon>
+				<div v-else class="tag-grid">
+					<div
+						v-for="tag in tagList"
+						:key="tag.id"
+						class="tag-card"
+						@click="handleTagClick(tag)"
+					>
+						<div class="tag-cover-box">
+							<v-img
+								v-if="tag.cover"
+								:src="tag.cover"
+								:alt="tag.content"
+								class="tag-cover-img"
+								cover
+							>
+								<template #placeholder>
+									<div
+										class="d-flex align-center justify-center fill-height bg-grey-lighten-2"
+									>
+										<v-progress-circular
+											indeterminate
+											size="24"
+											color="primary"
+										></v-progress-circular>
+									</div>
+								</template>
+								<template #error>
+									<v-img
+										src="/error-default.jpg"
+										cover
+										height="100%"
+										width="100%"
+									/>
+								</template>
+							</v-img>
+							<div v-else class="tag-cover-placeholder">
+								<v-icon
+									icon="mdi-image-off-outline"
+									size="48"
+									color="grey"
+								></v-icon>
+							</div>
 						</div>
-					</div>
-					<div class="tag-content-area">
-						<div class="tag-main-info">
-							<span class="style-label">TAG</span>
-							<span class="style-name">{{ tag.content }}</span>
-							<div class="style-underline"></div>
-						</div>
-						<div class="tag-footer">
-							<span class="tag-count">{{ tag.workCount || 0 }} 作品</span>
+						<div class="tag-content-area">
+							<div class="tag-section tag-left">
+								<span class="tag-label">TAG</span>
+								<span class="tag-value">{{ tag.content }}</span>
+								<div class="tag-underline tag-underline-left"></div>
+							</div>
+							<div class="tag-section tag-right">
+								<span class="tag-label">TOTAL</span>
+								<span class="tag-value">{{ tag.workCount || 0 }}</span>
+								<div class="tag-underline tag-underline-right"></div>
+							</div>
 						</div>
 					</div>
 				</div>
-			</div>
 
-			<!-- 分页 -->
-			<div v-if="totalPages > 1" class="pagination-container">
-				<v-pagination
-					v-model="currentPage"
-					:length="totalPages"
-					:total-visible="7"
-					color="primary"
-					@update:model-value="handlePageChange"
-				></v-pagination>
-			</div>
+				<template #fallback>
+					<div class="loading-container">
+						<v-progress-circular
+							indeterminate
+							color="primary"
+						></v-progress-circular>
+					</div>
+				</template>
+			</ClientOnly>
 		</div>
 	</div>
 </template>
@@ -103,112 +103,36 @@ useHead({
 	],
 });
 
-interface TagItem {
-	id: number;
-	content: string;
-	cover: string | null;
-	workCount?: number;
-}
-
-const page = ref(1);
-const limit = ref(10);
-const currentPage = ref(1);
-
 // 获取标签列表
-const {
-	data: tagListData,
-	pending: isPending,
-	refresh,
-} = useApiFetch<{
-	total: number;
-	list: Array<{
-		id: number;
-		content: string;
-		cover: string | null;
-		created_at: string;
-		updated_at: string | null;
-	}>;
-}>('/api/admin/tag', {
-	query: computed(() => ({
-		page: page.value,
-		limit: limit.value,
-	})),
-});
+const { data: tagListData, pending: isPending } =
+	useApiFetch('/api/web/tag/all');
 
 // 标签列表
-const tagList = ref<TagItem[]>([]);
+const tagList = ref([]);
 
-// 总页数
-const totalPages = computed(() => {
-	if (!tagListData.value?.data?.total) return 1;
-	return Math.ceil(tagListData.value.data.total / limit.value);
-});
-
-// 获取每个标签的作品数量
-const fetchWorkCounts = async (tagIds: number[]) => {
-	if (tagIds.length === 0) return {};
-
-	const counts: Record<number, number> = {};
-
-	// 批量查询每个标签的作品数量
-	await Promise.all(
-		tagIds.map(async (tagId) => {
-			try {
-				const response = await $fetch<{
-					total: number;
-					list: unknown[];
-				}>('/api/admin/work', {
-					query: {
-						tagIds: [tagId],
-						page: 1,
-						limit: 1,
-					},
-				});
-				counts[tagId] = response?.total || 0;
-			} catch (error) {
-				console.error(`Failed to fetch work count for tag ${tagId}:`, error);
-				counts[tagId] = 0;
-			}
-		}),
-	);
-
-	return counts;
-};
-
-// 更新标签列表并获取作品数量
+// 更新标签列表
 watch(
 	() => tagListData.value?.data,
-	async (newData) => {
-		if (!newData?.list) {
+	(newData) => {
+		if (!newData || !Array.isArray(newData)) {
 			tagList.value = [];
 			return;
 		}
 
-		const tagIds = newData.list.map((tag) => tag.id);
-		const workCounts = await fetchWorkCounts(tagIds);
-
-		tagList.value = newData.list.map((tag) => ({
+		tagList.value = newData.map((tag) => ({
 			id: tag.id,
 			content: tag.content,
 			cover: tag.cover,
-			workCount: workCounts[tag.id] || 0,
+			workCount: 0, // 占位符，后续由后端提供
 		}));
 	},
 	{ immediate: true },
 );
 
-// 处理分页变化
-const handlePageChange = (newPage: number) => {
-	page.value = newPage;
-	currentPage.value = newPage;
-	refresh();
-};
-
 // 处理标签点击
-const handleTagClick = (tag: TagItem) => {
-	// 可以导航到该标签的作品列表页面
-	// 例如：navigateTo(`/works?tagId=${tag.id}`)
-	console.log('Tag clicked:', tag);
+const handleTagClick = (tag) => {
+	// navigateTo(`/category/${tag.id}`);
+	console.log('Clicked tag:', tag);
 };
 </script>
 
@@ -298,12 +222,31 @@ const handleTagClick = (tag: TagItem) => {
 .tag-content-area {
 	padding: 24px;
 	display: flex;
-	flex-direction: column;
-	gap: 12px;
+	flex-direction: row;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 24px;
 }
 
-/* 统一的提示符样式 (TAG 风格) */
-.style-label {
+/* 左右两侧统一样式 */
+.tag-section {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	flex: 1;
+}
+
+.tag-left {
+	align-items: flex-start;
+}
+
+.tag-right {
+	align-items: flex-end;
+	text-align: right;
+}
+
+/* 统一的标签文字样式 */
+.tag-label {
 	font-size: 10px;
 	font-weight: 900;
 	color: #ff9a9e;
@@ -311,52 +254,36 @@ const handleTagClick = (tag: TagItem) => {
 	letter-spacing: 0.1em;
 	display: block;
 	line-height: 1;
+	margin-bottom: 4px;
 }
 
-.style-name {
+/* 统一的值样式 */
+.tag-value {
 	font-size: 1.5rem;
 	font-weight: 800;
 	color: #5a463d;
 	line-height: 1.2;
 	display: block;
+	margin-top: 0;
+	letter-spacing: 0;
 }
 
-.style-underline {
+/* 统一的下划线样式 */
+.tag-underline {
 	margin-top: 6px;
 	width: 60px;
 	height: 4px;
-	background: linear-gradient(to right, #ff9a9e, transparent);
 	border-radius: 999px;
 	transition: width 0.4s ease;
 }
 
-/* 底部统计展示区 */
-.tag-footer {
-	display: flex;
-	justify-content: flex-start;
-	align-items: center;
-	margin-top: 8px;
+.tag-underline-left {
+	background: linear-gradient(to right, #ff9a9e, transparent);
 }
 
-.tag-count {
-	font-size: 0.75rem;
-	font-weight: 800;
-	color: #c9c1ab;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	display: flex;
-	align-items: center;
-	gap: 6px;
-}
-
-/* 添加一个精致的小点缀代替箭头 */
-.tag-count::before {
-	content: '';
-	width: 6px;
-	height: 6px;
-	background-color: #ffcad4;
-	border-radius: 999px;
-	display: inline-block;
+.tag-underline-right {
+	background: linear-gradient(to right, #7ee8fa, #80ff72);
+	margin-left: auto;
 }
 
 /* 悬停动效 */
@@ -370,9 +297,16 @@ const handleTagClick = (tag: TagItem) => {
 	transform: scale(1.1);
 }
 
-.tag-card:hover .style-underline {
+.tag-card:hover .tag-underline {
 	width: 100%;
+}
+
+.tag-card:hover .tag-underline-left {
 	background: linear-gradient(to right, #ff9a9e, #fecfef);
+}
+
+.tag-card:hover .tag-underline-right {
+	background: linear-gradient(to right, #7ee8fa, #80ff72);
 }
 
 /* 加载和空状态 */
@@ -409,9 +343,22 @@ const handleTagClick = (tag: TagItem) => {
 
 	.tag-content-area {
 		padding: 16px;
+		gap: 16px;
+		flex-direction: row;
+		align-items: flex-start;
+		justify-content: space-between;
 	}
 
-	.style-name {
+	.tag-section {
+		flex: 1;
+	}
+
+	.tag-right {
+		align-items: flex-end;
+		text-align: right;
+	}
+
+	.tag-value {
 		font-size: 1.2rem;
 	}
 
