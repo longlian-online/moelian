@@ -23,6 +23,7 @@ export type WorkListRes = {
 		lastNo: number | null;
 		description: string;
 		chapterUpdatedAt: Date | null;
+		tags: string[];
 	}[];
 };
 
@@ -41,6 +42,7 @@ export type WorkDetailRes = {
 	description: string;
 	chapterUpdatedAt: Date | null;
 	chapterList: WorkDetailChapterItem[];
+	tags: string[];
 };
 
 export type WorkDetailChapterItem = {

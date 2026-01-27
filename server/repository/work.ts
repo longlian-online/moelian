@@ -231,6 +231,16 @@ export const listForWeb = async (params: ListForWebInput) => {
 		useDB().work.findMany({
 			include: {
 				Cover: true,
+				workTags: {
+					where: {
+						tag: { deleted_at: null },
+					},
+					select: {
+						tag: {
+							select: { content: true },
+						},
+					},
+				},
 			},
 			where,
 			orderBy: { id: 'desc' },
@@ -247,6 +257,16 @@ export const detailForWeb = async (id: Work['id']) => {
 		where: { id, status: Status.Enable, deleted_at: { equals: null } },
 		include: {
 			Cover: true,
+			workTags: {
+				where: {
+					tag: { deleted_at: null },
+				},
+				select: {
+					tag: {
+						select: { content: true },
+					},
+				},
+			},
 		},
 	});
 };
