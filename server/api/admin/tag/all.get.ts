@@ -4,10 +4,10 @@ import { ResourceType } from '~/server/lib/prisma';
 import { listAll } from '~/server/service/tag';
 
 export default defineWrappedResponseHandler(async (event) => {
-
 	const list = await listAll();
 	const baseUrl = useRuntimeConfig(event).storage.cos.url;
 	const result = await map(list, async (item) => {
+		const workTotal = item.workTags?.length || 0;
 		return {
 			...pick(item, ['id', 'content', 'created_at']),
 			cover: await getResourceURLByID(
@@ -15,6 +15,7 @@ export default defineWrappedResponseHandler(async (event) => {
 				baseUrl,
 				ResourceType.Cover,
 			),
+			work_total: workTotal,
 		};
 	});
 	return result;
