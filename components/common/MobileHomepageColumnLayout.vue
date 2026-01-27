@@ -16,10 +16,7 @@
 
 	<template v-else>
 		<div class="mobile-list-container">
-			<template
-				v-for="card in cards"
-				:key="card.id"
-			>
+			<template v-for="card in cards" :key="card.id">
 				<div class="yuri-card-horizontal" @click="handleCardClick(card.id)">
 					<!-- 封面区：28% 宽度，使用 Book3D -->
 					<div class="cover-side">
@@ -36,7 +33,7 @@
 						>
 							<template #overlay>
 								<AnimeTags
-									:tags="['校园']"
+									:tags="card.tags"
 									size="small"
 									position="bottom-left"
 								/>
@@ -108,15 +105,11 @@
 										card.serialType === 'Serializing' ? 'tag-red' : 'tag-green'
 									"
 								>
-									{{
-										card.serialType === 'Serializing' ? '连载中' : '已完结'
-									}}
+									{{ card.serialType === 'Serializing' ? '连载中' : '已完结' }}
 								</span>
 								<span
 									class="status-mini-tag"
-									:class="
-										card.lengthType === 'Short' ? 'tag-cyan' : 'tag-grey'
-									"
+									:class="card.lengthType === 'Short' ? 'tag-cyan' : 'tag-grey'"
 								>
 									{{
 										(card.lengthType === 'Long'

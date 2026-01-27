@@ -74,7 +74,7 @@
 										>
 											<template #overlay>
 												<!-- 左上角分类标签 -->
-												<AnimeTags :tags="['校园']" position="bottom-left" />
+												<AnimeTags :tags="card.tags" position="bottom-left" />
 											</template>
 										</Book3D>
 									</v-lazy>

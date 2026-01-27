@@ -40,7 +40,7 @@
 							<template #overlay>
 								<!-- 左上角分类标签 -->
 								<AnimeTags
-									:tags="['校园']"
+									:tags="card.tags"
 									size="small"
 									position="bottom-left"
 								/>

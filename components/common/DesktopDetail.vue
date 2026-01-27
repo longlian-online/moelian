@@ -22,7 +22,10 @@
 								:show-spine-text="true"
 							>
 								<template #overlay>
-									<AnimeTags :tags="['校园']" position="bottom-left" />
+									<AnimeTags
+										:tags="workDetail?.tags || []"
+										position="bottom-left"
+									/>
 								</template>
 							</Book3D>
 						</div>
@@ -61,9 +64,7 @@
 													? '中篇'
 													: '短篇'
 										}}
-										{{
-											props.contentType === 'manga' ? '漫画' : '小说'
-										}}
+										{{ props.contentType === 'manga' ? '漫画' : '小说' }}
 									</span>
 									<span
 										class="yuri-tag"
@@ -265,11 +266,13 @@
 										:spine-width="15"
 										:show-title="false"
 										:show-spine-text="false"
-										@click.stop="router.push(`/${props.contentType}/${card.id}`)"
+										@click.stop="
+											router.push(`/${props.contentType}/${card.id}`)
+										"
 									>
 										<template #overlay>
 											<AnimeTags
-												:tags="['校园']"
+												:tags="card.tags"
 												size="small"
 												position="bottom-left"
 											/>
@@ -281,7 +284,9 @@
 										v-copy="card.title"
 										v-tooltip="card.title"
 										class="recommendation-title"
-										@click.stop="router.push(`/${props.contentType}/${card.id}`)"
+										@click.stop="
+											router.push(`/${props.contentType}/${card.id}`)
+										"
 									>
 										{{ card.title }}
 									</h3>

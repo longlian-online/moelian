@@ -17,10 +17,7 @@
 	<template v-else>
 		<!-- 3 列网格容器 -->
 		<div class="yuri-grid-container">
-			<template
-				v-for="card in cards"
-				:key="card.id"
-			>
+			<template v-for="card in cards" :key="card.id">
 				<div class="yuri-grid-card" @click="handleCardClick(card.id)">
 					<!-- 封面容器：使用 Book3D -->
 					<div class="cover-wrapper">
@@ -38,7 +35,7 @@
 							<template #overlay>
 								<!-- 左下角分类标签 -->
 								<AnimeTags
-									:tags="['校园']"
+									:tags="card.tags"
 									size="small"
 									position="bottom-left"
 								/>
@@ -53,9 +50,7 @@
 									: 'status-completed'
 							"
 						>
-							{{
-								card.serialType === 'Serializing' ? '连载中' : '已完结'
-							}}
+							{{ card.serialType === 'Serializing' ? '连载中' : '已完结' }}
 						</div>
 					</div>
 
