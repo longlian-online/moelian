@@ -44,47 +44,40 @@ export type ListForAdminInput = {
 		>
 	>;
 	like?: Partial<Pick<Work, 'author' | 'title'>>;
-	tagIds?: number[];
+	tags?: string[];
 	pagination: PageRequestSchema;
 };
 export const listForAdmin = async (params: ListForAdminInput) => {
 	const where: Prisma.WorkWhereInput = {
 		...params.equals,
-		title: {
-			contains: params.like?.title,
-		},
-		author: {
-			contains: params.like?.author,
-		},
-		deleted_at: {
-			equals: null,
-		},
+		title: { contains: params.like?.title },
+		author: { contains: params.like?.author },
+		deleted_at: { equals: null },
 	};
-	const { tagIds } = params;
 	const includeConfig = {
 		Cover: true,
 		workTags: {
-			where: {
-				tag: { deleted_at: null },
-			},
-			select: {
-				tag: {
-					select: { content: true },
-				},
-			},
+			where: { tag: { deleted_at: null } },
+			select: { tag: { select: { content: true } } },
 		},
 	};
-
-	if (tagIds && tagIds.length > 0) {
-		const tagCount = tagIds.length;
+	const tags = params.tags;
+	if (tags && tags.length > 0) {
+		const existingTags = await useDB().tag.findMany({
+			where: { content: { in: tags }, deleted_at: null },
+			select: { content: true },
+		});
+		if (existingTags.length !== tags.length) {
+			return { total: 0, list: [] };
+		}
+		const tagCount = tags.length;
 		const matchWorkIds = await useDB().workTags.findMany({
-			select: { work_id: true },
 			where: {
-				tag_id: { in: tagIds },
+				tag: { content: { in: tags }, deleted_at: null },
 				work: { deleted_at: null },
 			},
+			select: { work_id: true, tag_id: true },
 			distinct: ['work_id', 'tag_id'],
-			orderBy: { work_id: 'asc' },
 		});
 		const workTagCountMap = new Map<number, number>();
 		matchWorkIds.forEach((item) => {
@@ -96,7 +89,9 @@ export const listForAdmin = async (params: ListForAdminInput) => {
 		const workIds = Array.from(workTagCountMap.entries())
 			.filter(([_, count]) => count === tagCount)
 			.map(([id]) => id);
-
+		if (workIds.length === 0) {
+			return { total: 0, list: [] };
+		}
 		const [total, list] = await Promise.all([
 			useDB().work.count({ where: { ...where, id: { in: workIds } } }),
 			useDB().work.findMany({
@@ -109,23 +104,15 @@ export const listForAdmin = async (params: ListForAdminInput) => {
 		return { total, list };
 	}
 	const [total, list] = await Promise.all([
-		useDB().work.count({
-			where,
-		}),
+		useDB().work.count({ where }),
 		useDB().work.findMany({
 			include: includeConfig,
 			where,
 			...pagination(params.pagination),
-			orderBy: {
-				id: 'desc',
-			},
+			orderBy: { id: 'desc' },
 		}),
 	]);
-
-	return {
-		total,
-		list,
-	};
+	return { total, list };
 };
 
 export type UpdateInput = Partial<
@@ -214,6 +201,7 @@ export type ListForWebInput = {
 	type: ContentType;
 	page: PageRequestSchema;
 	key?: string;
+	tags?: string[];
 };
 export const listForWeb = async (params: ListForWebInput) => {
 	const where: Prisma.WorkWhereInput = {
@@ -227,6 +215,25 @@ export const listForWeb = async (params: ListForWebInput) => {
 			{ author: { contains: params.key } },
 		];
 	}
+	if (params.tags?.length) {
+		const existingTags = await useDB().tag.findMany({
+			where: {
+				content: { in: params.tags },
+				deleted_at: null,
+			},
+			select: { content: true },
+		});
+		if (existingTags.length !== params.tags.length) {
+			return { list: [], total: 0 };
+		}
+		where.AND = params.tags.map((tagContent) => ({
+			workTags: {
+				some: {
+					tag: { content: tagContent, deleted_at: null },
+				},
+			},
+		}));
+	}
 	const [list, total] = await Promise.all([
 		useDB().work.findMany({
 			include: {
@@ -236,9 +243,7 @@ export const listForWeb = async (params: ListForWebInput) => {
 						tag: { deleted_at: null },
 					},
 					select: {
-						tag: {
-							select: { content: true },
-						},
+						tag: { select: { content: true } },
 					},
 				},
 			},

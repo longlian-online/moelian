@@ -25,7 +25,7 @@ export default defineWrappedResponseHandler(
 				author: data.author,
 				title: data.title,
 			},
-			tagIds: data.tagIds,
+			tags: data.tags,
 			pagination: {
 				page: data.page,
 				limit: data.limit,

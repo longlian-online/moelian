@@ -16,6 +16,7 @@ export default defineWrappedResponseHandler(
 				limit: 24,
 			},
 			key: data.key,
+			tags: data.tags,
 		});
 
 		const baseUrl = useRuntimeConfig(event).storage.cos.url;
