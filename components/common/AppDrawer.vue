@@ -15,6 +15,10 @@
 				<v-icon start icon="mdi-book"></v-icon>
 				小说
 			</v-tab>
+			<v-tab value="classify" to="/classify">
+				<v-icon start icon="mdi-tag"></v-icon>
+				分类
+			</v-tab>
 			<!-- <v-tab value="classify" to="/timeline">
 				<v-icon start icon="mdi-alarm"></v-icon>
 				时间表

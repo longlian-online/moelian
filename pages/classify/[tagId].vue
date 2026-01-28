@@ -170,7 +170,6 @@
 
 <script setup lang="ts">
 import type { WorkListRes } from '~/shared/dto/web/work';
-import type { TagWebItem } from '~/shared/dto/web/tag';
 import { ContentType } from '_db';
 import Book3D from '~/components/common/Book3D.vue';
 import AnimeTags from '~/components/common/AnimeTags.vue';
@@ -343,28 +342,39 @@ const {
 
 const isPending = computed(() => isPendingManga.value || isPendingNovel.value);
 
-// 合并作品列表
+// 合并作品列表，并添加 contentType 字段
 const workList = computed(() => {
-	let list: WorkListRes['list'] = [];
+	let list: (WorkListRes['list'][0] & { contentType: ContentType })[] = [];
 
 	if (contentType.value === ContentType.Manga) {
-		list = mangaWorkListData.value?.data?.list || [];
+		const mangaList = mangaWorkListData.value?.data?.list || [];
+		list = mangaList.map((work) => ({
+			...work,
+			contentType: ContentType.Manga,
+		}));
 	} else if (contentType.value === ContentType.Novel) {
-		list = novelWorkListData.value?.data?.list || [];
+		const novelList = novelWorkListData.value?.data?.list || [];
+		list = novelList.map((work) => ({
+			...work,
+			contentType: ContentType.Novel,
+		}));
 	} else {
 		// 全部：合并漫画和小说
 		const mangaList = mangaWorkListData.value?.data?.list || [];
 		const novelList = novelWorkListData.value?.data?.list || [];
-		list = [...mangaList, ...novelList];
+		list = [
+			...mangaList.map((work) => ({ ...work, contentType: ContentType.Manga })),
+			...novelList.map((work) => ({ ...work, contentType: ContentType.Novel })),
+		];
 	}
 
 	return list;
 });
 
 // 只在需要时请求小说列表
-const shouldFetchNovel = computed(() => {
-	return !contentType.value || contentType.value === ContentType.Novel;
-});
+// const shouldFetchNovel = computed(() => {
+// 	return !contentType.value || contentType.value === ContentType.Novel;
+// });
 
 // 刷新作品列表
 const refreshWorkList = () => {

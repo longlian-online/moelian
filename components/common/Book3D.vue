@@ -1,7 +1,7 @@
 <template>
 	<div class="book-3d-container" :style="containerStyle">
 		<div class="book-3d-wrapper" :style="wrapperStyle">
-			<div class="book-cover-link" @click="handleClick">
+			<div class="book-cover-link" @click="handleClick($event)">
 				<!-- 整个书体 -->
 				<div class="book-body">
 					<!-- 书脊（侧封） -->
@@ -129,7 +129,10 @@ const handleImageLoad = (src: string | Event) => {
 	}
 };
 
-const handleClick = () => {
+const handleClick = (event?: Event) => {
+	if (event) {
+		event.stopPropagation();
+	}
 	emit('click');
 };
 </script>

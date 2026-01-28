@@ -30,7 +30,7 @@
 							:spine-width="25"
 							:show-title="false"
 							:show-spine-text="false"
-							@click.stop
+							@click="handleCardClick(card.id)"
 						>
 							<template #overlay>
 								<!-- 左下角分类标签 -->
@@ -185,41 +185,9 @@ interface ApiResponse<T> {
 	message: string;
 	data: T; // 泛型 T 实际的业务数据
 }
-const handleCardClick = async (cardId: number) => {
-	try {
-		// 1. 使用 $fetch 或 $apiFetch 获取作品详情
-		const response = await $fetch<ApiResponse<WorkDetailRes>>(
-			`/api/web/work/${cardId}` as string,
-			{ method: 'GET' },
-		);
-		const chapterList = response.data.chapterList;
-
-		if (chapterList && chapterList.length > 0) {
-			// 2. 获取最小章节号对应的章节ID (即第一章的ID)
-			const minNoChapterId = getMinNoChapterId(chapterList);
-
-			if (minNoChapterId !== undefined) {
-				// 3. 触发跳转回调
-				props.onCardClick(minNoChapterId);
-			} else {
-				$tip(`${props.workType} ID ${cardId} 没有找到章节内容。`, {
-					color: 'error',
-					icon: 'mdi-alert-circle',
-				});
-			}
-		} else {
-			$tip(`${props.workType} ID ${cardId} 章节列表为空。`, {
-				color: 'error',
-				icon: 'mdi-alert-circle',
-			});
-		}
-	} catch (error) {
-		console.error('获取章节详情失败:', error);
-		$tip('获取章节详情失败:' + error, {
-			color: 'error',
-			icon: 'mdi-alert-circle',
-		});
-	}
+const handleCardClick = (cardId: number) => {
+	// 直接传递作品ID，跳转到详情页
+	props.onCardClick(cardId);
 };
 
 //寻找最小id的章节————第一章

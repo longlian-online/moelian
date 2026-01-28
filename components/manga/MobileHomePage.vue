@@ -33,7 +33,7 @@ const { isMangaVertical } = storeToRefs(settingsStore);
 
 const router = useRouter();
 const gotoManga = (id: number) => {
-	router.push(`/manga/chapter/${id}`);
+	router.push(`/manga/${id}`);
 };
 </script>
 

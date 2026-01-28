@@ -75,9 +75,9 @@
 				</v-text-field>
 			</template>
 
-			<template v-if="isMobile">
+			<!-- <template v-if="isMobile">
 				<v-btn icon="mdi-dots-vertical" variant="text"></v-btn>
-			</template>
+			</template> -->
 		</v-container>
 	</v-app-bar>
 </template>

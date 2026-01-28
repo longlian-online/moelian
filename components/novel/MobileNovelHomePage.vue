@@ -37,9 +37,8 @@ const { isNovelVertical } = storeToRefs(settingsStore);
 
 const router = useRouter();
 
-const gotoChapter = (chapterId: number) => {
-	//后续改为动态id
-	router.push(`/novel/chapter/${chapterId}`);
+const gotoChapter = (id: number) => {
+	router.push(`/novel/${id}`);
 };
 </script>
 
