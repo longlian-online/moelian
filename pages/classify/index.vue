@@ -72,7 +72,7 @@
 							</div>
 							<div class="tag-section tag-right">
 								<span class="tag-label">TOTAL</span>
-								<span class="tag-value">{{ tag.workCount || 0 }}</span>
+								<span class="tag-value">{{ tag.workCount || '0' }}</span>
 								<div class="tag-underline tag-underline-right"></div>
 							</div>
 						</div>
@@ -123,7 +123,7 @@ watch(
 			id: tag.id,
 			content: tag.content,
 			cover: tag.cover,
-			workCount: 0, // 占位符，后续由后端提供
+			workCount: tag.work_total,
 		}));
 	},
 	{ immediate: true },

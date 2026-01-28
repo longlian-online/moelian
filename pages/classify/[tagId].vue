@@ -5,47 +5,53 @@
 			<nav class="filter-bar">
 				<!-- 1. 类型筛选 -->
 				<div class="filter-group">
-					<v-select
-						v-model="contentType"
-						clearable
-						label="内容类型"
-						:items="[
-							{ title: '全部作品 (漫画 & 小说)', value: null },
-							{ title: '纯漫画', value: 'Manga' },
-							{ title: '纯小说', value: 'Novel' },
-						]"
-						variant="solo"
-						hide-details
-						@update:model-value="handleContentTypeChange"
-					></v-select>
+					<div class="flex flex-col flex-grow">
+						<span class="filter-label mb-1">内容类型</span>
+						<v-select
+							v-model="contentType"
+							clearable
+							:items="[
+								{ title: '漫画 & 小说', value: null },
+								{ title: '漫画', value: 'Manga' },
+								{ title: '小说', value: 'Novel' },
+							]"
+							variant="solo"
+							hide-details
+							@update:model-value="handleContentTypeChange"
+						></v-select>
+					</div>
 				</div>
 
 				<!-- 2. 分类跳转 -->
 				<div class="filter-group">
-					<v-select
-						v-model="selectedCategoryId"
-						clearable
-						label="标签分类"
-						:items="categorySelectItems"
-						variant="solo"
-						hide-details
-						@update:model-value="handleCategoryChange"
-					></v-select>
+					<div class="flex flex-col flex-grow">
+						<span class="filter-label mb-1">标签列表</span>
+						<v-select
+							v-model="selectedCategoryId"
+							clearable
+							:items="categorySelectItems"
+							variant="solo"
+							hide-details
+							@update:model-value="handleCategoryChange"
+						></v-select>
+					</div>
 				</div>
 
 				<!-- 3. 多选筛选 (缩小范围) -->
 				<div class="filter-group">
-					<v-select
-						v-model="selectedTags"
-						clearable
-						chips
-						label="标签筛选"
-						:items="availableTags"
-						multiple
-						variant="solo"
-						hide-details
-						@update:model-value="refreshWorkList"
-					></v-select>
+					<div class="flex flex-col flex-grow">
+						<span class="filter-label mb-1">标签筛选</span>
+						<v-select
+							v-model="selectedTags"
+							clearable
+							chips
+							:items="availableTags"
+							multiple
+							variant="solo"
+							hide-details
+							@update:model-value="refreshWorkList"
+						></v-select>
+					</div>
 				</div>
 			</nav>
 
@@ -415,8 +421,91 @@ useHead({
 }
 
 .filter-group {
+	display: flex;
+	align-items: center;
+	gap: 12px;
 	flex: 1;
-	min-width: 200px;
+	min-width: 280px;
+}
+
+.filter-label {
+	font-size: 11px;
+	font-weight: 900;
+	color: #ff9a9e;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	white-space: nowrap;
+}
+
+/* v-select 样式覆盖，使其看起来像 custom-select */
+.filter-group :deep(.v-select) {
+	flex: 1;
+}
+
+.filter-group :deep(.v-field) {
+	background: #fdfaf8;
+	border: 2px solid #f2ece6;
+	border-radius: 12px;
+	transition: all 0.3s;
+	box-shadow: none;
+}
+
+.filter-group :deep(.v-field--focused) {
+	border-color: #ffcad4;
+	background: white;
+}
+
+.filter-group :deep(.v-field__input) {
+	padding: 8px 16px;
+	font-size: 14px;
+	font-weight: 700;
+	color: #7d5a5a;
+	min-height: auto;
+}
+
+.filter-group :deep(.v-label) {
+	display: none;
+}
+
+.filter-group :deep(.v-field__append-inner) {
+	padding-right: 12px;
+}
+
+/* 多选标签样式 - 使其看起来像 multi-tag-box */
+.filter-group :deep(.v-select--chips .v-field) {
+	padding: 4px;
+	min-height: 44px;
+}
+
+.filter-group :deep(.v-select--chips .v-field__input) {
+	padding: 4px;
+	min-height: 44px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+}
+
+.filter-group :deep(.v-chip) {
+	background: #fff0f3;
+	color: #ff758c;
+	font-size: 11px;
+	font-weight: 800;
+	padding: 4px 10px;
+	border-radius: 8px;
+	border: 1px solid #ffcad4;
+	height: auto;
+	margin: 0;
+}
+
+.filter-group :deep(.v-chip__close) {
+	color: #ff758c;
+	opacity: 1;
+	margin-left: 4px;
+}
+
+.filter-group :deep(.v-chip__close:hover) {
+	opacity: 0.8;
 }
 
 /* --- 作品网格布局 --- */
@@ -639,10 +728,28 @@ useHead({
 
 	.filter-bar {
 		padding: 15px;
+		flex-direction: column;
+		gap: 12px;
 	}
 
 	.filter-group {
+		width: 100%;
 		min-width: 100%;
+		flex: 1 1 100%;
+		gap: 6px;
+	}
+
+	.filter-group .flex {
+		width: 100%;
+	}
+
+	.filter-group :deep(.v-select) {
+		width: 100%;
+	}
+
+	.filter-label {
+		font-size: 10px;
+		margin-bottom: 4px;
 	}
 }
 </style>
