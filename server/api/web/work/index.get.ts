@@ -37,6 +37,7 @@ export default defineWrappedResponseHandler(
 					description: item.description,
 					chapterUpdatedAt: item.chapterUpdatedAt,
 					tags: tags,
+					type: item.content_type
 				};
 			}),
 		};
