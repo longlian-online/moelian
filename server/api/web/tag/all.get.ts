@@ -17,7 +17,7 @@ export default defineWrappedResponseHandler(async (event) => {
 				baseUrl,
 				ResourceType.Cover,
 			),
-			work_total: workTotal,
+			workTotal: workTotal,
 		};
 	});
 
