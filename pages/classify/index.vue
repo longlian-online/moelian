@@ -1,12 +1,23 @@
 <template>
 	<div class="category-page">
+		<v-card>
+			<v-tabs
+				center-active
+				slider-color="#77C138"
+				color="#77C138"
+				:elevation="0"
+			>
+				<v-tab value="manga" to="/manga">漫画</v-tab>
+				<v-tab value="novel" to="/novel">小说</v-tab>
+				<v-tab value="classify" to="/classify">分类</v-tab>
+			</v-tabs>
+		</v-card>
 		<div class="gallery-container">
 			<!-- 页面顶部 -->
 			<header class="page-header">
 				<!-- <span class="page-subtitle">Collection Categories</span> -->
 				<h1 class="page-title">作品分类</h1>
 			</header>
-
 			<!-- 分类列表 -->
 			<ClientOnly>
 				<div v-if="isPending" class="loading-container">
@@ -123,7 +134,7 @@ watch(
 			id: tag.id,
 			content: tag.content,
 			cover: tag.cover,
-			workCount: tag.work_total,
+			workCount: tag.workTotal,
 		}));
 	},
 	{ immediate: true },

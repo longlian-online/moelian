@@ -114,12 +114,14 @@
 							</Book3D>
 						</div>
 						<div class="card-body">
-							<h3 class="card-title">{{ work.title }}</h3>
+							<h3 v-tooltip="work.title" v-copy="work.title" class="card-title">
+								{{ work.title }}
+							</h3>
 
 							<div class="meta-group">
 								<div class="meta-line color-pink">
 									<span class="m-tag">BY</span>
-									<span class="m-val">{{ work.author }}</span>
+									<span class="m-val" >{{ work.author }}</span>
 									<div class="m-line"></div>
 								</div>
 								<div class="meta-line color-purple">
@@ -127,7 +129,7 @@
 									<span class="m-val">
 										{{
 											work.lastNo
-												? `第 ${work.lastNo} ${work.lengthType === 'Manga' ? '话' : '章'}`
+												? `第 ${work.lastNo} ${work.type === ContentType.Manga ? '话' : '章'}`
 												: '暂无章节'
 										}}
 									</span>
@@ -135,10 +137,10 @@
 								</div>
 							</div>
 
-							<div class="card-excerpt">
+							<div v-tooltip="work.description" v-copy="work.description" class="card-excerpt">
 								{{ work.description || '暂无简介' }}
 							</div>
-
+							
 							<div class="card-footer">
 								<div class="index-container">
 									<div class="index-head">
@@ -170,6 +172,7 @@
 
 <script setup lang="ts">
 import type { WorkListRes } from '~/shared/dto/web/work';
+import type { TagWebItem } from '~/shared/dto/web';
 import { ContentType } from '_db';
 import Book3D from '~/components/common/Book3D.vue';
 import AnimeTags from '~/components/common/AnimeTags.vue';
@@ -342,29 +345,29 @@ const {
 
 const isPending = computed(() => isPendingManga.value || isPendingNovel.value);
 
-// 合并作品列表，并添加 contentType 字段
+// 合并作品列表，并添加 type 字段（API 返回 type，合并时需补充）
 const workList = computed(() => {
-	let list: (WorkListRes['list'][0] & { contentType: ContentType })[] = [];
+	let list: WorkListRes['list'] = [];
 
 	if (contentType.value === ContentType.Manga) {
 		const mangaList = mangaWorkListData.value?.data?.list || [];
 		list = mangaList.map((work) => ({
 			...work,
-			contentType: ContentType.Manga,
+			type: ContentType.Manga,
 		}));
 	} else if (contentType.value === ContentType.Novel) {
 		const novelList = novelWorkListData.value?.data?.list || [];
 		list = novelList.map((work) => ({
 			...work,
-			contentType: ContentType.Novel,
+			type: ContentType.Novel,
 		}));
 	} else {
 		// 全部：合并漫画和小说
 		const mangaList = mangaWorkListData.value?.data?.list || [];
 		const novelList = novelWorkListData.value?.data?.list || [];
 		list = [
-			...mangaList.map((work) => ({ ...work, contentType: ContentType.Manga })),
-			...novelList.map((work) => ({ ...work, contentType: ContentType.Novel })),
+			...mangaList.map((work) => ({ ...work, type: ContentType.Manga })),
+			...novelList.map((work) => ({ ...work, type: ContentType.Novel })),
 		];
 	}
 
@@ -386,8 +389,8 @@ const refreshWorkList = () => {
 
 // 处理作品点击
 const handleWorkClick = (work: WorkListRes['list'][0]) => {
-	const type = work.lengthType === 'Manga' ? 'manga' : 'novel';
-	router.push(`/${type}/${work.id}`);
+	const routeType = work.type === ContentType.Manga ? 'manga' : 'novel';
+	router.push(`/${routeType}/${work.id}`);
 };
 
 useHead({
@@ -570,6 +573,10 @@ useHead({
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+}
+.card-title:hover{
+	color: #ff9a9e;
+	cursor: pointer;
 }
 
 /* 延续品牌元数据提示符风格 */

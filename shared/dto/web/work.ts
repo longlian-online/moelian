@@ -28,6 +28,7 @@ export type WorkListRes = {
 		description: string;
 		chapterUpdatedAt: Date | null;
 		tags: string[];
+		type: ContentType;
 	}[];
 };
 
