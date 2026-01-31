@@ -179,7 +179,10 @@ export const deleteChapterFromConsumer = async (
 	);
 };
 
-export const mangaExtractHandler = async (key: string) => {
+export const contentExtractHandler = async (
+	key: string,
+	type: 'Manga' | 'Novel',
+) => {
 	const resource = await getResourceByKey(key);
 	if (!resource) {
 		throw new DATA_NOT_EXISTS();
@@ -191,19 +194,28 @@ export const mangaExtractHandler = async (key: string) => {
 
 	let parts = key.split('.');
 	if (parts.length !== 2) {
-		logger.error('漫画解压回调入参错误');
+		logger.error('解压回调入参错误');
 		return;
 	}
 	key = parts[0];
 
 	parts = key.split('/');
 	if (parts.length !== 2) {
-		logger.error('漫画解压回调入参错误');
+		logger.error('解压回调入参错误');
 		return;
 	}
 
-	key = `${ResourceType.ExtractManga}/${parts[1]}`;
-	await dao.mangaExtractCompleted(chapter.id, { key });
+	const resourceType = (() => {
+		switch (type) {
+			case 'Manga':
+				return ResourceType.ExtractManga;
+			case 'Novel':
+				return ResourceType.ExtractNovel;
+		}
+	})();
+
+	key = `${resourceType}/${parts[1]}`;
+	await dao.contentExtractCompleted(chapter.id, { key }, resourceType);
 };
 
 // 获取内容，如果是小说，直接返回源文件，如果是漫画，需要列出文件夹下所有文件
@@ -272,9 +284,9 @@ export const workHasChapter = async (workID: number) => {
 };
 
 export const chapterUpdate = async (data: {
-	id: number,
-	priority: number,
-	title: string,
+	id: number;
+	priority: number;
+	title: string;
 }) => {
-	return await dao.chapterUpdate(data)
-}
+	return await dao.chapterUpdate(data);
+};

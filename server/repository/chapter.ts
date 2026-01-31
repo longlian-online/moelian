@@ -249,18 +249,15 @@ export const deleteChapter = async (
 	return useDB().$transaction(sql);
 };
 
-/**
- * 漫画解压完成
- * 创建对应的 Resource 并关联到 Chapter
- */
-export const mangaExtractCompleted = async (
+export const contentExtractCompleted = async (
 	id: Chapter['id'],
 	data: { key: string },
+	type: ResourceType,
 ) => {
 	return useDB().$transaction(async (tx) => {
 		const product = await tx.resource.create({
 			data: {
-				type: ResourceType.ExtractManga,
+				type,
 				key: data.key,
 				name: data.key,
 				ext: '',
@@ -275,31 +272,7 @@ export const mangaExtractCompleted = async (
 			},
 		});
 	});
-};
-
-export const novelCopyCompleted = async (
-	id: Chapter['id'],
-	data: { key: string },
-) => {
-	return useDB().$transaction(async (tx) => {
-		const resource = await tx.resource.create({
-			data: {
-				type: ResourceType.Novel,
-				key: data.key,
-				name: data.key,
-				ext: 'docx',
-				size: 0,
-				status: Status.Enable,
-			} as Resource,
-		});
-		await tx.chapter.update({
-			where: { id },
-			data: {
-				content_id: resource.id,
-			},
-		});
-	});
-};
+}
 
 export const chapterUpdate = async (data: {
 	id: number,
