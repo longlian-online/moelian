@@ -10,8 +10,9 @@ export const WorkListReq = z.object({
 		if (!val) return undefined;
 		return Array.isArray(val) ? val : [val];
 	}, z.array(z.string()).optional()),
+	sortType: z.enum(['UPDATE', 'PUBLISH']).optional().default('UPDATE'),
 });
-
+export type SortType = 'UPDATE' | 'PUBLISH';
 /**
  * lastXXX 相关字段可能为null, 因为该作品可能还没上传章节
  */
