@@ -51,6 +51,7 @@ export const useWebWorkStore = defineStore('web-work', () => {
 			page: state.page,
 			type: state.type,
 			key: state.searchKey, // 使用 searchKey
+			sortType: 'UPDATE',
 		};
 
 		try {

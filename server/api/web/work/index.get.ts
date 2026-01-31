@@ -17,6 +17,7 @@ export default defineWrappedResponseHandler(
 			},
 			key: data.key,
 			tags: data.tags,
+			sortType: data.sortType,
 		});
 
 		const baseUrl = useRuntimeConfig(event).storage.cos.url;
