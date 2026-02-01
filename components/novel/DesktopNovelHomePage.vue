@@ -142,6 +142,8 @@
 										class="novel-heart-icon"
 										fill="currentColor"
 										viewBox="0 0 20 20"
+										width="10"
+										height="10"
 									>
 										<path
 											fill-rule="evenodd"

@@ -80,7 +80,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-	click: [];
+	click: [event?: Event];
 	imageLoad: [width: number];
 }>();
 
@@ -130,10 +130,8 @@ const handleImageLoad = (src: string | Event) => {
 };
 
 const handleClick = (event?: Event) => {
-	if (event) {
-		event.stopPropagation();
-	}
-	emit('click');
+	event?.stopPropagation();
+	emit('click', event);
 };
 </script>
 

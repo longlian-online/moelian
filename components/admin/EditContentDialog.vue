@@ -248,30 +248,12 @@ const handleSaveClick = async () => {
 };
 
 const adminWorkStore = useAdminWorkStore();
+const tagStore = useTagStore();
 
-// 获取所有标签列表
-const { data: allTagsData } = useApiFetch<
-	Array<{
-		id: number;
-		content: string;
-		cover: string;
-		created_at: string;
-	}>
->('/api/admin/tag/all');
+// 使用 store 中的标签数据，只请求一次
+const allTagItems = computed(() => tagStore.allTagNames);
+const tagNameToIdMap = computed(() => tagStore.tagNameToIdMap);
 
-// 所有标签选项（用于 combobox）
-const allTagItems = computed(() => {
-	return allTagsData.value?.data?.map((tag) => tag.content) || [];
-});
-
-// 标签名称到 ID 的映射
-const tagNameToIdMap = computed(() => {
-	const map = new Map<string, number>();
-	allTagsData.value?.data?.forEach((tag) => {
-		map.set(tag.content, tag.id);
-	});
-	return map;
-});
 
 // 选中的标签名称
 const selectedTagNames = ref<string[]>([]);
@@ -279,10 +261,9 @@ const selectedTagNames = ref<string[]>([]);
 // 监听 dialog 打开，初始化选中的标签
 watch(dialog, (newValue) => {
 	if (newValue) {
+		tagStore.ensureLoaded();
 		formData.value = JSON.parse(JSON.stringify(props.itemData));
-		// 初始化选中的标签名称
 		selectedTagNames.value = [...(props.itemData.tags || [])];
-		// 使用可选链调用方法，并使用非空断言来满足类型检查
 		form.value?.resetValidation();
 	}
 });

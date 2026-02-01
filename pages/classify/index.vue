@@ -1,17 +1,7 @@
 <template>
 	<div class="category-page">
-		<v-card>
-			<v-tabs
-				center-active
-				slider-color="#77C138"
-				color="#77C138"
-				:elevation="0"
-			>
-				<v-tab value="manga" to="/manga">漫画</v-tab>
-				<v-tab value="novel" to="/novel">小说</v-tab>
-				<v-tab value="classify" to="/classify">分类</v-tab>
-			</v-tabs>
-		</v-card>
+		<!-- 仅移动端展示 -->
+		<MobileTopBar />
 		<div class="gallery-container">
 			<!-- 页面顶部 -->
 			<header class="page-header">
@@ -121,6 +111,7 @@ const { data: tagListData, pending: isPending } =
 // 标签列表
 const tagList = ref([]);
 
+
 // 更新标签列表
 watch(
 	() => tagListData.value?.data,
@@ -157,12 +148,12 @@ const handleTagClick = (tag) => {
 .gallery-container {
 	max-width: 1200px;
 	margin: 0 auto;
-	padding: 60px 20px;
+	padding: 20px 20px;
 }
 
 /* 页面大标题 */
 .page-header {
-	margin-bottom: 50px;
+	margin-bottom: 2%;
 	text-align: left;
 	padding-left: 10px;
 }

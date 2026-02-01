@@ -6,19 +6,33 @@
 				v-if="pageLayout"
 				:data="chapterList"
 				:chapters="chapters"
-			></TwoPageReader>
+				:sorted-urls="sortedUrls"
+				:toggle-fullscreen="toggleFullscreen"
+			/>
 			<!-- 单页 上下滚动 -->
 			<OnePageReader
 				v-if="!pageLayout && !scrollDirection"
 				:data="chapterList"
 				:chapters="chapters"
-			></OnePageReader>
+				:sorted-urls="sortedUrls"
+				:is-first-chapter="isFirstChapter"
+				:is-last-chapter="isLastChapter"
+				:go-to-prev-chapter="goToPrevChapter"
+				:go-to-next-chapter="goToNextChapter"
+				:toggle-fullscreen="toggleFullscreen"
+			/>
 			<!-- 单页 左右滚动 -->
 			<SinglePageReader
 				v-if="!pageLayout && scrollDirection"
 				:data="chapterList"
 				:chapters="chapters"
-			></SinglePageReader>
+				:sorted-urls="sortedUrls"
+				:is-first-chapter="isFirstChapter"
+				:is-last-chapter="isLastChapter"
+				:go-to-prev-chapter="goToPrevChapter"
+				:go-to-next-chapter="goToNextChapter"
+				:toggle-fullscreen="toggleFullscreen"
+			/>
 		</div>
 	</ClientOnly>
 </template>
@@ -87,6 +101,48 @@ const chapters = computed(() => {
 	return rawChapters.value.slice().sort((a, b) => a.no - b.no);
 });
 
+/** 按文件名自然排序后的图片 URL 列表（公共逻辑） */
+const sortedUrls = computed(() =>
+	sortUrlArrayByFilenameNaturalOrder([...(chapterList.value || [])]),
+);
+
+/** 当前章节在章节列表中的索引 */
+const currentChapterIndex = computed(() =>
+	chapters.value.findIndex((c) => c.id === chapterId.value),
+);
+
+/** 是否为第一章（公共逻辑） */
+const isFirstChapter = computed(() => currentChapterIndex.value === 0);
+
+/** 是否为最后一章（公共逻辑） */
+const isLastChapter = computed(
+	() => currentChapterIndex.value === chapters.value.length - 1,
+);
+
+/** 跳转到上一章（公共逻辑） */
+function goToPrevChapter() {
+	if (currentChapterIndex.value <= 0) return;
+	const prevChapter = chapters.value[currentChapterIndex.value - 1];
+	navigateTo(`/manga/chapter/${prevChapter.id}`);
+}
+
+/** 跳转到下一章（公共逻辑） */
+function goToNextChapter() {
+	if (currentChapterIndex.value < 0 || currentChapterIndex.value >= chapters.value.length - 1)
+		return;
+	const nextChapter = chapters.value[currentChapterIndex.value + 1];
+	navigateTo(`/manga/chapter/${nextChapter.id}`);
+}
+
+/** 切换全屏（公共逻辑） */
+function toggleFullscreen() {
+	if (!document.fullscreenElement) {
+		document.documentElement.requestFullscreen();
+	} else if (document.exitFullscreen) {
+		document.exitFullscreen();
+	}
+}
+
 const isNavbarVisible = inject('isNavbarVisible') as Ref<boolean>;
 onMounted(() => {
 	//加载时默认为false
@@ -109,6 +165,15 @@ const { pageLayout, scrollDirection, readingMode } = storeToRefs(settingsStore);
 provide('pageLayout', pageLayout);
 provide('scrollDirection', scrollDirection);
 provide('readingMode', readingMode);
+
+/** 双页模式时强制锁定为左右滚动（公共逻辑） */
+watch(
+	pageLayout,
+	(newVal) => {
+		if (newVal === true) scrollDirection.value = true;
+	},
+	{ immediate: true },
+);
 
 // 动态设置页面标题
 const currentChapter = ref<WorkDetailChapterItem | null>(null);

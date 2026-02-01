@@ -59,120 +59,20 @@
 			</v-lazy>
 		</v-sheet>
 
-		<!-- 遮罩 -->
-		<v-overlay v-model="sheet" z-index="100" scroll-strategy="none"></v-overlay>
-		<!-- 底部工作区 -->
-		<div
-			v-show="sheet"
-			:class="{ 'my-bottom-sheet-active': sheet }"
-			class="my-bottom-sheet d-flex flex-column justify-center align-center pa-2"
+		<MangaReaderBottomSheet
+			v-model="sheet"
+			:chapters="propsList.chapters"
+			:is-first-chapter="propsList.isFirstChapter"
+			:is-last-chapter="propsList.isLastChapter"
+			:go-to-prev-chapter="propsList.goToPrevChapter"
+			:go-to-next-chapter="propsList.goToNextChapter"
+			:toggle-fullscreen="propsList.toggleFullscreen"
+			:show-chapter-nav="true"
+			:show-mobile-bar="true"
+			content-width="80%"
+			content-width-mobile="45vh"
 		>
-			<v-sheet
-				v-if="!isSelectActive"
-				class="rounded-xl d-flex justify-center align-center"
-				style="background-color: transparent"
-				elevation="0"
-			>
-				<div
-					style="background-color: black"
-					class="my-menu rounded-xl pa-2 d-flex justify-center align-center"
-				>
-					<v-menu transition="slide-x-transition">
-						<template #activator="{ props }">
-							<v-btn v-bind="props" stacked prepend-icon="mdi-cog-outline" flat>
-								阅读设置
-							</v-btn>
-						</template>
-						<v-list>
-							<v-list-item title="页面设置">
-								<v-tabs v-model="pageLayout" color="#32AAFF">
-									<v-tab :value="false">单页</v-tab>
-									<!-- 手机端禁用双页 -->
-									<v-tab :value="true" :disabled="isMobile">双页</v-tab>
-								</v-tabs>
-							</v-list-item>
-							<v-list-item v-model="scrollDirection" title="阅读模式">
-								<v-tabs v-model="scrollDirection" color="#32AAFF">
-									<v-tab :value="false">上下滚动</v-tab>
-									<v-tab :value="true">左右滚动</v-tab>
-								</v-tabs>
-							</v-list-item>
-							<v-list-item title="翻页方向">
-								<v-tabs v-model="readingMode" color="#32AAFF">
-									<!-- 单页模式并且为上下滚动时候禁用 -->
-									<v-tab
-										:value="false"
-										:disabled="!pageLayout && !scrollDirection"
-										>普通模式</v-tab
-									>
-									<v-tab
-										:value="true"
-										:disabled="!pageLayout && !scrollDirection"
-										>日漫模式</v-tab
-									>
-								</v-tabs>
-							</v-list-item>
-						</v-list>
-					</v-menu>
-
-					<v-btn
-						stacked
-						prepend-icon="mdi-fullscreen"
-						flat
-						@click="toggleFullscreen"
-						>全屏</v-btn
-					>
-				</div>
-			</v-sheet>
-
-			<v-sheet
-				class="justify-space-between d-flex justify-center align-center rounded-xl mt-4 mb-4"
-				:style="{ width: !isMobile ? '80%' : '45vh' }"
-			>
-				<div class="d-flex justify-space-between align-center w-100">
-					<v-btn
-						elevation="0"
-						prepend-icon="mdi-chevron-left"
-						variant="text"
-						:disabled="isFirst"
-						@click="goToPrevChapter"
-						>上一章</v-btn
-					>
-
-					<v-select
-						class="pa-2"
-						label="选择章节"
-						variant="underlined"
-						:items="chapters"
-						item-value="chapterNumber"
-						@focus="isSelectActive = true"
-						@blur="isSelectActive = false"
-					>
-						<template #item="{ props, item }">
-							<v-list-item
-								v-bind="props"
-								:to="`/manga/chapter/${item.raw.id}`"
-								:title="`${item.raw.title}`"
-							></v-list-item>
-						</template>
-					</v-select>
-
-					<v-btn
-						elevation="0"
-						append-icon="mdi-chevron-right"
-						variant="text"
-						:disabled="isLast"
-						@click="goToNextChapter"
-						>下一章</v-btn
-					>
-				</div>
-			</v-sheet>
-
-			<v-sheet
-				v-if="!isSelectActive"
-				class="justify-space-between d-flex justify-center align-center rounded-xl mt-4 mb-4"
-				:style="{ width: !isMobile ? '80%' : '45vh' }"
-			>
+			<template #pageSlider>
 				<v-slider
 					v-model="currentIndex"
 					class="mt-6 w-100"
@@ -187,64 +87,32 @@
 					<template #prepend>
 						<div class="me-2 text-h6">
 							{{ currentIndex + 1 }}/{{ chapterLength }}
-						</div></template
-					>
+						</div>
+					</template>
 					<template #thumb-label>
 						{{ currentIndex + 1 }}
 					</template>
 				</v-slider>
-			</v-sheet>
-		</div>
-
-		<v-sheet
-			v-if="isMobile"
-			class="justify-space-between d-flex justify-center align-center w-100"
-		>
-			<div class="d-flex justify-space-between align-center w-100">
-				<v-btn to="/manga" prepend-icon="mdi-home" stacked>首页</v-btn>
-				<v-btn
-					elevation="0"
-					prepend-icon="mdi-chevron-left"
-					variant="text"
-					:disabled="isFirst"
-					@click="goToPrevChapter"
-					>上一章</v-btn
-				>
-
-				<v-select
-					class="pa-2"
-					label="选择章节"
-					variant="underlined"
-					:items="chapters"
-					item-value="chapterNumber"
-					@focus="isSelectActive = true"
-					@blur="isSelectActive = false"
-				>
-					<template #item="{ props, item }">
-						<v-list-item
-							v-bind="props"
-							:to="`/manga/chapter/${item.raw.id}`"
-							:title="`${item.raw.title}`"
-						></v-list-item>
-					</template>
-				</v-select>
-
-				<v-btn
-					elevation="0"
-					append-icon="mdi-chevron-right"
-					variant="text"
-					:disabled="isLast"
-					@click="goToNextChapter"
-					>下一章</v-btn
-				>
-			</div>
-		</v-sheet>
+			</template>
+		</MangaReaderBottomSheet>
 	</v-container>
 </template>
 
 <script setup lang="ts">
+import type { PropType } from 'vue';
 import type { WorkDetailChapterItem } from '~/shared/dto/web/work';
 
+/**
+ * Props
+ * @prop data - 当前章节的图片 URL 列表
+ * @prop chapters - 章节列表
+ * @prop sortedUrls - 按文件名自然排序后的图片 URL 列表（由父组件提供）
+ * @prop isFirstChapter - 是否为第一章（由父组件提供）
+ * @prop isLastChapter - 是否为最后一章（由父组件提供）
+ * @prop goToPrevChapter - 跳转到上一章的方法（由父组件提供）
+ * @prop goToNextChapter - 跳转到下一章的方法（由父组件提供）
+ * @prop toggleFullscreen - 切换全屏的方法（由父组件提供）
+ */
 const propsList = defineProps({
 	data: {
 		type: Array as () => string[],
@@ -254,57 +122,53 @@ const propsList = defineProps({
 		type: Array as () => WorkDetailChapterItem[],
 		required: true,
 	},
+	sortedUrls: {
+		type: Array as () => string[],
+		default: () => [],
+	},
+	isFirstChapter: {
+		type: Boolean,
+		default: true,
+	},
+	isLastChapter: {
+		type: Boolean,
+		default: false,
+	},
+	goToPrevChapter: {
+		type: Function as PropType<() => void>,
+		default: undefined,
+	},
+	goToNextChapter: {
+		type: Function as PropType<() => void>,
+		default: undefined,
+	},
+	toggleFullscreen: {
+		type: Function as PropType<() => void>,
+		default: undefined,
+	},
 });
+
+/** 此组件不对外 emit 事件 */
+/** 此组件不对外暴露 slot */
 
 const { isMobile } = useDevice();
 
-const pageLayout = inject('pageLayout') as Ref<boolean>;
-const scrollDirection = inject('scrollDirection') as Ref<boolean>;
-const readingMode = inject('readingMode') as Ref<boolean>;
-const isNavbarVisible = inject('isNavbarVisible') as Ref<boolean>;
 
 const chapterLength = computed(() => propsList.data?.length || 0);
 
 const sheet = ref(false);
-const isFullscreen = ref(false);
 const currentIndex = ref(0);
 const sheetRefs = ref<Element[]>([]);
 const goTo = useGoTo();
 const isUserSliding = ref(false);
-const isSelectActive = ref(false);
+/** 使用父组件传入的 sortedUrls，若无则回退到本地计算 */
 const sortedUrls = computed(() =>
-	sortUrlArrayByFilenameNaturalOrder(propsList.data),
+	(propsList.sortedUrls?.length ?? 0) > 0
+		? propsList.sortedUrls
+		: sortUrlArrayByFilenameNaturalOrder(propsList.data),
 );
 
-// 获取当前章节ID
-const route = useRoute();
-const currentChapterId = computed(() => Number(route.params.id));
-
-// 计算是否是第一章
-const isFirst = computed(() => {
-	const currentChapterIndex = propsList.chapters.findIndex(
-		(chapter) => chapter.id === currentChapterId.value,
-	);
-	return currentChapterIndex === 0;
-});
-
-// 计算是否是最后一章
-const isLast = computed(() => {
-	const currentChapterIndex = propsList.chapters.findIndex(
-		(chapter) => chapter.id === currentChapterId.value,
-	);
-	return currentChapterIndex === propsList.chapters.length - 1;
-});
-
-function toggleFullscreen() {
-	if (!document.fullscreenElement) {
-		document.documentElement.requestFullscreen();
-		isFullscreen.value = true;
-	} else if (document.exitFullscreen) {
-		document.exitFullscreen();
-		isFullscreen.value = false;
-	}
-}
+// isFirst、isLast、goToPrevChapter、goToNextChapter、toggleFullscreen 由父组件通过 props 提供
 
 // 初始化交叉观察器
 let observer: IntersectionObserver | null = null;
@@ -408,99 +272,13 @@ watch(currentIndex, (newIndex) => {
 	}
 });
 
-//如果是单页模式且上下滚动，则禁用
-watch(
-	() => pageLayout.value,
-	(newVal) => {
-		if (newVal === true) {
-			scrollDirection.value = true;
-		}
-	},
-	{ immediate: true },
-);
+// 双页模式锁定逻辑已移至父组件
+// sheet 与 isNavbarVisible 的同步已移至 MangaReaderBottomSheet
 
-watch(
-	sheet,
-	(newVal) => {
-		if (isNavbarVisible) {
-			isNavbarVisible.value = newVal;
-		}
-	},
-	{ immediate: true },
-);
-
-// 获取下一章
-const goToNextChapter = () => {
-	const route = useRoute();
-	const currentChapterId = Number(route.params.id);
-
-	// 找到当前章节在章节列表中的索引
-	const currentChapterIndex = propsList.chapters.findIndex(
-		(chapter) => chapter.id === currentChapterId,
-	);
-
-	if (currentChapterIndex === -1) {
-		console.error('当前章节未找到');
-		return;
-	}
-
-	// 检查是否有下一章
-	if (currentChapterIndex < propsList.chapters.length - 1) {
-		const nextChapter = propsList.chapters[currentChapterIndex + 1];
-		navigateTo(`/manga/chapter/${nextChapter.id}`);
-	} else {
-		// 已经是最后一章，提示用户
-		console.log('已经是最后一章了');
-		// 这里可以添加用户提示，比如使用 toast 消息
-	}
-};
-
-// 获取上一章
-const goToPrevChapter = () => {
-	const route = useRoute();
-	const currentChapterId = Number(route.params.id);
-
-	// 找到当前章节在章节列表中的索引
-	const currentChapterIndex = propsList.chapters.findIndex(
-		(chapter) => chapter.id === currentChapterId,
-	);
-
-	if (currentChapterIndex === -1) {
-		console.error('当前章节未找到');
-		return;
-	}
-
-	// 检查是否有上一章
-	if (currentChapterIndex > 0) {
-		const prevChapter = propsList.chapters[currentChapterIndex - 1];
-		navigateTo(`/manga/chapter/${prevChapter.id}`);
-	} else {
-		// 已经是第一章，提示用户
-		console.log('已经是第一章了');
-		// 这里可以添加用户提示，比如使用 toast 消息
-	}
-};
 </script>
 
 <style scoped>
 .container {
 	background-color: white !important;
-}
-.my-menu .v-btn {
-	background-color: transparent;
-}
-
-.my-bottom-sheet {
-	position: fixed;
-	bottom: -400px;
-	left: 50%;
-	transform: translateX(-50%);
-	width: 50%;
-	z-index: 1000;
-	transition: bottom 0.3s ease-out;
-}
-
-.my-bottom-sheet-active {
-	bottom: 10px;
 }
 </style>
