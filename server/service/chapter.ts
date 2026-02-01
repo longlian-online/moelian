@@ -20,6 +20,7 @@ import { ContentType, ResourceType } from '../lib/prisma';
 import { getDirAllObjectURLs } from './cos';
 import { getResourceById, getResourceByKey } from '../repository/resource';
 import type { WorkContentRes } from '~/shared/dto/web/work';
+import { objectify } from 'radash';
 
 export type ListForAdminInput = dao.ListForAdminInput;
 export const listForAdmin = async (params: ListForAdminInput) => {
@@ -241,10 +242,11 @@ export const getContentByID = async (id: Chapter['id'], baseURL: string) => {
 			break;
 		}
 		case 'Novel': {
+			const content = await getNovelContent(chapter, baseURL);
 			res = {
 				type: ResourceType.Novel,
 				novel: {
-					url: await getNovelContent(chapter.content_id, baseURL),
+					...content,
 				},
 				chapters: [],
 			};
@@ -262,7 +264,19 @@ export const getContentByID = async (id: Chapter['id'], baseURL: string) => {
 };
 
 const getMangaContent = async (resourceID: number | null) => {
-	let key = getDefaultResourceKeyByType(ResourceType.ExtractManga);
+	return getDirResourceWithDefault(resourceID, ResourceType.ExtractManga);
+};
+
+/**
+ * 获取文件夹类型资源的所有文件链接，当该资源在数据库中无法获取时，返回默认的文件地址列表
+ * @param resourceID 资源ID
+ * @param resourceType 资源类型（用于在无法获取到资源的地址时返回默认文件地址列表）
+ */
+const getDirResourceWithDefault = async (
+	resourceID: number | null,
+	resourceType: ResourceType,
+) => {
+	let key = getDefaultResourceKeyByType(resourceType);
 
 	if (resourceID) {
 		const resource = await getResourceById(resourceID, Status.Enable);
@@ -270,13 +284,41 @@ const getMangaContent = async (resourceID: number | null) => {
 			key = resource.key;
 		}
 	}
-	const urls = await getDirAllObjectURLs(key);
-	return urls;
+
+	return await getDirAllObjectURLs(key);
 };
 
-const getNovelContent = async (resourceID: number | null, baseUrl: string) => {
-	const url = getResourceURLByID(resourceID, baseUrl, ResourceType.Novel);
-	return url;
+/**
+ * 获取小说内容链接
+ * 存在两种小说内容的存储类型
+ * 1. 旧版存储方式（仅一个DOCX文件）
+ * 2. 新版存储方式（资源指向一个文件夹，文件夹下存在一个 index.json 和 相关资源）
+ * 新版存储方式的小说将返回一个 record，键为文件名，值为文件地址
+ * @param novel
+ * @param baseUrl
+ */
+const getNovelContent = async (novel: Chapter, baseUrl: string) => {
+	if (novel.product_id) {
+		const urls = await getDirResourceWithDefault(
+			novel.product_id,
+			ResourceType.ExtractNovel,
+		);
+
+		return {
+			urlMap: objectify(urls, (url) => {
+				return url.split('/').pop()!;
+			}),
+		};
+	}
+	if (novel.content_id) {
+		return {
+			url: await getResourceURLByID(
+				novel.content_id,
+				baseUrl,
+				ResourceType.Novel,
+			),
+		};
+	}
 };
 
 export const workHasChapter = async (workID: number) => {
