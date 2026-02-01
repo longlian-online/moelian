@@ -1,59 +1,79 @@
 <template>
 	<div :key="String($route.params.tagId)" class="classify-result-page">
 		<div class="main-container">
-			<!-- 三合一筛选导航栏 -->
-			<nav class="filter-bar">
-				<!-- 1. 类型筛选 -->
-				<div class="filter-group">
-					<div class="flex flex-col flex-grow">
-						<span class="filter-label mb-1">内容类型</span>
-						<v-select
-							v-model="contentType"
-							clearable
-							:items="[
-								{ title: '漫画 & 小说', value: null },
-								{ title: '漫画', value: 'Manga' },
-								{ title: '小说', value: 'Novel' },
-							]"
-							variant="solo"
-							hide-details
-							@update:model-value="handleContentTypeChange"
-						></v-select>
+			<!-- 三合一筛选导航栏：依赖异步标签数据，用 ClientOnly 避免 SSR 水合不匹配 -->
+			<ClientOnly>
+				<nav class="filter-bar">
+					<!-- 1. 类型筛选 -->
+					<div class="filter-group">
+						<div class="flex flex-col flex-grow">
+							<span class="filter-label mb-1">内容类型</span>
+							<v-select
+								v-model="contentType"
+								clearable
+								:items="[
+									{ title: '漫画 & 小说', value: null },
+									{ title: '漫画', value: 'Manga' },
+									{ title: '小说', value: 'Novel' },
+								]"
+								variant="solo"
+								hide-details
+								@update:model-value="handleContentTypeChange"
+							></v-select>
+						</div>
 					</div>
-				</div>
 
-				<!-- 2. 分类跳转 -->
-				<div class="filter-group">
-					<div class="flex flex-col flex-grow">
-						<span class="filter-label mb-1">标签列表</span>
-						<v-select
-							v-model="selectedCategoryId"
-							clearable
-							:items="categorySelectItems"
-							variant="solo"
-							hide-details
-							@update:model-value="handleCategoryChange"
-						></v-select>
+					<!-- 2. 分类跳转 -->
+					<div class="filter-group">
+						<div class="flex flex-col flex-grow">
+							<span class="filter-label mb-1">标签列表</span>
+							<v-select
+								v-model="selectedCategoryId"
+								clearable
+								:items="categorySelectItems"
+								item-value="value"
+								item-title="title"
+								variant="solo"
+								hide-details
+								@update:model-value="handleCategoryChange"
+							></v-select>
+						</div>
 					</div>
-				</div>
 
-				<!-- 3. 多选筛选 (缩小范围) -->
-				<div class="filter-group">
-					<div class="flex flex-col flex-grow">
-						<span class="filter-label mb-1">标签筛选</span>
-						<v-select
-							v-model="selectedTags"
-							clearable
-							chips
-							:items="availableTags"
-							multiple
-							variant="solo"
-							hide-details
-							@update:model-value="refreshWorkList"
-						></v-select>
+					<!-- 3. 多选筛选 (缩小范围) -->
+					<div class="filter-group">
+						<div class="flex flex-col flex-grow">
+							<span class="filter-label mb-1">标签筛选</span>
+							<v-select
+								v-model="selectedTags"
+								clearable
+								chips
+								:items="availableTags"
+								multiple
+								variant="solo"
+								hide-details
+								@update:model-value="refreshWorkList"
+							></v-select>
+						</div>
 					</div>
-				</div>
-			</nav>
+				</nav>
+				<template #fallback>
+					<nav class="filter-bar">
+						<div class="filter-group">
+							<span class="filter-label mb-1">内容类型</span>
+							<v-skeleton-loader type="text" />
+						</div>
+						<div class="filter-group">
+							<span class="filter-label mb-1">标签列表</span>
+							<v-skeleton-loader type="text" />
+						</div>
+						<div class="filter-group">
+							<span class="filter-label mb-1">标签筛选</span>
+							<v-skeleton-loader type="text" />
+						</div>
+					</nav>
+				</template>
+			</ClientOnly>
 
 			<!-- 作品网格 -->
 			<ClientOnly>
