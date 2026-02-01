@@ -8,7 +8,6 @@ import {
 	updateChapterFormConsumer,
 	deleteChapterFromConsumer,
 	getContentByID,
-	mangaExtractHandler,
 } from '~/server/service/chapter';
 import * as dao from '~/server/repository/chapter';
 import * as workRepo from '~/server/repository/work';
@@ -238,7 +237,7 @@ describe('章节服务', () => {
 			const p = mangaExtractHandler('test');
 
 			await expect(p).rejects.toThrowError();
-			expect(dao.mangaExtractCompleted).not.toHaveBeenCalled();
+			expect(dao.contentExtractCompleted).not.toHaveBeenCalled();
 		});
 	});
 
