@@ -8,6 +8,7 @@ import {
 	updateChapterFormConsumer,
 	deleteChapterFromConsumer,
 	getContentByID,
+	contentExtractHandler,
 } from '~/server/service/chapter';
 import * as dao from '~/server/repository/chapter';
 import * as workRepo from '~/server/repository/work';
@@ -234,7 +235,7 @@ describe('章节服务', () => {
 		test('章节不存在，处理失败', async () => {
 			vi.mocked(dao.getChapterByBizID).mockResolvedValue(null);
 
-			const p = mangaExtractHandler('test');
+			const p = contentExtractHandler('test', 'Manga');
 
 			await expect(p).rejects.toThrowError();
 			expect(dao.contentExtractCompleted).not.toHaveBeenCalled();
