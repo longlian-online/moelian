@@ -3,6 +3,7 @@ import type { Prisma, Resource, Work, ContentType } from '_db';
 import { Status } from '_db';
 import dayjs from 'dayjs';
 import { pagination } from '~/server/utils/db';
+import type { SortType } from '#shared/dto/web/work';
 
 export type CreateWorkInput = Omit<
 	Work,
@@ -202,6 +203,7 @@ export type ListForWebInput = {
 	page: PageRequestSchema;
 	key?: string;
 	tags?: string[];
+	sortType?: SortType;
 };
 export const listForWeb = async (params: ListForWebInput) => {
 	const where: Prisma.WorkWhereInput = {
@@ -234,6 +236,10 @@ export const listForWeb = async (params: ListForWebInput) => {
 			},
 		}));
 	}
+	const sortType = params.sortType || 'UPDATE'; // 默认最新更新
+	const orderBy = {
+		[sortType === 'UPDATE' ? 'updated_at' : 'created_at']: 'desc',
+	};
 	const [list, total] = await Promise.all([
 		useDB().work.findMany({
 			include: {
@@ -248,7 +254,7 @@ export const listForWeb = async (params: ListForWebInput) => {
 				},
 			},
 			where,
-			orderBy: { id: 'desc' },
+			orderBy,
 			...pagination(params.page),
 		}),
 		useDB().work.count({ where }),
