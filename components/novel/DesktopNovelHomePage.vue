@@ -35,7 +35,7 @@
 							:spine-width="25"
 							:show-title="false"
 							:show-spine-text="false"
-							@click.stop
+							@click.stop="gotoNovalId(card.id)"
 						>
 							<template #overlay>
 								<!-- 左上角分类标签 -->

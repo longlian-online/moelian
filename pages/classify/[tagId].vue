@@ -102,6 +102,7 @@
 								:spine-width="30"
 								:show-title="false"
 								:show-spine-text="false"
+								@click.stop="handleWorkClick(work)"
 							>
 								<template #overlay>
 									<AnimeTags

@@ -20,6 +20,7 @@
 								:spine-width="50"
 								:show-title="false"
 								:show-spine-text="true"
+								@click="handleCoverClick"
 							>
 								<template #overlay>
 									<AnimeTags
@@ -445,6 +446,13 @@ const { data: recommendationsData } = await useAsyncData<WorkListRes['list']>(
 		watch: [workId],
 	},
 );
+
+function handleCoverClick() {
+	const firstChapterId = sortedChapterList.value[0]?.id;
+	if (firstChapterId) {
+		router.push(`/${props.contentType}/chapter/${firstChapterId}`);
+	}
+}
 
 useHead({
 	title: `${workDetail.title || '作品详情'}`,
