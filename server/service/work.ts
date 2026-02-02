@@ -224,3 +224,18 @@ export const updateWorkTags = async (workId: number, tagIds: number[]) => {
 		await dao.batchBindWorkTags(workId, tagIds, tx);
 	});
 };
+type RecommendByTagsInput = dao.RecommendByTagsInput;
+export const recommendWorks = async (input: RecommendByTagsInput) => {
+	const list = await dao.recommendByTags(input);
+	if (!list.length) return [];
+	const workIDs = list.map((item) => item.id);
+	const chapters = await listLastChapterByWorkIDs(workIDs);
+	return list.map((item) => {
+		const chapter = chapters.find((c) => c.work_id === item.id);
+		return {
+			...item,
+			lastNo: chapter?.no ?? null,
+			chapterUpdatedAt: chapter?.created_at ?? null,
+		};
+	});
+};

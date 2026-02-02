@@ -72,3 +72,8 @@ export type WorkContentRes = {
 };
 
 export type WorkListReq = z.infer<typeof WorkListReq>;
+
+export const RecommendReq = z.object({
+	id: z.coerce.number(),
+	limit: z.coerce.number().optional().default(4),
+});
