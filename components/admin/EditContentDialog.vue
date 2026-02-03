@@ -113,7 +113,7 @@
 								no-data-text="没有可用的标签"
 								placeholder="选择已有标签"
 							>
-								<template v-slot:chip="{ props: chipProps, item }">
+								<template #chip="{ props: chipProps, item }">
 									<v-chip v-bind="chipProps" color="primary" variant="tonal">
 										<strong>{{ item.raw }}</strong>
 									</v-chip>
@@ -254,7 +254,6 @@ const tagStore = useTagStore();
 const allTagItems = computed(() => tagStore.allTagNames);
 const tagNameToIdMap = computed(() => tagStore.tagNameToIdMap);
 
-
 // 选中的标签名称
 const selectedTagNames = ref<string[]>([]);
 
@@ -333,12 +332,15 @@ const confirmSave = async () => {
 					.map((name) => tagNameToIdMap.value.get(name))
 					.filter((id): id is number => id !== undefined);
 
-				const { error } = await useApiFetch(`/api/admin/work/${original.id}/tags`, {
-					method: 'PATCH',
-					body: {
-						tag_ids: tagIds,
+				const { error } = await useApiFetch(
+					`/api/admin/work/${original.id}/tags`,
+					{
+						method: 'PATCH',
+						body: {
+							tag_ids: tagIds,
+						},
 					},
-				});
+				);
 
 				if (error.value) {
 					return;

@@ -1,119 +1,117 @@
 <template>
 	<v-overlay v-model="sheetModel" z-index="100" scroll-strategy="none" />
 	<div
-			v-show="sheetModel"
-			:class="{ 'manga-reader-bottom-sheet-active': sheetModel }"
-			class="manga-reader-bottom-sheet d-flex flex-column justify-center align-center pa-2"
+		v-show="sheetModel"
+		:class="{ 'manga-reader-bottom-sheet-active': sheetModel }"
+		class="manga-reader-bottom-sheet d-flex flex-column justify-center align-center pa-2"
+	>
+		<!-- 阅读设置 + 全屏 -->
+		<v-sheet
+			v-if="!isSelectActive"
+			class="rounded-xl d-flex justify-center align-center"
+			style="background-color: transparent"
+			elevation="0"
 		>
-			<!-- 阅读设置 + 全屏 -->
-			<v-sheet
-				v-if="!isSelectActive"
-				class="rounded-xl d-flex justify-center align-center"
-				style="background-color: transparent"
-				elevation="0"
+			<div
+				style="background-color: black"
+				class="manga-reader-menu rounded-xl pa-2 d-flex justify-center align-center"
 			>
-				<div
-					style="background-color: black"
-					class="manga-reader-menu rounded-xl pa-2 d-flex justify-center align-center"
+				<v-menu transition="slide-x-transition">
+					<template #activator="{ props }">
+						<v-btn v-bind="props" stacked prepend-icon="mdi-cog-outline" flat>
+							阅读设置
+						</v-btn>
+					</template>
+					<v-list>
+						<v-list-item title="页面设置">
+							<v-tabs v-model="pageLayout" color="#32AAFF">
+								<v-tab :value="false">单页</v-tab>
+								<v-tab :value="true" :disabled="isMobile">双页</v-tab>
+							</v-tabs>
+						</v-list-item>
+						<v-list-item v-model="scrollDirection" title="阅读模式">
+							<v-tabs v-model="scrollDirection" color="#32AAFF">
+								<v-tab :value="false" :disabled="pageLayout">上下滚动</v-tab>
+								<v-tab :value="true">左右滚动</v-tab>
+							</v-tabs>
+						</v-list-item>
+						<v-list-item title="翻页方向">
+							<v-tabs v-model="readingMode" color="#32AAFF">
+								<v-tab
+									:value="false"
+									:disabled="!pageLayout && !scrollDirection"
+									>普通模式</v-tab
+								>
+								<v-tab :value="true" :disabled="!pageLayout && !scrollDirection"
+									>日漫模式</v-tab
+								>
+							</v-tabs>
+						</v-list-item>
+					</v-list>
+				</v-menu>
+				<v-btn
+					stacked
+					prepend-icon="mdi-fullscreen"
+					flat
+					@click="toggleFullscreen?.()"
+					>全屏</v-btn
 				>
-					<v-menu transition="slide-x-transition">
-						<template #activator="{ props }">
-							<v-btn v-bind="props" stacked prepend-icon="mdi-cog-outline" flat>
-								阅读设置
-							</v-btn>
-						</template>
-						<v-list>
-							<v-list-item title="页面设置">
-								<v-tabs v-model="pageLayout" color="#32AAFF">
-									<v-tab :value="false">单页</v-tab>
-									<v-tab :value="true" :disabled="isMobile">双页</v-tab>
-								</v-tabs>
-							</v-list-item>
-							<v-list-item v-model="scrollDirection" title="阅读模式">
-								<v-tabs v-model="scrollDirection" color="#32AAFF">
-									<v-tab :value="false" :disabled="pageLayout">上下滚动</v-tab>
-									<v-tab :value="true">左右滚动</v-tab>
-								</v-tabs>
-							</v-list-item>
-							<v-list-item title="翻页方向">
-								<v-tabs v-model="readingMode" color="#32AAFF">
-									<v-tab
-										:value="false"
-										:disabled="!pageLayout && !scrollDirection"
-										>普通模式</v-tab
-									>
-									<v-tab
-										:value="true"
-										:disabled="!pageLayout && !scrollDirection"
-										>日漫模式</v-tab
-									>
-								</v-tabs>
-							</v-list-item>
-						</v-list>
-					</v-menu>
-					<v-btn
-						stacked
-						prepend-icon="mdi-fullscreen"
-						flat
-						@click="toggleFullscreen?.()"
-						>全屏</v-btn
-					>
-				</div>
-			</v-sheet>
+			</div>
+		</v-sheet>
 
-			<!-- 章节选择 -->
-			<v-sheet
-				class="justify-space-between d-flex justify-center align-center rounded-xl mt-4 mb-4"
-				:style="{ width: contentWidthStyle }"
-			>
-				<div class="d-flex justify-space-between align-center w-100">
-					<v-btn
-						v-if="showChapterNav"
-						elevation="0"
-						prepend-icon="mdi-chevron-left"
-						variant="text"
-						:disabled="isFirstChapter"
-						@click="goToPrevChapter?.()"
-						>上一章</v-btn
-					>
-					<v-select
-						:class="showChapterNav ? 'pa-2' : 'pa-2 flex-grow-1'"
-						label="选择章节"
-						variant="underlined"
-						:items="chapters"
-						item-value="chapterNumber"
-						@focus="isSelectActive = true"
-						@blur="isSelectActive = false"
-					>
-						<template #item="{ props: itemProps, item }">
-							<v-list-item
-								v-bind="itemProps"
-								:to="`/manga/chapter/${item.raw.id}`"
-								:title="`${item.raw.title}`"
-							/>
-						</template>
-					</v-select>
-					<v-btn
-						v-if="showChapterNav"
-						elevation="0"
-						append-icon="mdi-chevron-right"
-						variant="text"
-						:disabled="isLastChapter"
-						@click="goToNextChapter?.()"
-						>下一章</v-btn
-					>
-				</div>
-			</v-sheet>
+		<!-- 章节选择 -->
+		<v-sheet
+			class="justify-space-between d-flex justify-center align-center rounded-xl mt-4 mb-4"
+			:style="{ width: contentWidthStyle }"
+		>
+			<div class="d-flex justify-space-between align-center w-100">
+				<v-btn
+					v-if="showChapterNav"
+					elevation="0"
+					prepend-icon="mdi-chevron-left"
+					variant="text"
+					:disabled="isFirstChapter"
+					@click="goToPrevChapter?.()"
+					>上一章</v-btn
+				>
+				<v-select
+					:class="showChapterNav ? 'pa-2' : 'pa-2 flex-grow-1'"
+					label="选择章节"
+					variant="underlined"
+					:items="chapters"
+					item-value="chapterNumber"
+					@focus="isSelectActive = true"
+					@blur="isSelectActive = false"
+				>
+					<template #item="{ props: itemProps, item }">
+						<v-list-item
+							v-bind="itemProps"
+							:to="`/manga/chapter/${item.raw.id}`"
+							:title="`${item.raw.title}`"
+						/>
+					</template>
+				</v-select>
+				<v-btn
+					v-if="showChapterNav"
+					elevation="0"
+					append-icon="mdi-chevron-right"
+					variant="text"
+					:disabled="isLastChapter"
+					@click="goToNextChapter?.()"
+					>下一章</v-btn
+				>
+			</div>
+		</v-sheet>
 
-			<!-- 页码滑块（由父组件通过 slot 传入，各模式不同） -->
-			<v-sheet
-				v-if="!isSelectActive && $slots.pageSlider"
-				class="justify-space-between d-flex justify-center align-center rounded-xl mt-4 mb-4"
-				:style="{ width: contentWidthStyle }"
-			>
-				<slot name="pageSlider" />
-			</v-sheet>
-		</div>
+		<!-- 页码滑块（由父组件通过 slot 传入，各模式不同） -->
+		<v-sheet
+			v-if="!isSelectActive && $slots.pageSlider"
+			class="justify-space-between d-flex justify-center align-center rounded-xl mt-4 mb-4"
+			:style="{ width: contentWidthStyle }"
+		>
+			<slot name="pageSlider" />
+		</v-sheet>
+	</div>
 
 	<!-- 移动端底部导航栏 -->
 	<v-sheet
