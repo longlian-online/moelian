@@ -346,3 +346,64 @@ export const batchBindWorkTags = async (
 		skipDuplicates: true,
 	});
 };
+
+export type RecommendByTagsInput = {
+	workId: number;
+	limit: number;
+};
+export const recommendByTags = async ({
+	workId,
+	limit,
+}: RecommendByTagsInput) => {
+	const db = useDB();
+	const tags = await db.workTags.findMany({
+		where: {
+			work_id: workId,
+		},
+		select: {
+			tag_id: true,
+		},
+	});
+	if (!tags.length) return [];
+	const tagIds = tags.map((t) => t.tag_id);
+	//按标签重合度统计作品
+	const similarWorks = await db.workTags.groupBy({
+		by: ['work_id'],
+		where: {
+			tag_id: { in: tagIds },
+			work_id: { not: workId },
+			work: {
+				deleted_at: null,
+				status: Status.Enable,
+			},
+		},
+		_count: {
+			tag_id: true,
+		},
+		orderBy: {
+			_count: {
+				tag_id: 'desc',
+			},
+		},
+		take: limit,
+	});
+	if (!similarWorks.length) return [];
+	const workIds = similarWorks.map((i) => i.work_id)
+	const orderMap = new Map(
+		similarWorks.map((item, index) => [item.work_id, index]),
+	);
+	const works = await db.work.findMany({
+		where: {
+			id: { in: workIds },
+		},
+		include: {
+			Cover: true,
+			workTags: {
+				where: { tag: { deleted_at: null } },
+				select: { tag: { select: { content: true } } },
+			},
+		},
+	});
+	works.sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0));
+	return works;
+};
