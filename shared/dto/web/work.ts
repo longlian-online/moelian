@@ -10,8 +10,9 @@ export const WorkListReq = z.object({
 		if (!val) return undefined;
 		return Array.isArray(val) ? val : [val];
 	}, z.array(z.string()).optional()),
+	sortType: z.enum(['UPDATE', 'PUBLISH']).optional().default('UPDATE'),
 });
-
+export type SortType = 'UPDATE' | 'PUBLISH';
 /**
  * lastXXX 相关字段可能为null, 因为该作品可能还没上传章节
  */
@@ -72,3 +73,8 @@ export type WorkContentRes = {
 };
 
 export type WorkListReq = z.infer<typeof WorkListReq>;
+
+export const RecommendReq = z.object({
+	id: z.coerce.number(),
+	limit: z.coerce.number().optional().default(4),
+});

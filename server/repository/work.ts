@@ -3,6 +3,7 @@ import type { Prisma, Resource, Work, ContentType } from '_db';
 import { Status } from '_db';
 import dayjs from 'dayjs';
 import { pagination } from '~/server/utils/db';
+import type { SortType } from '#shared/dto/web/work';
 
 export type CreateWorkInput = Omit<
 	Work,
@@ -202,6 +203,7 @@ export type ListForWebInput = {
 	page: PageRequestSchema;
 	key?: string;
 	tags?: string[];
+	sortType?: SortType;
 };
 export const listForWeb = async (params: ListForWebInput) => {
 	const where: Prisma.WorkWhereInput = {
@@ -234,6 +236,10 @@ export const listForWeb = async (params: ListForWebInput) => {
 			},
 		}));
 	}
+	const sortType = params.sortType || 'UPDATE'; // 默认最新更新
+	const orderBy = {
+		[sortType === 'UPDATE' ? 'updated_at' : 'created_at']: 'desc',
+	};
 	const [list, total] = await Promise.all([
 		useDB().work.findMany({
 			include: {
@@ -248,7 +254,7 @@ export const listForWeb = async (params: ListForWebInput) => {
 				},
 			},
 			where,
-			orderBy: { id: 'desc' },
+			orderBy,
 			...pagination(params.page),
 		}),
 		useDB().work.count({ where }),
@@ -339,4 +345,65 @@ export const batchBindWorkTags = async (
 		})),
 		skipDuplicates: true,
 	});
+};
+
+export type RecommendByTagsInput = {
+	workId: number;
+	limit: number;
+};
+export const recommendByTags = async ({
+	workId,
+	limit,
+}: RecommendByTagsInput) => {
+	const db = useDB();
+	const tags = await db.workTags.findMany({
+		where: {
+			work_id: workId,
+		},
+		select: {
+			tag_id: true,
+		},
+	});
+	if (!tags.length) return [];
+	const tagIds = tags.map((t) => t.tag_id);
+	//按标签重合度统计作品
+	const similarWorks = await db.workTags.groupBy({
+		by: ['work_id'],
+		where: {
+			tag_id: { in: tagIds },
+			work_id: { not: workId },
+			work: {
+				deleted_at: null,
+				status: Status.Enable,
+			},
+		},
+		_count: {
+			tag_id: true,
+		},
+		orderBy: {
+			_count: {
+				tag_id: 'desc',
+			},
+		},
+		take: limit,
+	});
+	if (!similarWorks.length) return [];
+	const workIds = similarWorks.map((i) => i.work_id)
+	const orderMap = new Map(
+		similarWorks.map((item, index) => [item.work_id, index]),
+	);
+	const works = await db.work.findMany({
+		where: {
+			id: { in: workIds },
+		},
+		include: {
+			Cover: true,
+			workTags: {
+				where: { tag: { deleted_at: null } },
+				select: { tag: { select: { content: true } } },
+			},
+		},
+	});
+	works.sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0));
+	return works;
 };
