@@ -10,9 +10,12 @@ export type ListForAdminInput = {
 	pagination: PageRequestSchema;
 };
 export type CreateTagInput = Pick<Tag, 'content'> & {
-	cover_id: Tag['cover_id'];
+	cover_id: number;
 };
-export type UpdateTagInput = Partial<Pick<Tag, 'content' | 'cover_id'>>;
+export type UpdateTagInput = Partial<Pick<Tag, 'content'>> & {
+	rawCoverID?: number;
+	cover_id: number;
+};
 
 /**
  * 标签分页列表查询
@@ -43,26 +46,55 @@ export const listForAdmin = async (params: ListForAdminInput) => {
  */
 export const create = async (data: CreateTagInput) => {
 	const now = dayjs().toDate();
-	return useDB().tag.create({
-		data: {
-			...data,
-			created_at: now,
-			updated_at: now,
-		},
-	});
+
+	const sql = [
+		useDB().tag.create({
+			data: {
+				...data,
+				created_at: now,
+				updated_at: now,
+			},
+		}),
+		useDB().resource.update({
+			where: { id: data.cover_id },
+			data: {
+				status: Status.Enable,
+			}
+		})
+	]
+
+	return useDB().$transaction(sql);
 };
 
 /**
  * 修改标签(名称/封面)
  */
 export const update = async (id: Tag['id'], data: UpdateTagInput) => {
-	return useDB().tag.update({
+	 const sql = [
+		 useDB().tag.update({
 		where: { id },
 		data: {
 			...data,
 			updated_at: dayjs().toDate(),
 		},
-	});
+	}),
+		 useDB().resource.update({
+			where: { id: data.cover_id },
+			 data: {
+				status: Status.Enable,
+			 }
+		 })
+	 ]
+	if (data.rawCoverID) {
+		sql.push(useDB().resource.update({
+			where: { id: data.rawCoverID },
+			data: {
+				status: Status.Disable,
+			}
+		}))
+	}
+
+	return useDB().$transaction(sql);
 };
 
 /**
