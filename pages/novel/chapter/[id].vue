@@ -329,7 +329,7 @@ watch(selectedChapterId, (id) => {
 
 // 排序章节（安全）
 const chapters = computed(() => {
-	return (rawChapters.value ?? []).slice().sort((a, b) => a.no - b.no);
+	return (rawChapters.value ?? []).slice();
 });
 
 // 当前章节相关计算属性
