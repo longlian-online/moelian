@@ -139,6 +139,7 @@ enum ResourceType {
   Manga
   Novel
   ExtractManga
+  ExtractNovel
 }
 
 model Resource {

@@ -5,7 +5,7 @@ import {
 import { XMLParser } from 'fast-xml-parser';
 
 /**
- * 当工作流解压漫画完成时触发
+ * 当工作流解压小说完成时触发
  * 修改章节相关的状态,并创建对应的资源记录
  */
 export default defineEventHandler(async (event) => {
@@ -16,16 +16,16 @@ export default defineEventHandler(async (event) => {
 	logger.info('xml parse', req);
 	if (
 		req.Response.WorkflowExecution.State !== 'Success' ||
-		req.Response.WorkflowExecution.WorkflowName !== '漫画解压'
+		req.Response.WorkflowExecution.WorkflowName !== '小说解压'
 	) {
-		logger.error('漫画解压回调处理失败');
+		logger.error('小说解压回调处理失败');
 		return;
 	}
 
 	const key = req.Response.WorkflowExecution.Object as string;
 
 	try {
-		await contentExtractHandler(key, 'Manga');
+		await contentExtractHandler(key, 'Novel');
 	} catch (e) {
 		logger.error(e);
 	}

@@ -2,7 +2,7 @@ import { Prisma, type Chapter, type Resource } from '_db';
 import { Status } from '_db';
 import { pick } from 'radash';
 import type { PageRequestSchema } from '#shared/dto';
-import { ResourceType, type Work } from '../lib/prisma';
+import type { ResourceType, Work } from '../lib/prisma';
 import dayjs from 'dayjs';
 
 export type CreateChapterInput = Pick<
@@ -14,7 +14,7 @@ export const create = async (data: CreateChapterInput) => {
 		data: {
 			...data,
 			status: Status.Disable,
-			priority: data.no * 10
+			priority: data.no * 10,
 		},
 	});
 };
@@ -85,14 +85,14 @@ export const listForAdmin = async (params: ListForAdminInput) => {
 		useDB().chapter.findMany({
 			where,
 			...pagination(params.pagination),
-			orderBy:[
+			orderBy: [
 				{
 					priority: 'desc',
 				},
 				{
 					id: 'desc',
-				}
-			]
+				},
+			],
 		}),
 	]);
 
@@ -109,11 +109,11 @@ export const listChapterForIndex = async (params: { workID: Work['id'] }) => {
 			status: Status.Enable,
 			deleted_at: { equals: null },
 		},
-		orderBy:[
+		orderBy: [
 			{
 				priority: 'asc',
 			},
-		]
+		],
 	});
 };
 
@@ -249,18 +249,16 @@ export const deleteChapter = async (
 	return useDB().$transaction(sql);
 };
 
-/**
- * 漫画解压完成
- * 创建对应的 Resource 并关联到 Chapter
- */
-export const mangaExtractCompleted = async (
+export const contentExtractCompleted = async (
 	id: Chapter['id'],
 	data: { key: string },
+	type: ResourceType,
+	oldProductID?: number,
 ) => {
 	return useDB().$transaction(async (tx) => {
 		const product = await tx.resource.create({
 			data: {
-				type: ResourceType.ExtractManga,
+				type,
 				key: data.key,
 				name: data.key,
 				ext: '',
@@ -274,37 +272,20 @@ export const mangaExtractCompleted = async (
 				product_id: product.id,
 			},
 		});
-	});
-};
 
-export const novelCopyCompleted = async (
-	id: Chapter['id'],
-	data: { key: string },
-) => {
-	return useDB().$transaction(async (tx) => {
-		const resource = await tx.resource.create({
-			data: {
-				type: ResourceType.Novel,
-				key: data.key,
-				name: data.key,
-				ext: 'docx',
-				size: 0,
-				status: Status.Enable,
-			} as Resource,
-		});
-		await tx.chapter.update({
-			where: { id },
-			data: {
-				content_id: resource.id,
-			},
-		});
+		if (oldProductID) {
+			tx.resource.update({
+				where: { id: oldProductID },
+				data: { status: Status.Disable },
+			});
+		}
 	});
 };
 
 export const chapterUpdate = async (data: {
-	id: number,
-	priority: number,
-	title: string,
+	id: number;
+	priority: number;
+	title: string;
 }) => {
 	return await useDB().chapter.update({
 		where: {
@@ -314,5 +295,5 @@ export const chapterUpdate = async (data: {
 			priority: data.priority,
 			title: data.title,
 		},
-	})
+	});
 };

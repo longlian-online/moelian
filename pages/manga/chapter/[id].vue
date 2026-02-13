@@ -97,8 +97,7 @@ const chapters = computed(() => {
 		return [];
 	}
 	// 2. 使用 slice() 创建数组副本，避免修改原始数据
-	// 3. 使用 sort() 根据 no 属性进行升序排序 (a.no - b.no)
-	return rawChapters.value.slice().sort((a, b) => a.no - b.no);
+	return rawChapters.value.slice()
 });
 
 /** 按文件名自然排序后的图片 URL 列表（公共逻辑） */

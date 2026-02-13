@@ -67,7 +67,8 @@ export type WorkContentRes = {
 		urls: string[];
 	};
 	novel?: {
-		url: string;
+		url?: string;
+		urlMap?: Record<string, string>;
 	};
 	chapters: WorkDetailChapterItem[];
 };

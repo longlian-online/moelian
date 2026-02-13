@@ -157,7 +157,7 @@ watch(selectedChapterId, (id) => {
 });
 
 const chapters = computed(() => {
-	return (rawChapters.value ?? []).slice().sort((a, b) => a.no - b.no);
+	return (rawChapters.value ?? []).slice();
 });
 
 const currentChapter = computed(() => {
