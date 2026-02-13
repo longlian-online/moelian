@@ -362,13 +362,14 @@ async function submitFile() {
 					if (item.file) {
 						// 将图片添加到 ZIP（使用 placeholder_{index} 命名）
 						const fileExtension = item.file.name.split('.').pop() || 'png';
-						const fileName = `placeholder_${imageIndex}`;
-						zip.file(`${fileName}.${fileExtension}`, item.file);
+						const fileName = `placeholder_${imageIndex}.${fileExtension}`;
+						const placeholderName = `placeholder_${imageIndex}`;
+						zip.file(fileName, item.file);
 
 						// 在 index.json 中使用占位符
 						indexData.push({
 							type: 'img',
-							url: fileName,
+							url: placeholderName,
 						});
 
 						imageIndex++;
@@ -383,22 +384,44 @@ async function submitFile() {
 				// 3. 添加 index.json 到 ZIP
 				zip.file('index.json', JSON.stringify(indexData, null, 2));
 
-				// 4. 生成并下载 ZIP
-				overlayMessage.value = '正在生成下载文件...';
-				const zipBlob = await zip.generateAsync({ type: 'blob' });
-				const downloadUrl = URL.createObjectURL(zipBlob);
-				const link = document.createElement('a');
-				link.href = downloadUrl;
-				link.download = `chapter-${chapterId.value}-data.zip`;
-				document.body.appendChild(link);
-				link.click();
-				document.body.removeChild(link);
-				URL.revokeObjectURL(downloadUrl);
-
-				$tip('处理完成！数据已输出到控制台并下载为 ZIP 文件', {
-					icon: 'mdi-check-circle',
-					timeout: -1,
+				// 4. 生成最终的小说内容压缩包
+				overlayMessage.value = '正在生成内容压缩包...';
+				const chapterDataZipBlob = await zip.generateAsync({
+					type: 'blob',
 				});
+				const chapterDataFile = new File(
+					[chapterDataZipBlob],
+					'chapter-data.zip',
+					{ type: 'application/zip' },
+				);
+
+				// 5. 上传原始 docx 文件作为资源
+				overlayMessage.value = '正在上传原始文档...';
+				await uploadToCos(
+					chapterFile.value,
+					'/api/admin/resource',
+					selectedContentType.value,
+					({ percent, speed: s }) => {
+						progress.value = percent;
+						speed.value = s;
+					},
+					controller.signal,
+				);
+
+				// 6. 上传构建好的小说内容压缩包 (index.json + 图片)
+				overlayMessage.value = '正在上传解析后的内容包...';
+				const contentId = await uploadToCos(
+					chapterDataFile,
+					'/api/admin/resource',
+					'Novel', // 强制指定为 Novel 类型
+				);
+
+				// 7. 关联章节内容 (使用解析后内容包的 contentId)
+				await uploadChapterContent(chapterId.value!, contentId, 0);
+
+				await chapterStore.refreshList();
+				$tip('上传并解析成功！');
+				router.push(`/admin/chapter/${id}`);
 			} else {
 				// --- 原有 ZIP 处理流程 ---
 				overlayMessage.value = '正在上传文件...';
