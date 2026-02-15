@@ -20,16 +20,58 @@
 		<v-sheet class="pa-2">
 			<div class="content-box">
 				<template
-					v-for="({ content, isCenter }, index) in loadedContent"
+					v-for="({ content, isCenter, type, label }, index) in loadedContent"
 					:key="index"
 				>
-					<p
-						class="my-content"
-						:style="{ textAlign: isCenter ? 'center' : 'left' }"
-					>
-						<span>{{ content }}</span>
-					</p>
-					<br />
+					<template v-if="type === 'img'">
+						<div class="d-flex flex-column align-center my-6 w-100">
+							<v-card
+								elevation="4"
+								class="pa-2 rounded-lg lily-frame"
+								max-width="92%"
+							>
+								<v-img
+									:src="content"
+									width="100%"
+									class="rounded-lg"
+								>
+									<template #placeholder>
+										<v-skeleton-loader
+											type="image"
+											width="100%"
+											height="250"
+											class="rounded-lg"
+										></v-skeleton-loader>
+									</template>
+									<template #error>
+										<v-img
+											src="/error-default.jpg"
+											width="100%"
+											class="rounded-lg"
+										></v-img>
+									</template>
+								</v-img>
+							</v-card>
+							<div class="lily-label-container mt-3 d-flex align-center">
+								<svg class="lily-icon" viewBox="0 0 100 100" width="16" height="16">
+									<path d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10" fill="#ff6b9d"/>
+								</svg>
+								<span v-if="label" class="lily-text mx-2">{{ label }}</span>
+								<svg class="lily-icon" viewBox="0 0 100 100" width="16" height="16" style="transform: scaleX(-1)">
+									<path d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10" fill="#ff6b9d"/>
+								</svg>
+							</div>
+						</div>
+					</template>
+					<template v-else>
+						<p
+							class="my-content"
+							:style="{ textAlign: isCenter ? 'center' : 'left' }"
+						>
+							<span>{{ content }}</span>
+						</p>
+						<br />
+					</template>
 				</template>
 			</div>
 			<div class="d-flex justify-space-between align-center">
@@ -107,7 +149,7 @@ import type { WorkDetailChapterItem } from '~/shared/dto/web/work';
  * @prop navigateToChapter - 跳转到指定章节的方法
  */
 defineProps<{
-	loadedContent: { content: string; isCenter: boolean }[];
+	loadedContent: { content: string; isCenter: boolean; type?: 'text' | 'img'; label?: string }[];
 	chapters: WorkDetailChapterItem[];
 	selectedChapterId: number | null;
 	isFirstChapter: boolean;
@@ -133,6 +175,23 @@ defineEmits<{
 <style scoped>
 .content-box p {
 	text-indent: 2em;
+}
+
+.content-box :deep(.v-img__img) {
+	position: relative !important;
+}
+
+.lily-frame {
+	background-color: #fff0f5;
+	border: 3px solid #ff6b9d;
+	border-radius: 12px;
+	box-shadow: 0 3px 12px rgba(255, 107, 157, 0.25);
+}
+
+.lily-text {
+	color: #ff6b9d !important;
+	font-weight: 600;
+	font-size: 0.75rem;
 }
 
 .selection-text-ellipsis {

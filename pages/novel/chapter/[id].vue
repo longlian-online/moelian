@@ -2,9 +2,9 @@
 	<div :key="String($route.params.id)">
 		<MobileNovelReader
 			v-if="isMobile"
+			v-model:selected-chapter-id="selectedChapterId"
 			:loaded-content="loadedContent"
 			:chapters="chapters"
-			v-model:selected-chapter-id="selectedChapterId"
 			:is-first-chapter="isFirstChapter"
 			:is-last-chapter="isLastChapter"
 			:prev-chapter="prevChapter"
@@ -16,9 +16,9 @@
 
 		<DesktopNovelReader
 			v-else
+			v-model:selected-chapter-id="selectedChapterId"
 			:loaded-content="loadedContent"
 			:chapters="chapters"
-			v-model:selected-chapter-id="selectedChapterId"
 			:is-first-chapter="isFirstChapter"
 			:is-last-chapter="isLastChapter"
 			:prev-chapter="prevChapter"
@@ -52,8 +52,16 @@ definePageMeta({
 const route = useRoute();
 const chapterId = computed(() => Number(route.params.id));
 const docxUrl = ref('');
+const urlMap = ref<Record<string, string> | null>(null);
 const rawChapters = ref<WorkDetailChapterItem[]>([]);
-const loadedContent = ref<{ content: string; isCenter: boolean }[]>([]);
+const loadedContent = ref<
+	{
+		content: string;
+		isCenter: boolean;
+		type?: 'text' | 'img';
+		label?: string;
+	}[]
+>([]);
 const isLoading = ref(false);
 const selectedChapterId = ref<number | null>(null);
 const isNavbarVisible = inject('isNavbarVisible') as Ref<boolean>;
@@ -80,6 +88,62 @@ async function parseDocx(url: string) {
 		loadedContent.value = processMammothOutput(result.value);
 	} catch (err) {
 		console.error('❌ DOCX 解析失败:', err);
+	} finally {
+		isLoading.value = false;
+	}
+}
+
+// 解析新的 urlMap 格式
+async function parseUrlMap(urlMap: Record<string, string>) {
+	isLoading.value = true;
+	loadedContent.value = [];
+
+	try {
+		const indexUrl = urlMap.index;
+		if (!indexUrl) throw new Error('未找到 index.json 地址');
+
+		const response = await fetch(indexUrl);
+		if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+		const indexData: Array<{
+			type: 'text' | 'img';
+			content?: string;
+			url?: string;
+		}> = await response.json();
+
+		let imageCounter = 1;
+		loadedContent.value = indexData.map((item) => {
+			if (item.type === 'img') {
+				// 尝试从 urlMap 中获取真实的图片地址
+				// 兼容处理：有些 index.json 可能直接存了完整 url，有些存的是 key
+				let realUrl = '';
+				if (item.url) {
+					// 1. 尝试作为 key 从 urlMap 获取 (例如 "placeholder_1")
+					realUrl = urlMap[item.url] || '';
+
+					// 2. 如果没找到，且 item.url 本身就是 http 开头的，则直接使用
+					if (!realUrl && item.url.startsWith('http')) {
+						realUrl = item.url;
+					}
+				}
+
+				const label = `插画1-${imageCounter++}`;
+
+				return {
+					content: realUrl,
+					isCenter: true,
+					type: 'img' as const,
+					label: label,
+				};
+			}
+			return {
+				content: item.content || '',
+				isCenter: false,
+				type: 'text' as const,
+			};
+		});
+	} catch (err) {
+		console.error('❌ urlMap 解析失败:', err);
 	} finally {
 		isLoading.value = false;
 	}
@@ -135,14 +199,20 @@ watch(
 	async (newVal) => {
 		if (newVal) {
 			docxUrl.value = newVal.novel?.url ?? '';
+			urlMap.value = newVal.novel?.urlMap ?? null;
 			rawChapters.value = newVal.chapters ?? [];
 			selectedChapterId.value = chapterId.value;
 
-			if (import.meta.client && docxUrl.value) {
-				await parseDocx(docxUrl.value);
+			if (import.meta.client) {
+				if (urlMap.value) {
+					await parseUrlMap(urlMap.value);
+				} else if (docxUrl.value) {
+					await parseDocx(docxUrl.value);
+				}
 			}
 		} else {
 			docxUrl.value = '';
+			urlMap.value = null;
 			rawChapters.value = [];
 			loadedContent.value = [];
 		}
