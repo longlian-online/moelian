@@ -113,7 +113,7 @@
 								no-data-text="没有可用的标签"
 								placeholder="选择已有标签"
 							>
-								<template v-slot:chip="{ props: chipProps, item }">
+								<template #chip="{ props: chipProps, item }">
 									<v-chip v-bind="chipProps" color="primary" variant="tonal">
 										<strong>{{ item.raw }}</strong>
 									</v-chip>
@@ -248,30 +248,11 @@ const handleSaveClick = async () => {
 };
 
 const adminWorkStore = useAdminWorkStore();
+const tagStore = useTagStore();
 
-// 获取所有标签列表
-const { data: allTagsData } = useApiFetch<
-	Array<{
-		id: number;
-		content: string;
-		cover: string;
-		created_at: string;
-	}>
->('/api/admin/tag/all');
-
-// 所有标签选项（用于 combobox）
-const allTagItems = computed(() => {
-	return allTagsData.value?.data?.map((tag) => tag.content) || [];
-});
-
-// 标签名称到 ID 的映射
-const tagNameToIdMap = computed(() => {
-	const map = new Map<string, number>();
-	allTagsData.value?.data?.forEach((tag) => {
-		map.set(tag.content, tag.id);
-	});
-	return map;
-});
+// 使用 store 中的标签数据，只请求一次
+const allTagItems = computed(() => tagStore.allTagNames);
+const tagNameToIdMap = computed(() => tagStore.tagNameToIdMap);
 
 // 选中的标签名称
 const selectedTagNames = ref<string[]>([]);
@@ -279,10 +260,9 @@ const selectedTagNames = ref<string[]>([]);
 // 监听 dialog 打开，初始化选中的标签
 watch(dialog, (newValue) => {
 	if (newValue) {
+		tagStore.ensureLoaded();
 		formData.value = JSON.parse(JSON.stringify(props.itemData));
-		// 初始化选中的标签名称
 		selectedTagNames.value = [...(props.itemData.tags || [])];
-		// 使用可选链调用方法，并使用非空断言来满足类型检查
 		form.value?.resetValidation();
 	}
 });
@@ -352,12 +332,15 @@ const confirmSave = async () => {
 					.map((name) => tagNameToIdMap.value.get(name))
 					.filter((id): id is number => id !== undefined);
 
-				const { error } = await useApiFetch(`/api/admin/work/${original.id}/tags`, {
-					method: 'PATCH',
-					body: {
-						tag_ids: tagIds,
+				const { error } = await useApiFetch(
+					`/api/admin/work/${original.id}/tags`,
+					{
+						method: 'PATCH',
+						body: {
+							tag_ids: tagIds,
+						},
 					},
-				});
+				);
 
 				if (error.value) {
 					return;

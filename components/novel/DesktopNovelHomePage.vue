@@ -35,7 +35,7 @@
 							:spine-width="25"
 							:show-title="false"
 							:show-spine-text="false"
-							@click.stop
+							@click.stop="gotoNovalId(card.id)"
 						>
 							<template #overlay>
 								<!-- 左上角分类标签 -->
@@ -142,6 +142,8 @@
 										class="novel-heart-icon"
 										fill="currentColor"
 										viewBox="0 0 20 20"
+										width="10"
+										height="10"
 									>
 										<path
 											fill-rule="evenodd"

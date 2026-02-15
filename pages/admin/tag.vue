@@ -472,22 +472,15 @@ const {
 	}),
 });
 
-// 获取所有标签（用于搜索下拉框）
-const { data: allTagsData, refresh: refreshAllTags } = useApiFetch<
-	Array<{
-		id: number;
-		content: string;
-		cover: string;
-		created_at: string;
-	}>
->('/api/admin/tag/all');
+// 使用 store 中的标签数据（与 EditContentDialog 共享，只请求一次）
+const tagStore = useTagStore();
+onMounted(() => tagStore.ensureLoaded());
 
 // === 计算属性 ===
 
 // 标签列表数据（直接使用 API 返回的数据，API 会根据 content 参数过滤）
 const filteredList = computed(() => {
 	const list = tagListData.value?.data?.list || [];
-	// 确保 cover 字段是有效的 URL
 	return list.map((item) => ({
 		...item,
 		cover: item.cover && item.cover.trim() ? item.cover : null,
@@ -495,9 +488,7 @@ const filteredList = computed(() => {
 });
 
 // 所有标签名称（用于搜索下拉框）
-const allTagNames = computed(() => {
-	return allTagsData.value?.data?.map((item) => item.content) || [];
-});
+const allTagNames = computed(() => tagStore.allTagNames);
 
 // 总页数
 const totalItems = computed(() => tagListData.value?.data?.total || 0);
@@ -761,7 +752,7 @@ const handleSubmit = async () => {
 		await refreshList();
 
 		// 刷新所有标签列表（用于搜索下拉框）
-		await refreshAllTags();
+		await tagStore.refresh();
 	} finally {
 		postPending.value = false;
 	}
@@ -817,7 +808,7 @@ const handleDelete = async (id: number) => {
 	await refreshList();
 
 	// 刷新所有标签列表（用于搜索下拉框）
-	await refreshAllTags();
+	await tagStore.refresh();
 
 	// 如果删除后当前页没有数据，且不是第一页，则跳转到上一页
 	if (filteredList.value.length === 0 && page.value > 1) {

@@ -169,7 +169,7 @@
 </template>
 
 <script setup lang="ts">
-import type { WorkListRes, WorkDetailRes } from '~/shared/dto/web/work';
+import type { WorkListRes } from '~/shared/dto/web/work';
 import dayjs from 'dayjs';
 
 // 定义回调函数的类型：接受一个 number 类型的 ID，没有返回值 (void)
@@ -186,7 +186,6 @@ const props = defineProps({
 	},
 });
 export type WorkItemType = WorkListRes['list'][number];
-const { $tip } = useNuxtApp();
 const webWorkStore = useWebWorkStore();
 
 // 根据 workType 动态获取 Store 中的数据和状态
@@ -241,31 +240,10 @@ if (error.value) {
 	console.error(`[${props.workType} 列表] 数据加载失败:`, error.value);
 }
 
-interface ApiResponse<T> {
-	code: number;
-	message: string;
-	data: T; // 泛型 T 实际的业务数据
-}
 const handleCardClick = (cardId: number) => {
 	// 直接传递作品ID，跳转到详情页
 	props.onCardClick(cardId);
 };
-
-// 寻找最小id的章节————第一章
-function getMinNoChapterId(chapterList): number | undefined {
-	if (!chapterList || chapterList.length === 0) {
-		return undefined;
-	}
-
-	const minNoChapter = chapterList.reduce((minChapter, currentChapter) => {
-		if (currentChapter.no < minChapter.no) {
-			return currentChapter;
-		}
-		return minChapter;
-	}, chapterList[0]);
-
-	return minNoChapter.id;
-}
 </script>
 
 <style scoped>

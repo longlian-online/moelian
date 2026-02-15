@@ -68,94 +68,19 @@
 			</v-window-item>
 		</v-window>
 
-		<!-- 遮罩 -->
-		<v-overlay v-model="sheet" z-index="100" scroll-strategy="none"></v-overlay>
-
-		<div
-			v-show="sheet"
-			:class="{ 'my-bottom-sheet-active': sheet }"
-			class="my-bottom-sheet d-flex flex-column justify-center align-center pa-2"
+		<MangaReaderBottomSheet
+			v-model="sheet"
+			:chapters="propsList.chapters"
+			:is-first-chapter="true"
+			:is-last-chapter="false"
+			:toggle-fullscreen="propsList.toggleFullscreen"
+			:show-chapter-nav="false"
+			:show-mobile-bar="false"
+			content-width="60%"
 		>
-			<v-sheet
-				v-if="!isSelectActive"
-				class="rounded-xl d-flex justify-center align-center"
-				style="background-color: transparent"
-				elevation="0"
-			>
-				<div style="background-color: black" class="my-menu rounded-xl pa-2">
-					<v-menu transition="slide-x-transition">
-						<template #activator="{ props }">
-							<v-btn v-bind="props" stacked prepend-icon="mdi-cog-outline" flat>
-								阅读设置
-							</v-btn>
-						</template>
-						<v-list>
-							<v-list-item title="页面设置">
-								<v-tabs v-model="pageLayout" color="#32AAFF">
-									<v-tab :value="false">单页</v-tab>
-									<v-tab :value="true">双页</v-tab>
-								</v-tabs>
-							</v-list-item>
-							<v-list-item v-model="scrollDirection" title="阅读模式">
-								<v-tabs v-model="scrollDirection" color="#32AAFF">
-									<v-tab :value="false" :disabled="pageLayout">上下滚动</v-tab>
-									<v-tab :value="true">左右滚动</v-tab>
-								</v-tabs>
-							</v-list-item>
-							<v-list-item title="页面设置">
-								<v-tabs v-model="readingMode" color="#32AAFF">
-									<v-tab :value="false">普通模式</v-tab>
-									<v-tab :value="true">日漫模式</v-tab>
-								</v-tabs>
-							</v-list-item>
-						</v-list>
-					</v-menu>
-
-					<v-btn
-						stacked
-						prepend-icon="mdi-fullscreen"
-						flat
-						@click="toggleFullscreen"
-						>全屏</v-btn
-					>
-				</div>
-			</v-sheet>
-
-			<v-sheet
-				class="justify-space-between d-flex justify-center align-center rounded-xl mt-4 mb-4"
-				style="width: 60%"
-			>
-				<div class="d-flex justify-space-between align-center w-100">
-					<!-- <v-btn elevation="0" prepend-icon="mdi-chevron-left">上一章</v-btn> -->
-
-					<v-select
-						class="pa-2 flex-grow-1"
-						label="选择章节"
-						variant="underlined"
-						:items="chapters"
-						item-value="chapterNumber"
-						@focus="isSelectActive = true"
-						@blur="isSelectActive = false"
-					>
-						<template #item="{ props, item }">
-							<v-list-item
-								v-bind="props"
-								:to="`/manga/chapter/${item.raw.id}`"
-								:title="`${item.raw.title}`"
-							></v-list-item>
-						</template>
-					</v-select>
-
-					<!-- <v-btn elevation="0" append-icon="mdi-chevron-right">下一章</v-btn> -->
-				</div>
-			</v-sheet>
-			<v-sheet
-				v-if="!isSelectActive"
-				class="justify-space-between d-flex justify-center align-center rounded-xl mt-4 mb-4"
-				style="width: 60%"
-			>
+			<template #pageSlider>
 				<v-btn v-if="displayIndex === totalPages" variant="plain">下一章</v-btn>
-				<v-btn icon="mdi-chevron-left" @click="prev"></v-btn>
+				<v-btn icon="mdi-chevron-left" @click="prev" />
 				<v-slider
 					v-model="displayIndex"
 					class="mt-6"
@@ -168,19 +93,26 @@
 					<template #prepend>
 						<div class="me-2 text-h6">
 							{{ displayIndex }}/{{ totalPages }}
-						</div></template
-					>
+						</div>
+					</template>
 				</v-slider>
-				<v-btn icon="mdi-chevron-right" variant="plain" @click="next"></v-btn>
-			</v-sheet>
-		</div>
+				<v-btn icon="mdi-chevron-right" variant="plain" @click="next" />
+			</template>
+		</MangaReaderBottomSheet>
 	</v-container>
 </template>
 
 <script setup lang="ts">
 import type { VWindow } from 'vuetify/components';
 import type { WorkDetailChapterItem } from '~/shared/dto/web/work';
-// 当前章节的数据
+
+/**
+ * Props
+ * @prop data - 当前章节的图片 URL 列表
+ * @prop chapters - 章节列表
+ * @prop sortedUrls - 按文件名自然排序后的图片 URL 列表（由父组件提供）
+ * @prop toggleFullscreen - 切换全屏的方法（由父组件提供）
+ */
 const propsList = defineProps({
 	data: {
 		type: Array as () => string[],
@@ -190,24 +122,36 @@ const propsList = defineProps({
 		type: Array as () => WorkDetailChapterItem[],
 		required: true,
 	},
+	sortedUrls: {
+		type: Array as () => string[],
+		default: () => [],
+	},
+	toggleFullscreen: {
+		type: Function as () => () => void,
+		default: () => () => {},
+	},
 });
 
-const isNavbarVisible = inject('isNavbarVisible') as Ref<boolean>;
+/** 此组件不对外 emit 事件 */
+/** 此组件不对外暴露 slot */
+
 const windowRef = ref<VWindow | null>(null);
 const isLeft = ref(false);
 const isRight = ref(false);
 const sheet = ref(false);
 const onboarding = ref(0);
 const displayIndex = ref(1);
-const isSelectActive = ref(false);
 //tabs变量
 const pageLayout = inject('pageLayout') as Ref<boolean>;
 const scrollDirection = inject('scrollDirection') as Ref<boolean>;
 const readingMode = inject('readingMode') as Ref<boolean>;
 //切换左右页翻页 false为向左翻页
 const windowReverse = ref(false);
+/** 使用父组件传入的 sortedUrls，若无则回退到本地计算 */
 const sortedUrls = computed(() =>
-	sortUrlArrayByFilenameNaturalOrder(propsList.data),
+	(propsList.sortedUrls?.length ?? 0) > 0
+		? propsList.sortedUrls
+		: sortUrlArrayByFilenameNaturalOrder(propsList.data),
 );
 // 计算总页数
 const totalPages = computed(() => {
@@ -249,19 +193,7 @@ function next() {
 	windowReverse.value = false;
 	onboarding.value = (onboarding.value + 1) % totalPages.value;
 }
-//全屏逻辑
-const isFullscreen = ref(false);
-function toggleFullscreen() {
-	if (!document.fullscreenElement) {
-		document.documentElement.requestFullscreen();
-		isFullscreen.value = true;
-	} else {
-		if (document.exitFullscreen) {
-			document.exitFullscreen();
-			isFullscreen.value = false;
-		}
-	}
-}
+//全屏逻辑：使用父组件传入的 toggleFullscreen
 //鼠标切页逻辑
 function handleMouseMove(event: MouseEvent) {
 	if (!windowRef.value) return;
@@ -309,16 +241,7 @@ function handleKeyDown(event: KeyboardEvent) {
 			break;
 	}
 }
-//如果是双页模式（true），则强制锁定为左右滚动
-watch(
-	() => pageLayout.value,
-	(newVal) => {
-		if (newVal === true) {
-			scrollDirection.value = true;
-		}
-	},
-	{ immediate: true },
-);
+// 双页模式锁定逻辑已移至父组件
 //修改页码移动
 watch(onboarding, (newVal) => {
 	displayIndex.value = newVal + 1;
@@ -326,24 +249,11 @@ watch(onboarding, (newVal) => {
 watch(displayIndex, (newVal) => {
 	onboarding.value = newVal - 1;
 });
-watch(
-	sheet,
-	(newVal) => {
-		if (isNavbarVisible) {
-			isNavbarVisible.value = newVal;
-		}
-	},
-	{ immediate: true },
-);
 </script>
 
 <style scoped>
 .relative-container {
 	background-color: white !important;
-}
-
-.my-menu .v-btn {
-	background-color: transparent;
 }
 
 /* 定义左右箭头的光标样式 */
@@ -355,17 +265,4 @@ watch(
 	cursor: url('/right-arrow.png'), auto;
 }
 
-.my-bottom-sheet {
-	position: fixed;
-	bottom: -400px;
-	left: 50%;
-	transform: translateX(-50%);
-	width: 75%;
-	z-index: 1000;
-	transition: bottom 0.3s ease-out;
-}
-
-.my-bottom-sheet-active {
-	bottom: 10px;
-}
 </style>

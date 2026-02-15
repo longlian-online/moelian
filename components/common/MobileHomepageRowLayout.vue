@@ -110,7 +110,7 @@
 </template>
 
 <script setup lang="ts">
-import type { WorkListRes, WorkDetailRes } from '~/shared/dto/web/work';
+import type { WorkListRes } from '~/shared/dto/web/work';
 type WorkType = 'Manga' | 'Novel';
 type CardClickCallback = (id: number) => void;
 const props = defineProps({
@@ -180,34 +180,10 @@ if (error.value) {
 	});
 }
 
-interface ApiResponse<T> {
-	code: number;
-	message: string;
-	data: T; // 泛型 T 实际的业务数据
-}
 const handleCardClick = (cardId: number) => {
 	// 直接传递作品ID，跳转到详情页
 	props.onCardClick(cardId);
 };
-
-//寻找最小id的章节————第一章
-function getMinNoChapterId(chapterList): number | undefined {
-	if (!chapterList || chapterList.length === 0) {
-		return undefined;
-	}
-
-	// 使用 reduce 找到具有最小 'no' 属性的完整章节对象
-	const minNoChapter = chapterList.reduce((minChapter, currentChapter) => {
-		// 比较：如果当前章节的 'no' 小于已记录的最小章节的 'no'，则更新最小章节
-		if (currentChapter.no < minChapter.no) {
-			return currentChapter;
-		}
-		return minChapter;
-	}, chapterList[0]); // 初始值设置为数组的第一个元素
-
-	// 返回这个最小章节的 id
-	return minNoChapter.id;
-}
 
 const handleAuthorClick = (author: string) => {
 	const typeKey = props.workType.toLowerCase();

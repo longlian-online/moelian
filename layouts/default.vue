@@ -7,7 +7,6 @@
 		<v-main>
 			<slot></slot>
 		</v-main>
-		<!-- <MobileFooter v-if="isMobile"></MobileFooter> -->
 		<!-- 全局组件 -->
 		<Tip></Tip>
 		<ConfirmDialog

@@ -145,6 +145,8 @@
 														class="yuri-heart-icon"
 														fill="currentColor"
 														viewBox="0 0 20 20"
+														width="14"
+														height="14"
 													>
 														<path
 															fillRule="evenodd"
