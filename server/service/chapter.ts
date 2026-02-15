@@ -17,10 +17,10 @@ import { MessageContentTypeMap } from '../types/consumer';
 import { uuidv7 } from 'uuidv7';
 import { getDefaultResourceKeyByType, getResourceURLByID } from './resource';
 import { ContentType, ResourceType } from '../lib/prisma';
-import { getDirAllObjectURLs } from './cos';
+import { getDirAllObjectURLMap, getDirAllObjectURLs } from './cos';
 import { getResourceById, getResourceByKey } from '../repository/resource';
 import type { WorkContentRes } from '~/shared/dto/web/work';
-import { objectify } from 'radash';
+import { assign, objectify } from 'radash';
 
 export type ListForAdminInput = dao.ListForAdminInput;
 export const listForAdmin = async (params: ListForAdminInput) => {
@@ -288,6 +288,28 @@ const getDirResourceWithDefault = async (
 	return await getDirAllObjectURLs(key);
 };
 
+
+/**
+ * 获取文件夹类型资源的所有文件链接，当该资源在数据库中无法获取时，返回默认的文件地址列表
+ * @param resourceID 资源ID
+ * @param resourceType 资源类型（用于在无法获取到资源的地址时返回默认文件地址列表）
+ */
+const getDirResourceMapWithDefault = async (
+	resourceID: number | null,
+	resourceType: ResourceType,
+) => {
+	let key = getDefaultResourceKeyByType(resourceType);
+
+	if (resourceID) {
+		const resource = await getResourceById(resourceID, Status.Enable);
+		if (resource) {
+			key = resource.key;
+		}
+	}
+
+	return await getDirAllObjectURLMap(key);
+};
+
 /**
  * 获取小说内容链接
  * 存在两种小说内容的存储类型
@@ -299,15 +321,18 @@ const getDirResourceWithDefault = async (
  */
 const getNovelContent = async (novel: Chapter, baseUrl: string) => {
 	if (novel.product_id) {
-		const urls = await getDirResourceWithDefault(
+		const urls = await getDirResourceMapWithDefault(
 			novel.product_id,
 			ResourceType.ExtractNovel,
 		);
 
+		const urlMap: Record<string, string> = {};
+		for (const url of urls) {
+			urlMap[url.key] = url.url
+		}
+
 		return {
-			urlMap: objectify(urls, (url) => {
-				return url.split('/').pop()!;
-			}),
+			urlMap,
 		};
 	}
 	if (novel.content_id) {
