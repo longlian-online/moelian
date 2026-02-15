@@ -5,7 +5,8 @@
 				<!-- 加载状态 -->
 				<template
 					v-if="
-						webWorkStore.mangaList.length === 0 && !webWorkStore.mangaTotalItems
+						webWorkStore.mangaList.length === 0 &&
+						webWorkStore.mangaTotalItems === null
 					"
 				>
 					<div class="d-flex align-center flex-wrap" style="flex-wrap: wrap">
@@ -160,7 +161,7 @@
 													card?.lastNo || '1000'
 												}}</span>
 											</div>
-											<!-- 渐变进度条 -->
+
 											<div class="yuri-progress-bar">
 												<div
 													class="yuri-progress-fill"
