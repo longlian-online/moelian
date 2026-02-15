@@ -88,7 +88,7 @@ export const getDirAllObjectURLMap = async (prefix: string) => {
 			() => {
 			},
 		);
-		const name = object.Key.split('.').at(-1) || object.Key;
+		const name = object.Key.split('/').at(-1) || object.Key;
 		return {
 			key: name,
 			url,
