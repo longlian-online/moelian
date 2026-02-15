@@ -48,18 +48,8 @@ export const updateStatus = async (id: Chapter['id'], status: Status) => {
 	await dao.update(id, { status });
 };
 
-// 内容是否准备好，漫画和小说的判断逻辑不同，漫画依据 product_id 是否存在，而小说依据 content_id 是否存在
-// 因为漫画需要解压，content_id 为压缩包，product_id 为解压后的文件夹，小说不需要解压，源文件即内最终内容
 export const productReady = (chapter: Chapter): boolean => {
-	let productReady = false;
-	if (chapter.content_type === ContentType.Manga) {
-		productReady = chapter.product_id !== null;
-	}
-	if (chapter.content_type === ContentType.Novel) {
-		productReady = chapter.content_id !== null;
-	}
-
-	return productReady;
+	return chapter.product_id !== null;
 };
 
 export type UpdateChapterInput = Pick<Chapter, 'title'>;
