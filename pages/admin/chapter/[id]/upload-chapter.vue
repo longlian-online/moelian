@@ -395,18 +395,6 @@ async function submitFile() {
 					{ type: 'application/zip' },
 				);
 
-				// 5. 上传原始 docx 文件作为资源
-				overlayMessage.value = '正在上传原始文档...';
-				await uploadToCos(
-					chapterFile.value,
-					'/api/admin/resource',
-					selectedContentType.value,
-					({ percent, speed: s }) => {
-						progress.value = percent;
-						speed.value = s;
-					},
-					controller.signal,
-				);
 
 				// 6. 上传构建好的小说内容压缩包 (index.json + 图片)
 				overlayMessage.value = '正在上传解析后的内容包...';
