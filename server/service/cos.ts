@@ -88,7 +88,10 @@ export const getDirAllObjectURLMap = async (prefix: string) => {
 			() => {
 			},
 		);
-		const name = object.Key.split('.').at(-1) || object.Key;
+		// 取出文件名
+		let name = object.Key.split('/').at(-1) || object.Key;
+		// 移除后缀
+		name = name.split('.')[0] || name;
 		return {
 			key: name,
 			url,
