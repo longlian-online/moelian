@@ -28,6 +28,7 @@ export default defineEventHandler(async (event) => {
 		await contentExtractHandler(key, 'Novel');
 	} catch (e) {
 		logger.error(e);
+		throw e
 	}
 	return;
 });
