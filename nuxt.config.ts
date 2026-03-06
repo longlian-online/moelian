@@ -83,6 +83,7 @@ export default defineNuxtConfig({
 				bucket: process.env.NUXT_STORAGE_COS_BUCKET,
 				region: process.env.NUXT_STORAGE_COS_REGION,
 				url: process.env.NUXT_STORAGE_COS_URL,
+				domain: process.env.NUXT_STORAGE_COS_DOMAIN,
 			},
 		},
 		nats: {

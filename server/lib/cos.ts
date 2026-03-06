@@ -12,7 +12,8 @@ export const useCOS = () => {
 
     nitroApp.cosClient = new COS({
       SecretId: config.storage.cos.secretId,
-      SecretKey: config.storage.cos.secretKey
+      SecretKey: config.storage.cos.secretKey,
+      Domain: config.storage.cos.domain ?? undefined,
     });
 
     logger.info("COS client initialized");
