@@ -224,7 +224,12 @@ async function parseDocx(url: string) {
 
 	try {
 		// 由于 mammoth 和 fetch 是客户端 API，SSR 时不会运行
-		const response = await fetch(url);
+		const response = await fetch(url, {
+			headers: {
+				'Cache-Control': 'public, max-age=3600',
+				Pragma: 'public',
+			},
+		});
 		if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 		const arrayBuffer = await response.arrayBuffer();
 
