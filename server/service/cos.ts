@@ -26,22 +26,14 @@ export const getPresignedUploadUrl = (params: GetPresignedUploadUrlInput) => {
 export type GetPresignedReadUrlInput = {
 	key: string;
 };
+// 移除使用预签名读的方式，暂时只修改实现
+// TODO 优化语义
 export const getPresignedReadUrl = (params: GetPresignedReadUrlInput) => {
 	const cosConfig = useRuntimeConfig().storage.cos;
-	return useCOS().getObjectUrl(
-		{
-			Method: 'GET',
-			Expires: 300,
-			Bucket: cosConfig.bucket,
-			Region: cosConfig.region,
-			Key: params.key,
-		},
-		(err: COS.CosError, _: COS.GetObjectUrlResult) => {
-			if (err) {
-				logger.error('获取预签名读取链接失败', err);
-			}
-		},
-	);
+	if (params.key.startsWith('/')) {
+		params.key = params.key.substring(1);
+	}
+	return `${cosConfig.url}/${params.key}`;
 };
 
 export const getDirAllObjectURLs = async (prefix: string) => {
@@ -55,14 +47,7 @@ export const getDirAllObjectURLs = async (prefix: string) => {
 	const urls = result.Contents.filter((object)=>{
 		return object.Size !== '0'
 	}).map((object) => {
-		return useCOS().getObjectUrl(
-			{
-				Bucket: cosConfig.bucket,
-				Region: cosConfig.region,
-				Key: object.Key,
-			},
-			() => {},
-		);
+		return getPresignedReadUrl({ key: object.Key });
 	});
 
 	return urls;
