@@ -109,7 +109,12 @@
 
 					<template #[`item.actions`]="{ item }">
 						<div class="d-flex justify-center align-center">
-							<EditChapterMetaDialog :refresh="adminChapterStore.refreshList" :id="item.id" :priority="item.priority" :title="item.title"></EditChapterMetaDialog>
+							<EditChapterMetaDialog
+								:id="item.id"
+								:refresh="adminChapterStore.refreshList"
+								:priority="item.priority"
+								:title="item.title"
+							></EditChapterMetaDialog>
 							<!-- 发布 / 下架按钮 -->
 							<v-btn
 								v-if="item.status === 'Disable'"
@@ -148,9 +153,9 @@
 						</div>
 					</template>
 
-					<template #[`item.priority`]="{item}">
+					<template #[`item.priority`]="{ item }">
 						<div>
-							{{item.priority/10}}
+							{{ item.priority / 10 }}
 						</div>
 					</template>
 

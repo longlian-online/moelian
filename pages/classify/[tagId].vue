@@ -10,7 +10,6 @@
 							<span class="filter-label mb-1">内容类型</span>
 							<v-select
 								v-model="contentType"
-								clearable
 								:items="[
 									{ title: '漫画 & 小说', value: null },
 									{ title: '漫画', value: 'Manga' },
@@ -29,7 +28,6 @@
 							<span class="filter-label mb-1">标签列表</span>
 							<v-select
 								v-model="selectedCategoryId"
-								clearable
 								:items="categorySelectItems"
 								item-value="value"
 								item-title="title"
@@ -50,6 +48,8 @@
 								chips
 								:items="availableTags"
 								multiple
+								persistent-placeholder
+								placeholder="所有作品"
 								variant="solo"
 								hide-details
 								@update:model-value="refreshWorkList"
@@ -91,18 +91,10 @@
 					style="display: flex"
 				>
 					<div class="empty-icon">
-						<v-icon icon="mdi-book-off" size="64" color="#ff9a9e"></v-icon>
+						<v-img src="/error.png"></v-img>
 					</div>
-					<h2 class="empty-title">抱歉，没有找到相关作品 🥺</h2>
+					<h2 class="empty-title">抱歉，玲奈子没有找到相关作品</h2>
 					<p class="empty-desc">请尝试调整筛选条件或减少标签选择</p>
-					<v-btn
-						color="primary"
-						variant="elevated"
-						class="mt-6"
-						@click="resetFilters"
-					>
-						重置筛选
-					</v-btn>
 				</div>
 
 				<div v-else class="work-grid">
@@ -142,7 +134,7 @@
 							<div class="meta-group">
 								<div class="meta-line color-pink">
 									<span class="m-tag">BY</span>
-									<span class="m-val" >{{ work.author }}</span>
+									<span class="m-val">{{ work.author }}</span>
 									<div class="m-line"></div>
 								</div>
 								<div class="meta-line color-purple">
@@ -158,10 +150,14 @@
 								</div>
 							</div>
 
-							<div v-tooltip="work.description" v-copy="work.description" class="card-excerpt">
+							<div
+								v-tooltip="work.description"
+								v-copy="work.description"
+								class="card-excerpt"
+							>
 								{{ work.description || '暂无简介' }}
 							</div>
-							
+
 							<div class="card-footer">
 								<div class="index-container">
 									<div class="index-head">
@@ -219,6 +215,19 @@ const selectedCategoryId = ref<number | null>(currentTagId.value);
 // 标签多选筛选（默认包含当前标签）
 const selectedTags = ref<string[]>([]);
 
+// 监听标签选择变化
+watch(selectedTags, (newTags) => {
+	// 如果用户清空了所有标签，自动添加“所有作品”
+	if (newTags.length === 0) {
+		selectedTags.value = ['所有作品'];
+	}
+	// 如果当前包含“所有作品”，但用户又选了其他真实标签，则移除“所有作品”
+	else if (newTags.length > 1 && newTags.includes('所有作品')) {
+		selectedTags.value = newTags.filter((t) => t !== '所有作品');
+	}
+	refreshWorkList();
+});
+
 // 获取所有标签列表
 const { data: allTagsData } = useApiFetch<TagWebItem[]>('/api/web/tag/all');
 
@@ -243,6 +252,10 @@ watch(
 				}
 			} else {
 				currentTagName.value = '全部分类';
+				// 如果没有当前标签且没选任何标签，设为所有作品
+				if (selectedTags.value.length === 0) {
+					selectedTags.value = ['所有作品'];
+				}
 			}
 		}
 	},
@@ -251,7 +264,8 @@ watch(
 
 // 可用的标签列表（用于多选）
 const availableTags = computed(() => {
-	return allTags.value.map((tag) => tag.content);
+	const tags = allTags.value.map((tag) => tag.content);
+	return ['所有作品', ...tags];
 });
 
 // 分类选择器的选项
@@ -274,13 +288,6 @@ const handleCategoryChange = () => {
 	} else {
 		router.push('/classify/all');
 	}
-};
-
-// 重置筛选
-const resetFilters = () => {
-	contentType.value = null;
-	selectedTags.value = currentTagId.value ? [currentTagName.value] : [];
-	refreshWorkList();
 };
 
 // 监听路由变化，更新选中的分类
@@ -321,10 +328,10 @@ const mangaQueryParams = computed(() => {
 		type: ContentType.Manga,
 	};
 
-	// 添加标签筛选（多个tags参数）
-	if (selectedTags.value && selectedTags.value.length > 0) {
-		// 使用 $fetch 时，数组会自动转换为多个同名参数
-		params.tags = selectedTags.value;
+	// 添加标签筛选（排除虚拟的“所有作品”标签）
+	const realTags = selectedTags.value.filter((t) => t !== '所有作品');
+	if (realTags.length > 0) {
+		params.tags = realTags;
 	}
 
 	return params;
@@ -339,8 +346,9 @@ const novelQueryParams = computed(() => {
 	};
 
 	// 添加标签筛选
-	if (selectedTags.value && selectedTags.value.length > 0) {
-		params.tags = selectedTags.value;
+	const realTags = selectedTags.value.filter((t) => t !== '所有作品');
+	if (realTags.length > 0) {
+		params.tags = realTags;
 	}
 
 	return params;
@@ -595,7 +603,7 @@ useHead({
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
-.card-title:hover{
+.card-title:hover {
 	color: #ff9a9e;
 	cursor: pointer;
 }
@@ -728,16 +736,11 @@ useHead({
 }
 
 .empty-icon {
-	width: 120px;
-	height: 120px;
-	background: #fff0f3;
-	border-radius: 40px;
+	width: 240px;
+	height: 240px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	color: #ff9a9e;
-	margin-bottom: 24px;
-	border: 2px dashed #ffcad4;
 }
 
 .empty-title {

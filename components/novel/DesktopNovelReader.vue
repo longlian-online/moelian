@@ -21,16 +21,58 @@
 				<v-sheet elevation="1" class="pa-6">
 					<div class="content-box">
 						<template
-							v-for="({ content, isCenter }, index) in loadedContent"
+							v-for="({ content, isCenter, type, label }, index) in loadedContent"
 							:key="index"
 						>
-							<p
-								class="my-content"
-								:style="{ textAlign: isCenter ? 'center' : 'left' }"
-							>
-								<span>{{ content }}</span>
-							</p>
-							<br />
+							<template v-if="type === 'img'">
+								<div class="d-flex flex-column align-center my-8 w-100">
+									<v-card
+										elevation="4"
+										class="pa-3 rounded-xl lily-frame"
+										max-width="85%"
+									>
+										<v-img
+											:src="content"
+											width="100%"
+											class="rounded-lg"
+										>
+											<template #placeholder>
+												<v-skeleton-loader
+													type="image"
+													width="100%"
+													height="400"
+													class="rounded-lg"
+												></v-skeleton-loader>
+											</template>
+											<template #error>
+												<v-img
+													src="/error-default.jpg"
+													width="100%"
+													class="rounded-lg"
+												></v-img>
+											</template>
+										</v-img>
+									</v-card>
+									<div class="lily-label-container mt-4 d-flex align-center">
+										<svg class="lily-icon" viewBox="0 0 100 100" width="20" height="20">
+											<path d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10" fill="#ff6b9d"/>
+										</svg>
+										<span v-if="label" class="lily-text mx-3">{{ label }}</span>
+										<svg class="lily-icon" viewBox="0 0 100 100" width="20" height="20" style="transform: scaleX(-1)">
+											<path d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10" fill="#ff6b9d"/>
+										</svg>
+									</div>
+								</div>
+							</template>
+							<template v-else>
+								<p
+									class="my-content"
+									:style="{ textAlign: isCenter ? 'center' : 'left' }"
+								>
+									<span>{{ content }}</span>
+								</p>
+								<br />
+							</template>
 						</template>
 					</div>
 					<div class="d-flex justify-space-between align-center">
@@ -111,7 +153,7 @@ import type { WorkDetailChapterItem } from '~/shared/dto/web/work';
  * @prop navigateToChapter - 跳转到指定章节的方法
  */
 defineProps<{
-	loadedContent: { content: string; isCenter: boolean }[];
+	loadedContent: { content: string; isCenter: boolean; type?: 'text' | 'img'; label?: string }[];
 	chapters: WorkDetailChapterItem[];
 	selectedChapterId: number | null;
 	isFirstChapter: boolean;
@@ -139,6 +181,30 @@ defineEmits<{
 <style scoped>
 .content-box p {
 	text-indent: 2em;
+}
+
+.content-box :deep(.v-img__img) {
+	position: relative !important;
+}
+
+.lily-frame {
+	background-color: #fff0f5; /* 樱花粉衬底 */
+	border: 4px solid #ff6b9d; /* 更鲜艳的粉色边框 */
+	border-radius: 12px;
+	box-shadow: 0 4px 15px rgba(255, 107, 157, 0.3);
+	position: relative;
+	overflow: hidden;
+}
+
+.lily-text {
+	color: #ff6b9d !important; /* 统一为鲜艳的粉色 */
+	font-weight: 600;
+	letter-spacing: 1px;
+	font-size: 0.875rem;
+}
+
+.lily-icon {
+	opacity: 0.6;
 }
 
 .custom-breadcrumbs :deep(.v-breadcrumbs-item) {
