@@ -1,7 +1,8 @@
 import logger from '~/server/lib/winston';
-import { mangaExtractHandler } from '~/server/service/chapter';
+import {
+	contentExtractHandler,
+} from '~/server/service/chapter';
 import { XMLParser } from 'fast-xml-parser';
-import { ResourceType } from '~/server/lib/prisma';
 
 /**
  * 当工作流解压漫画完成时触发
@@ -24,7 +25,7 @@ export default defineEventHandler(async (event) => {
 	const key = req.Response.WorkflowExecution.Object as string;
 
 	try {
-		await mangaExtractHandler(key);
+		await contentExtractHandler(key, 'Manga');
 	} catch (e) {
 		logger.error(e);
 	}

@@ -32,10 +32,19 @@ export async function uploadToCos(
 	onProgress?: (progress: UploadProgress) => void,
 	signal?: AbortSignal,
 ): Promise<number> {
+	// 验证文件参数
+	if (!file || !(file instanceof File)) {
+		throw new Error('文件参数无效');
+	}
+
+	if (!file.name) {
+		throw new Error('文件名称无效');
+	}
+
 	//获取扩展名
 	const ext = file.name.split('.').pop() || '';
 
-	const { data } = await useApiFetch<CosUploadUrlRes>(getUploadUrlApi, {
+	const { data, error } = await useApiFetch<CosUploadUrlRes>(getUploadUrlApi, {
 		method: 'POST',
 		body: {
 			ext,
@@ -43,8 +52,29 @@ export async function uploadToCos(
 			type,
 		},
 	});
+
+	if (error.value) {
+		console.error('获取上传URL失败:', error.value);
+		throw new Error('获取上传URL失败');
+	}
+
+	if (!data.value || !data.value.data) {
+		console.error('API返回数据格式错误:', data.value);
+		throw new Error('API返回数据格式错误');
+	}
+
 	const fileId = data.value.data.id;
-	const uploadInfo = data.value?.data;
+	const uploadInfo = data.value.data;
+
+	if (!fileId || typeof fileId !== 'number') {
+		console.error('获取到的fileId无效:', fileId);
+		throw new Error('获取到的资源ID无效');
+	}
+
+	if (!uploadInfo || !uploadInfo.url) {
+		console.error('获取到的上传URL无效:', uploadInfo);
+		throw new Error('获取到的上传URL无效');
+	}
 	// 上传文件（
 	let lastLoaded = 0;
 	let lastTime = Date.now();

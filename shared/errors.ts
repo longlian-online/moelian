@@ -48,6 +48,18 @@ export const ErrorMap = {
 		code: 40008,
 		message: '无权操作',
 	},
+	TAG_HAS_WORK: {
+		code: 40009,
+		message: '该标签下存在章节，无法删除',
+	},
+	TAG_REPEAT: {
+		code: 40010,
+		message: '标签重复',
+	},
+	TAG_NOT_EXISTS: {
+		code: 40011,
+		message: '标签不存在',
+	},
 } as const satisfies Record<string, BusinessErrorDefinition>;
 
 export type KeyOfErrorMap = keyof typeof ErrorMap;

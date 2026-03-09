@@ -53,6 +53,37 @@ export const getDirAllObjectURLs = async (prefix: string) => {
 	return urls;
 };
 
+export const getDirAllObjectURLMap = async (prefix: string) => {
+	const cosConfig = useRuntimeConfig().storage.cos;
+	const result = await useCOS().getBucket({
+		Prefix: prefix,
+		Bucket: cosConfig.bucket,
+		Region: cosConfig.region,
+	});
+
+	return result.Contents.filter((object) => {
+		return object.Size !== '0'
+	}).map((object) => {
+		const url = useCOS().getObjectUrl(
+			{
+				Bucket: cosConfig.bucket,
+				Region: cosConfig.region,
+				Key: object.Key,
+			},
+			() => {
+			},
+		);
+		// 取出文件名
+		let name = object.Key.split('/').at(-1) || object.Key;
+		// 移除后缀
+		name = name.split('.')[0] || name;
+		return {
+			key: name,
+			url,
+		}
+	});
+};
+
 export const deleteObjectByKey = async (key: string) => {
 	const cosConfig = useRuntimeConfig().storage.cos;
 	// 是否为文件夹

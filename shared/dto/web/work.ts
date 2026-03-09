@@ -6,8 +6,13 @@ export const WorkListReq = z.object({
 	page: WebPage,
 	type: z.enum(ContentType),
 	key: z.string().max(100).optional(),
+	tags: z.preprocess((val) => {
+		if (!val) return undefined;
+		return Array.isArray(val) ? val : [val];
+	}, z.array(z.string()).optional()),
+	sortType: z.enum(['UPDATE', 'PUBLISH']).optional().default('UPDATE'),
 });
-
+export type SortType = 'UPDATE' | 'PUBLISH';
 /**
  * lastXXX 相关字段可能为null, 因为该作品可能还没上传章节
  */
@@ -23,6 +28,8 @@ export type WorkListRes = {
 		lastNo: number | null;
 		description: string;
 		chapterUpdatedAt: Date | null;
+		tags: string[];
+		type: ContentType;
 	}[];
 };
 
@@ -41,6 +48,7 @@ export type WorkDetailRes = {
 	description: string;
 	chapterUpdatedAt: Date | null;
 	chapterList: WorkDetailChapterItem[];
+	tags: string[];
 };
 
 export type WorkDetailChapterItem = {
@@ -59,9 +67,15 @@ export type WorkContentRes = {
 		urls: string[];
 	};
 	novel?: {
-		url: string;
+		url?: string;
+		urlMap?: Record<string, string>;
 	};
 	chapters: WorkDetailChapterItem[];
 };
 
 export type WorkListReq = z.infer<typeof WorkListReq>;
+
+export const RecommendReq = z.object({
+	id: z.coerce.number(),
+	limit: z.coerce.number().optional().default(4),
+});

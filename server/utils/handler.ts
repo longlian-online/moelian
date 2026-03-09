@@ -10,11 +10,16 @@ export const defineWrappedResponseHandler = <T extends EventHandlerRequest, D>(
   defineEventHandler<T>(async (event) => {
     try {
       const response = await handler(event);
+      // return camelize({
+			// 	code: 0,
+			// 	message: 'OK',
+			// 	data: response,
+			// });
       return {
-        code: 0,
-        message: 'OK',
-        data: response,
-      };
+				code: 0,
+				message: 'OK',
+				data: response,
+      }
     } catch (err) {
       logger.error(err)
       if (err instanceof ZodError) {
@@ -50,3 +55,20 @@ export const getId = (event: H3Event) =>{
   }
   return id
 }
+// const toCamelCase = (str: string) =>
+// 	str.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+
+// const camelize = (data: unknown): unknown => {
+// 	if (Array.isArray(data)) {
+// 		return data.map(camelize);
+// 	}
+// 	if (data !== null && typeof data === 'object') {
+// 		return Object.fromEntries(
+// 			Object.entries(data).map(([key, value]) => [
+// 				toCamelCase(key),
+// 				camelize(value)
+// 			]),
+// 		);
+// 	}
+// 	return data;
+// };
