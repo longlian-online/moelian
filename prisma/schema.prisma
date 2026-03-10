@@ -8,6 +8,7 @@ generator client {
   provider        = "prisma-client-js"
   output          = "../node_modules/_db"
   previewFeatures = ["typedSql"]
+  binaryTargets   = ["native", "rhel-openssl-1.1.x"]
 }
 
 datasource db {
