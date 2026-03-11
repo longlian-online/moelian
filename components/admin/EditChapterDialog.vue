@@ -221,98 +221,133 @@ async function submitFile() {
 				onConfirm: async () => {
 					dialog.value = false; // 关闭编辑对话框
 					overlay.value = true; // 开启全局遮罩
-					//创建新的 AbortController 并保存
-					const controller = new AbortController();
-					uploadController.value = controller;
+					try {
+						//创建新的 AbortController 并保存
+						const controller = new AbortController();
+						uploadController.value = controller;
 
-					const isDocx =
-						chapterFile.value!.name.endsWith('.docx') ||
-						chapterFile.value!.type ===
+						const isDocx =
+							chapterFile.value.name.endsWith('.docx') ||
+							chapterFile.value.type ===
 							'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
-					if (isDocx) {
-						// --- DOCX 处理流程 ---
-						overlayMessage.value = '正在解析文档...';
-						progress.value = 0;
-						speed.value = '';
+						if (isDocx) {
+							// --- DOCX 处理流程 ---
+							overlayMessage.value = '正在解析文档...';
+							progress.value = 0;
+							speed.value = '';
 
-						// 1. 解析
-						const contentItems = await processDocx(chapterFile.value!);
+							// 1. 解析
+							const contentItems = await processDocx(chapterFile.value);
 
-						// 2. 构建 ZIP 包和 index.json
-						overlayMessage.value = '正在打包数据...';
-						const zip = new JSZip();
-						const indexData: Array<{
-							type: string;
-							content?: string;
-							url?: string;
-						}> = [];
-						let imageIndex = 1;
+							// 2. 构建 ZIP 包和 index.json
+							overlayMessage.value = '正在打包数据...';
+							const zip = new JSZip();
+							const indexData: Array<{
+								type: string;
+								content?: string;
+								url?: string;
+							}> = [];
+							let imageIndex = 1;
 
-						for (const item of contentItems) {
-							// 检查是否取消
-							if (controller.signal.aborted) {
-								throw new Error('用户取消了上传');
+							for (const item of contentItems) {
+								// 检查是否取消
+								if (controller.signal.aborted) {
+									throw new Error('用户取消了上传');
+								}
+
+								if (item.file) {
+									// 将图片添加到 ZIP（使用 placeholder_{index} 命名）
+									const fileExtension = item.file.name.split('.').pop() || 'png';
+									const fileName = `placeholder_${imageIndex}.${fileExtension}`;
+									const placeholderName = `placeholder_${imageIndex}`;
+									zip.file(fileName, item.file);
+
+									// 在 index.json 中使用占位符
+									indexData.push({
+										type: 'img',
+										url: placeholderName,
+									});
+
+									imageIndex++;
+								} else if (item.text) {
+									indexData.push({
+										type: 'text',
+										content: item.text,
+									});
+								}
 							}
 
-							if (item.file) {
-								// 将图片添加到 ZIP（使用 placeholder_{index} 命名）
-								const fileExtension = item.file.name.split('.').pop() || 'png';
-								const fileName = `placeholder_${imageIndex}`;
-								zip.file(`${fileName}.${fileExtension}`, item.file);
+							// 3. 添加 index.json 到 ZIP
+							zip.file('index.json', JSON.stringify(indexData, null, 2));
 
-								// 在 index.json 中使用占位符
-								indexData.push({
-									type: 'img',
-									url: fileName,
-								});
+							// 4. 生成最终的小说内容压缩包
+							overlayMessage.value = '正在生成内容压缩包...';
+							const chapterDataZipBlob = await zip.generateAsync({
+								type: 'blob',
+							});
+							const chapterDataFile = new File(
+								[chapterDataZipBlob],
+								'chapter-data.zip',
+								{ type: 'application/zip' },
+							);
 
-								imageIndex++;
-							} else if (item.text) {
-								indexData.push({
-									type: 'text',
-									content: item.text,
-								});
-							}
+
+							// 6. 上传构建好的小说内容压缩包 (index.json + 图片)
+							overlayMessage.value = '正在上传解析后的内容包...';
+							const contentId = await uploadToCos(
+								chapterDataFile,
+								'/api/admin/resource',
+								'Novel', // 强制指定为 Novel 类型
+							);
+
+							// 7. 关联章节内容 (使用解析后内容包的 contentId)
+							await uploadChapterContent(chapterId.value!, contentId, 0);
+
+							await chapterStore.refreshList();
+							$tip('上传并解析成功！');
+						} else {
+							// --- 原有 ZIP 处理流程 ---
+							overlayMessage.value = '正在上传文件...';
+							const contentId = await uploadToCos(
+								chapterFile.value,
+								'/api/admin/resource',
+								selectedContentType.value,
+								({ percent, speed: s }) => {
+									progress.value = percent;
+									speed.value = s;
+								},
+								controller.signal,
+							);
+
+							await uploadChapterContent(chapterId.value!, contentId, 0);
+							await chapterStore.refreshList();
+							//timeout -1代表永远保留 需要手动关闭
+							$tip(`上传成功！`, {
+								timeout: -1,
+							});
 						}
-
-						// 3. 添加 index.json 到 ZIP
-						zip.file('index.json', JSON.stringify(indexData, null, 2));
-
-						// 4. 生成并下载 ZIP
-						overlayMessage.value = '正在生成下载文件...';
-						const zipBlob = await zip.generateAsync({ type: 'blob' });
-						const downloadUrl = URL.createObjectURL(zipBlob);
-						const link = document.createElement('a');
-						link.href = downloadUrl;
-						link.download = `chapter-${chapterId.value}-data.zip`;
-						document.body.appendChild(link);
-						link.click();
-						document.body.removeChild(link);
-						URL.revokeObjectURL(downloadUrl);
-
-						await chapterStore.refreshList();
-						overlay.value = false;
-						dialog.value = false;
-						uploadController.value = null;
-						$tip('处理完成！数据已输出到控制台并下载为 ZIP 文件', {
-							icon: 'mdi-check-circle',
+					} catch (err) {
+						//  捕获并静默处理用户取消的错误
+						if (err.message === '用户取消了上传') {
+							$tip('用户取消上传', {
+								color: 'error',
+								icon: 'mdi-alert-circle',
+							});
+							return;
+						}
+						//处理其他失败
+						console.error(err);
+						$tip('上传失败: ' + (err.message || '未知错误'), {
+							color: 'error',
+							icon: 'mdi-alert-circle',
 							timeout: -1,
 						});
-					} else {
-						// --- 原有 ZIP 处理流程 ---
-						const contentId = await uploadToCos(
-							chapterFile.value,
-							'/api/admin/resource',
-							selectedContentType.value,
-							({ percent, speed: s }) => {
-								progress.value = percent;
-								speed.value = s;
-							},
-							controller.signal,
-						);
-
-						await uploadChapterContent(chapterId.value!, contentId, 0);
+					} finally {
+						overlay.value = false; // 关闭全局遮罩
+						overlayMessage.value = ''; // 重置消息
+						uploadController.value = null; // 清除 controller
+					}
 						await chapterStore.refreshList();
 						overlay.value = false; // 成功后立即关闭遮罩
 						dialog.value = false; // 成功后立即关闭对话框
@@ -321,8 +356,7 @@ async function submitFile() {
 						$tip(`上传成功！`, {
 							timeout: -1,
 						});
-					}
-				},
+					},
 			});
 		} catch (err) {
 			if (err.message === '用户取消了上传') {
