@@ -35,13 +35,22 @@
 					<!-- 信息内容区 (右侧) -->
 					<div class="detail-info-wrapper">
 						<div class="detail-info-content">
-							<h1
-								v-copy="workDetail.title"
-								v-tooltip="workDetail.title"
-								class="yuri-title"
-							>
-								{{ workDetail.title }}
-							</h1>
+							<div class="detail-title-row">
+								<h1
+									v-copy="workDetail.title"
+									v-tooltip="workDetail.title"
+									class="yuri-title"
+								>
+									{{ workDetail.title }}
+								</h1>
+								<v-btn
+									icon="mdi-share"
+									variant="text"
+									size="middle"
+									class="share-btn"
+									@click="showShareDialog = true"
+								></v-btn>
+							</div>
 
 							<!-- 第一行：作者 (左) 与 标签 (右) -->
 							<div class="detail-info-row">
@@ -327,6 +336,26 @@
 			</aside>
 		</template>
 	</div>
+
+	<v-dialog v-model="showShareDialog" max-width="400">
+		<div class="share-dialog-content">
+			<h3 class="share-dialog-title">{{ workDetail?.title }}</h3>
+			<div class="share-link-row">
+				<input
+					:value="shareUrl"
+					readonly
+					class="share-link-input"
+				/>
+				<v-btn
+					:color="copied ? 'success' : 'primary'"
+					class="share-copy-btn"
+					@click="handleCopyLink"
+				>
+					{{ copied ? '已复制✓' : '复制链接' }}
+				</v-btn>
+			</div>
+		</div>
+	</v-dialog>
 </template>
 
 <script setup lang="ts">
@@ -355,6 +384,28 @@ const router = useRouter();
 const route = useRoute();
 const workId = computed(() => Number(route.params.id));
 const store = useWebWorkStore();
+
+const showShareDialog = ref(false);
+const copied = ref(false);
+let copyTimer: ReturnType<typeof setTimeout> | null = null;
+
+const shareUrl = computed(() => {
+	if (typeof window === 'undefined') return '';
+	return `${window.location.origin}/novel/${workId.value}`;
+});
+
+async function handleCopyLink() {
+	try {
+		await navigator.clipboard.writeText(shareUrl.value);
+		copied.value = true;
+		if (copyTimer) clearTimeout(copyTimer);
+		copyTimer = setTimeout(() => {
+			copied.value = false;
+		}, 2000);
+	} catch {
+		$tip('复制失败', { color: 'error', icon: 'mdi-alert-circle' });
+	}
+}
 
 // 每页分片大小（可自定义）
 const SEGMENT_SIZE = 12;
@@ -513,12 +564,29 @@ useHead({
 	font-weight: 900;
 	color: #5a463d;
 	letter-spacing: -0.01em;
-	margin-bottom: 24px;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 	max-width: 100%;
 	display: block;
+	margin: 0;
+}
+
+.detail-title-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 24px;
+}
+
+.share-btn {
+	flex-shrink: 0;
+	color: #c9c1ab !important;
+}
+
+.share-btn:hover {
+	color: #ff758c !important;
 }
 
 /* 作品主卡片 */
@@ -1178,5 +1246,45 @@ useHead({
 	.detail-chapter-grid {
 		grid-template-columns: repeat(2, 1fr);
 	}
+}
+
+.share-dialog-content {
+	background: white;
+	border-radius: 16px;
+	padding: 24px;
+}
+
+.share-dialog-title {
+	font-size: 18px;
+	font-weight: 900;
+	color: #5a463d;
+	margin-bottom: 16px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.share-link-row {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+}
+
+.share-link-input {
+	flex: 1;
+	padding: 10px 12px;
+	border: 1px solid #f2ece6;
+	border-radius: 8px;
+	font-size: 13px;
+	color: #7d5a5a;
+	background: #fdfaf8;
+	outline: none;
+}
+
+.share-copy-btn {
+	flex-shrink: 0;
+	font-weight: 900 !important;
+	border-radius: 8px !important;
+	text-transform: none !important;
 }
 </style>

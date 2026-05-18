@@ -31,7 +31,8 @@
 
 			<!-- 信息区域 -->
 			<section class="mobile-info-section">
-				<!-- 标题 -->
+			<!-- 标题 -->
+			<div class="mobile-title-row">
 				<h1
 					v-copy="workDetail.title"
 					v-tooltip="workDetail.title"
@@ -39,6 +40,14 @@
 				>
 					{{ workDetail.title }}
 				</h1>
+				<v-btn
+					icon="mdi-share"
+					variant="text"
+					size="middle"
+					class="share-btn"
+					@click="showShareDialog = true"
+				></v-btn>
+			</div>
 
 				<!-- 作者和标签行 -->
 				<div class="mobile-info-row">
@@ -299,6 +308,26 @@
 			</section>
 		</template>
 	</div>
+
+	<v-dialog v-model="showShareDialog" max-width="360">
+		<div class="share-dialog-content">
+			<h3 class="share-dialog-title">{{ workDetail?.title }}</h3>
+			<div class="share-link-row">
+				<input
+					:value="shareUrl"
+					readonly
+					class="share-link-input"
+				/>
+				<v-btn
+					:color="copied ? 'success' : 'primary'"
+					class="share-copy-btn"
+					@click="handleCopyLink"
+				>
+					{{ copied ? '已复制✓' : '复制链接' }}
+				</v-btn>
+			</div>
+		</div>
+	</v-dialog>
 </template>
 
 <script setup lang="ts">
@@ -329,6 +358,28 @@ const router = useRouter();
 const route = useRoute();
 const workId = computed(() => Number(route.params.id));
 const store = useWebWorkStore();
+
+const showShareDialog = ref(false);
+const copied = ref(false);
+let copyTimer: ReturnType<typeof setTimeout> | null = null;
+
+const shareUrl = computed(() => {
+	if (typeof window === 'undefined') return '';
+	return `${window.location.origin}/novel/${workId.value}`;
+});
+
+async function handleCopyLink() {
+	try {
+		await navigator.clipboard.writeText(shareUrl.value);
+		copied.value = true;
+		if (copyTimer) clearTimeout(copyTimer);
+		copyTimer = setTimeout(() => {
+			copied.value = false;
+		}, 2000);
+	} catch {
+		$tip('复制失败', { color: 'error', icon: 'mdi-alert-circle' });
+	}
+}
 
 // 每页分片大小（可自定义）
 const SEGMENT_SIZE = 12;
@@ -470,8 +521,26 @@ useHead({
 	font-weight: 900;
 	color: #5a463d;
 	letter-spacing: -0.01em;
-	margin-bottom: 20px;
 	line-height: 1.3;
+	flex: 1;
+	min-width: 0;
+	margin: 0;
+}
+
+.mobile-title-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 20px;
+}
+
+.share-btn {
+	flex-shrink: 0;
+	color: #c9c1ab !important;
+}
+
+.share-btn:hover {
+	color: #ff758c !important;
 }
 
 .mobile-info-row {
@@ -875,5 +944,45 @@ useHead({
 .mobile-recommend-underline {
 	height: 2px;
 	margin-top: 2px;
+}
+
+.share-dialog-content {
+	background: white;
+	border-radius: 16px;
+	padding: 20px;
+}
+
+.share-dialog-title {
+	font-size: 16px;
+	font-weight: 900;
+	color: #5a463d;
+	margin-bottom: 12px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.share-link-row {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.share-link-input {
+	width: 100%;
+	padding: 10px 12px;
+	border: 1px solid #f2ece6;
+	border-radius: 8px;
+	font-size: 12px;
+	color: #7d5a5a;
+	background: #fdfaf8;
+	outline: none;
+	box-sizing: border-box;
+}
+
+.share-copy-btn {
+	font-weight: 900 !important;
+	border-radius: 8px !important;
+	text-transform: none !important;
 }
 </style>
