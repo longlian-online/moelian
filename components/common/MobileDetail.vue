@@ -312,20 +312,34 @@
 	<v-dialog v-model="showShareDialog" max-width="360">
 		<div class="share-dialog-content">
 			<h3 class="share-dialog-title">{{ workDetail?.title }}</h3>
-			<div class="share-link-row">
-				<input
-					:value="shareUrl"
-					readonly
-					class="share-link-input"
-				/>
-				<v-btn
-					:color="copied ? 'success' : 'primary'"
-					class="share-copy-btn"
-					@click="handleCopyLink"
-				>
-					{{ copied ? '已复制✓' : '复制链接' }}
-				</v-btn>
-			</div>
+			<v-tabs v-model="shareTab" class="share-tabs" align-tabs="center">
+				<v-tab value="link">链接分享</v-tab>
+				<v-tab value="qrcode">二维码分享</v-tab>
+			</v-tabs>
+			<v-window v-model="shareTab">
+				<v-window-item value="link">
+					<div class="share-link-row">
+						<input
+							:value="shareUrl"
+							readonly
+							class="share-link-input"
+						/>
+						<v-btn
+							:color="copied ? 'success' : 'primary'"
+							class="share-copy-btn"
+							@click="handleCopyLink"
+						>
+							{{ copied ? '已复制✓' : '复制链接' }}
+						</v-btn>
+					</div>
+				</v-window-item>
+				<v-window-item value="qrcode">
+					<div class="share-qrcode-wrapper">
+						<canvas ref="qrCanvas" class="share-qrcode"></canvas>
+						<p class="share-qrcode-hint">扫码打开作品页面</p>
+					</div>
+				</v-window-item>
+			</v-window>
 		</div>
 	</v-dialog>
 </template>
@@ -335,6 +349,7 @@ import type { WorkDetailRes, WorkListRes } from '~/shared/dto/web/work';
 import dayjs from 'dayjs';
 import Book3D from '~/components/common/Book3D.vue';
 import AnimeTags from '~/components/common/AnimeTags.vue';
+import QRCode from 'qrcode';
 
 const props = defineProps({
 	recommendedTitle: {
@@ -360,7 +375,9 @@ const workId = computed(() => Number(route.params.id));
 const store = useWebWorkStore();
 
 const showShareDialog = ref(false);
+const shareTab = ref('link');
 const copied = ref(false);
+const qrCanvas = ref<HTMLCanvasElement | null>(null);
 let copyTimer: ReturnType<typeof setTimeout> | null = null;
 
 const shareUrl = computed(() => {
@@ -380,6 +397,34 @@ async function handleCopyLink() {
 		$tip('复制失败', { color: 'error', icon: 'mdi-alert-circle' });
 	}
 }
+
+async function generateQRCode() {
+	if (!qrCanvas.value || !shareUrl.value) return;
+	try {
+		await QRCode.toCanvas(qrCanvas.value, shareUrl.value, {
+			width: 200,
+			margin: 1,
+		});
+	} catch {
+		$tip('二维码生成失败', { color: 'error', icon: 'mdi-alert-circle' });
+	}
+}
+
+watch(shareTab, (tab) => {
+	if (tab === 'qrcode') {
+		nextTick(() => {
+			generateQRCode();
+		});
+	}
+});
+
+watch(showShareDialog, (visible) => {
+	if (visible && shareTab.value === 'qrcode') {
+		nextTick(() => {
+			generateQRCode();
+		});
+	}
+});
 
 // 每页分片大小（可自定义）
 const SEGMENT_SIZE = 12;
@@ -962,6 +1007,10 @@ useHead({
 	white-space: nowrap;
 }
 
+.share-tabs {
+	margin-bottom: 12px;
+}
+
 .share-link-row {
 	display: flex;
 	flex-direction: column;
@@ -984,5 +1033,24 @@ useHead({
 	font-weight: 900 !important;
 	border-radius: 8px !important;
 	text-transform: none !important;
+}
+
+.share-qrcode-wrapper {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 12px;
+	padding: 16px 0;
+}
+
+.share-qrcode {
+	border-radius: 8px;
+}
+
+.share-qrcode-hint {
+	font-size: 13px;
+	color: #9a8471;
+	font-weight: 700;
+	margin: 0;
 }
 </style>
