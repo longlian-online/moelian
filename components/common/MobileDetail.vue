@@ -41,12 +41,14 @@
 					{{ workDetail.title }}
 				</h1>
 				<v-btn
-					icon="mdi-share"
+					prepend-icon="mdi-share"
 					variant="text"
-					size="middle"
+					size="small"
 					class="share-btn"
 					@click="showShareDialog = true"
-				></v-btn>
+				>
+					分享
+				</v-btn>
 			</div>
 
 				<!-- 作者和标签行 -->
@@ -309,7 +311,7 @@
 		</template>
 	</div>
 
-	<v-dialog v-model="showShareDialog" max-width="360">
+	<v-dialog v-model="showShareDialog" max-width="440">
 		<div class="share-dialog-content">
 			<h3 class="share-dialog-title">{{ workDetail?.title }}</h3>
 			<v-tabs v-model="shareTab" class="share-tabs" align-tabs="center">
@@ -334,10 +336,12 @@
 					</div>
 				</v-window-item>
 				<v-window-item value="qrcode">
-					<div class="share-qrcode-wrapper">
-						<canvas ref="qrCanvas" class="share-qrcode"></canvas>
-						<p class="share-qrcode-hint">扫码打开作品页面</p>
-					</div>
+					<ShareCard
+						ref="shareCardRef"
+						:cover-url="workDetail?.coverUrl"
+						:share-url="shareUrl"
+						:title="workDetail?.title"
+					/>
 				</v-window-item>
 			</v-window>
 		</div>
@@ -377,7 +381,7 @@ const store = useWebWorkStore();
 const showShareDialog = ref(false);
 const shareTab = ref('link');
 const copied = ref(false);
-const qrCanvas = ref<HTMLCanvasElement | null>(null);
+const shareCardRef = ref<InstanceType<typeof import('~/components/common/ShareCard.vue').default> | null>(null);
 let copyTimer: ReturnType<typeof setTimeout> | null = null;
 
 const shareUrl = computed(() => {
@@ -398,22 +402,10 @@ async function handleCopyLink() {
 	}
 }
 
-async function generateQRCode() {
-	if (!qrCanvas.value || !shareUrl.value) return;
-	try {
-		await QRCode.toCanvas(qrCanvas.value, shareUrl.value, {
-			width: 200,
-			margin: 1,
-		});
-	} catch {
-		$tip('二维码生成失败', { color: 'error', icon: 'mdi-alert-circle' });
-	}
-}
-
 watch(shareTab, (tab) => {
 	if (tab === 'qrcode') {
 		nextTick(() => {
-			generateQRCode();
+			shareCardRef.value?.generateCard();
 		});
 	}
 });
@@ -421,7 +413,7 @@ watch(shareTab, (tab) => {
 watch(showShareDialog, (visible) => {
 	if (visible && shareTab.value === 'qrcode') {
 		nextTick(() => {
-			generateQRCode();
+			shareCardRef.value?.generateCard();
 		});
 	}
 });
@@ -581,11 +573,18 @@ useHead({
 
 .share-btn {
 	flex-shrink: 0;
-	color: #c9c1ab !important;
+	color: #ff758c !important;
+	border: 2px solid #ff758c !important;
+	border-radius: 12px !important;
+	font-weight: 900 !important;
+	letter-spacing: 0.05em !important;
+	padding: 0 16px !important;
+	font-size: 14px !important;
 }
 
 .share-btn:hover {
-	color: #ff758c !important;
+	color: #ffffff !important;
+	background: #ff758c !important;
 }
 
 .mobile-info-row {
@@ -1035,22 +1034,4 @@ useHead({
 	text-transform: none !important;
 }
 
-.share-qrcode-wrapper {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 12px;
-	padding: 16px 0;
-}
-
-.share-qrcode {
-	border-radius: 8px;
-}
-
-.share-qrcode-hint {
-	font-size: 13px;
-	color: #9a8471;
-	font-weight: 700;
-	margin: 0;
-}
 </style>
