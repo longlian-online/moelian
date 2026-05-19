@@ -104,8 +104,7 @@ async function generateCard() {
 
 	if (props.coverUrl) {
 		try {
-			const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(props.coverUrl)}`;
-			const img = await loadImage(proxyUrl);
+			const img = await loadImage(props.coverUrl);
 			drawCoverAsBackground(ctx, img, CARD_SIZE, CARD_SIZE);
 		} catch {
 			drawFallbackBackground(ctx);
