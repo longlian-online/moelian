@@ -6,7 +6,7 @@ WORKDIR /app
 # 设置pnpm
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
 # 1. 安装依赖
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -33,7 +33,7 @@ COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.ya
 # 生产环境依赖
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && \
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate && \
     pnpm install --prod --frozen-lockfile && \
     pnpm store prune && \
     rm -rf /pnpm/store /root/.npm /root/.cache /var/cache/apk/*
