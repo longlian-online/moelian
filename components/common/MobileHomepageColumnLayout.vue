@@ -134,10 +134,10 @@
 							{{ card.description }}
 						</div>
 
-						<!-- 百合指数 -->
+						<!-- 章节数 -->
 						<div class="concentration-box">
 							<div class="concentration-header">
-								<span class="concentration-label">百合指数</span>
+								<span class="concentration-label">章节数</span>
 								<span class="concentration-value">{{
 									card?.lastNo || '1000'
 								}}</span>
@@ -465,7 +465,7 @@ const handleCardClick = (cardId: number) => {
 	border-color: #b2ebf2;
 }
 
-/* 百合指数 */
+/* 章节数 */
 .concentration-box {
 	margin-top: auto;
 	background-color: #fefcf9;
