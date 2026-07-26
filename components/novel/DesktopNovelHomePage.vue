@@ -134,7 +134,7 @@
 							</p>
 						</div>
 
-						<!-- 底部：百合指数条 -->
+						<!-- 底部：章节数 -->
 						<div class="novel-concentration-section">
 							<div class="novel-concentration-header">
 								<div class="novel-concentration-label">
@@ -151,7 +151,7 @@
 											clip-rule="evenodd"
 										/>
 									</svg>
-									<span class="novel-concentration-text">百合指数</span>
+									<span class="novel-concentration-text">章节数</span>
 								</div>
 								<span class="novel-concentration-value">{{
 									card?.lastNo || '1000'
@@ -515,7 +515,7 @@ const handleAuthorClick = (author: string) => {
 	}
 }
 
-/* 底部：百合指数条 */
+/* 底部：章节数 */
 .novel-concentration-section {
 	padding-top: 8px;
 	border-top: 1px solid #f2ece6;

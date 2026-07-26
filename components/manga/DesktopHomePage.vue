@@ -155,7 +155,7 @@
 															clipRule="evenodd"
 														/>
 													</svg>
-													<span class="yuri-concentration-text">百合指数</span>
+													<span class="yuri-concentration-text">章节数</span>
 												</div>
 												<span class="yuri-concentration-value">{{
 													card?.lastNo || '1000'
