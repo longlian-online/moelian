@@ -9,7 +9,7 @@ ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 
 # 1. 安装依赖
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # 2. 复制源码和构建
@@ -28,7 +28,7 @@ WORKDIR /app
 
 # 只复制运行必需
 COPY --from=builder /app/.output ./.output
-COPY --from=builder /app/package.json /app/pnpm-lock.yaml ./
+COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
 
 # 生产环境依赖
 ENV PNPM_HOME="/pnpm"
