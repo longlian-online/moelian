@@ -353,7 +353,6 @@ import type { WorkDetailRes, WorkListRes } from '~/shared/dto/web/work';
 import dayjs from 'dayjs';
 import Book3D from '~/components/common/Book3D.vue';
 import AnimeTags from '~/components/common/AnimeTags.vue';
-import QRCode from 'qrcode';
 
 const props = defineProps({
 	recommendedTitle: {
@@ -386,7 +385,7 @@ let copyTimer: ReturnType<typeof setTimeout> | null = null;
 
 const shareUrl = computed(() => {
 	if (typeof window === 'undefined') return '';
-	return `${window.location.origin}/novel/${workId.value}`;
+	return `${window.location.origin}/${props.contentType}/${workId.value}`;
 });
 
 async function handleCopyLink() {
