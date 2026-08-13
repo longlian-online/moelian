@@ -19,7 +19,7 @@ name: OpenCodeReview PR Review
 # 不匹配的普通评论落入唯一 noop-<run_id> 组，立即跳过且不会干扰进行中的评审。
 concurrency:
   group: >-
-    ${{{
+    ${{
       (
         github.event_name == 'pull_request_target'
         || (
@@ -39,7 +39,7 @@ concurrency:
       )
       && format('ocr-{0}', github.event.pull_request.number || github.event.issue.number)
       || format('noop-{0}', github.run_id)
-    }}}
+    }}
   cancel-in-progress: true
 
 on:
