@@ -5,11 +5,11 @@
 # - PR 评论以 /open-code-review 或 @open-code-review 开头时手动重跑（仅成员）
 # - LLM 使用 OpenCode Go（OpenAI 兼容端点）
 #
-# 所需 secrets/variables（Settings -> Secrets and variables -> Actions）：
-#   secret    OCR_LLM_URL            https://opencode.ai/zen/go/v1/chat/completions
-#   secret    OCR_LLM_AUTH_TOKEN     OpenCode Go API key
-#   variable  OCR_LLM_MODEL          deepseek-v4-pro（或 deepseek-v4-flash）
-#   variable  OCR_LLM_USE_ANTHROPIC  false
+# 所需 secrets（Settings -> Secrets and variables -> Actions）：
+#   OCR_LLM_URL            https://opencode.ai/zen/go/v1/chat/completions
+#   OCR_LLM_AUTH_TOKEN     OpenCode Go API key
+#   OCR_LLM_MODEL          deepseek-v4-pro（或 deepseek-v4-flash）
+#   OCR_LLM_USE_ANTHROPIC  false
 #
 # 完整输入/输出与四种评论发布模式（sticky / incremental）见上游 action.yml。
 
@@ -100,8 +100,8 @@ jobs:
         with:
           llm_url: ${{ secrets.OCR_LLM_URL }}
           llm_auth_token: ${{ secrets.OCR_LLM_AUTH_TOKEN }}
-          llm_model: ${{ vars.OCR_LLM_MODEL }}
-          llm_use_anthropic: ${{ vars.OCR_LLM_USE_ANTHROPIC }}
+          llm_model: ${{ secrets.OCR_LLM_MODEL }}
+          llm_use_anthropic: ${{ secrets.OCR_LLM_USE_ANTHROPIC }}
           language: 'Chinese'
           # OpenCode Go 为 OpenAI 兼容端点，清空默认的 thinking extra_body 避免未知字段被拒
           llm_extra_body: '{}'
