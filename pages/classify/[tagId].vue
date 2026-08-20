@@ -161,7 +161,7 @@
 							<div class="card-footer">
 								<div class="index-container">
 									<div class="index-head">
-										<span class="index-lbl">百合指数</span>
+										<span class="index-lbl">章节数</span>
 										<span class="index-val">99%</span>
 									</div>
 									<div class="index-bar">
