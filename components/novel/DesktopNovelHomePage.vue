@@ -35,6 +35,7 @@
 							:spine-width="25"
 							:show-title="false"
 							:show-spine-text="false"
+							:to="`/novel/${card.id}`"
 							@click.stop="gotoNovalId(card.id)"
 						>
 							<template #overlay>
