@@ -161,11 +161,14 @@
 							<div class="card-footer">
 								<div class="index-container">
 									<div class="index-head">
-										<span class="index-lbl">百合指数</span>
-										<span class="index-val">99%</span>
+										<span class="index-lbl">章节数</span>
+										<span class="index-val">{{ work.lastNo ?? 0 }} 章</span>
 									</div>
 									<div class="index-bar">
-										<div class="index-fill" style="width: 99%"></div>
+										<div
+											class="index-fill"
+											:style="{ width: `${Math.min(100, work.lastNo ?? 0)}%` }"
+										></div>
 									</div>
 								</div>
 							</div>

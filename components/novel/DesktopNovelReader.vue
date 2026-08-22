@@ -20,9 +20,13 @@
 
 				<v-sheet elevation="1" class="pa-6">
 					<div class="content-box">
-						<template
-							v-for="({ content, isCenter, type, label }, index) in loadedContent"
+						<div
+							v-for="(
+								{ content, isCenter, type, label }, index
+							) in loadedContent"
 							:key="index"
+							:data-reading-block="index"
+							class="novel-reading-block"
 						>
 							<template v-if="type === 'img'">
 								<div class="d-flex flex-column align-center my-8 w-100">
@@ -31,11 +35,7 @@
 										class="pa-3 rounded-xl lily-frame"
 										max-width="85%"
 									>
-										<v-img
-											:src="content"
-											width="100%"
-											class="rounded-lg"
-										>
+										<v-img :src="content" width="100%" class="rounded-lg">
 											<template #placeholder>
 												<v-skeleton-loader
 													type="image"
@@ -54,12 +54,29 @@
 										</v-img>
 									</v-card>
 									<div class="lily-label-container mt-4 d-flex align-center">
-										<svg class="lily-icon" viewBox="0 0 100 100" width="20" height="20">
-											<path d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10" fill="#ff6b9d"/>
+										<svg
+											class="lily-icon"
+											viewBox="0 0 100 100"
+											width="20"
+											height="20"
+										>
+											<path
+												d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10"
+												fill="#ff6b9d"
+											/>
 										</svg>
 										<span v-if="label" class="lily-text mx-3">{{ label }}</span>
-										<svg class="lily-icon" viewBox="0 0 100 100" width="20" height="20" style="transform: scaleX(-1)">
-											<path d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10" fill="#ff6b9d"/>
+										<svg
+											class="lily-icon"
+											viewBox="0 0 100 100"
+											width="20"
+											height="20"
+											style="transform: scaleX(-1)"
+										>
+											<path
+												d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10"
+												fill="#ff6b9d"
+											/>
 										</svg>
 									</div>
 								</div>
@@ -73,7 +90,7 @@
 								</p>
 								<br />
 							</template>
-						</template>
+						</div>
 					</div>
 					<div class="d-flex justify-space-between align-center">
 						<v-btn
@@ -153,14 +170,21 @@ import type { WorkDetailChapterItem } from '~/shared/dto/web/work';
  * @prop navigateToChapter - 跳转到指定章节的方法
  */
 defineProps<{
-	loadedContent: { content: string; isCenter: boolean; type?: 'text' | 'img'; label?: string }[];
+	loadedContent: {
+		content: string;
+		isCenter: boolean;
+		type?: 'text' | 'img';
+		label?: string;
+	}[];
 	chapters: WorkDetailChapterItem[];
 	selectedChapterId: number | null;
 	isFirstChapter: boolean;
 	isLastChapter: boolean;
 	prevChapter: WorkDetailChapterItem | null;
 	nextChapter: WorkDetailChapterItem | null;
-	currentChapter: WorkDetailChapterItem | { id: number; no: number; title: string };
+	currentChapter:
+		| WorkDetailChapterItem
+		| { id: number; no: number; title: string };
 	breadcrumbItems: { title: string; disabled: boolean; to: string }[];
 	navigateToChapter: (chapter: WorkDetailChapterItem) => void;
 }>();

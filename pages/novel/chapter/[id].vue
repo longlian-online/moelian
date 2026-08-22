@@ -67,6 +67,18 @@ const selectedChapterId = ref<number | null>(null);
 const isNavbarVisible = inject('isNavbarVisible') as Ref<boolean>;
 const { isMobile } = useDevice();
 const isChangeTheme = ref(false);
+const { getProgress, saveNovelProgress } = useReadingProgress();
+const savedProgress = getProgress('novel', chapterId.value);
+const initialNovelPosition =
+	savedProgress?.position.kind === 'novel' ? savedProgress.position : null;
+const isRestoringProgress = ref(Boolean(initialNovelPosition));
+let progressSaveTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingNovelPosition = initialNovelPosition ?? {
+	kind: 'novel' as const,
+	percentage: 0,
+	anchorIndex: 0,
+	offsetRatio: 0,
+};
 
 async function parseDocx(url: string) {
 	isLoading.value = true;
@@ -244,6 +256,108 @@ const currentChapter = computed(() => {
 			title: '正在加载',
 		}
 	);
+});
+
+const measureNovelPosition = () => {
+	const maxScroll = Math.max(
+		0,
+		document.documentElement.scrollHeight - window.innerHeight,
+	);
+	const percentage = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+	const blocks = Array.from(
+		document.querySelectorAll<HTMLElement>('[data-reading-block]'),
+	);
+	const anchor =
+		blocks.find((element) => element.getBoundingClientRect().bottom > 0) ??
+		blocks.at(-1);
+	const anchorIndex = Number(anchor?.dataset.readingBlock ?? 0);
+	const rect = anchor?.getBoundingClientRect();
+	const offsetRatio = rect
+		? Math.min(1, Math.max(0, -rect.top / Math.max(1, rect.height)))
+		: 0;
+
+	pendingNovelPosition = {
+		kind: 'novel',
+		percentage,
+		anchorIndex,
+		offsetRatio,
+	};
+};
+
+const persistNovelProgress = () => {
+	if (currentChapter.value.id === 0) return;
+	saveNovelProgress({
+		chapterId: chapterId.value,
+		chapterNo: currentChapter.value.no,
+		percentage: pendingNovelPosition.percentage,
+		anchorIndex: pendingNovelPosition.anchorIndex,
+		offsetRatio: pendingNovelPosition.offsetRatio,
+	});
+};
+
+const handleNovelScroll = () => {
+	if (isRestoringProgress.value) return;
+	measureNovelPosition();
+	if (progressSaveTimer) clearTimeout(progressSaveTimer);
+	progressSaveTimer = setTimeout(persistNovelProgress, 400);
+};
+
+const restoreNovelProgress = () => {
+	if (!initialNovelPosition || loadedContent.value.length === 0) {
+		isRestoringProgress.value = false;
+		return;
+	}
+
+	const anchor = document.querySelector<HTMLElement>(
+		`[data-reading-block="${initialNovelPosition.anchorIndex}"]`,
+	);
+	if (anchor) {
+		const top =
+			window.scrollY +
+			anchor.getBoundingClientRect().top +
+			anchor.offsetHeight * initialNovelPosition.offsetRatio;
+		window.scrollTo({ top, behavior: 'auto' });
+	} else {
+		const maxScroll = Math.max(
+			0,
+			document.documentElement.scrollHeight - window.innerHeight,
+		);
+		window.scrollTo({
+			top: maxScroll * initialNovelPosition.percentage,
+			behavior: 'auto',
+		});
+	}
+
+	requestAnimationFrame(() => {
+		isRestoringProgress.value = false;
+	});
+};
+
+watch(
+	() => loadedContent.value.length,
+	async (length) => {
+		if (!length || !initialNovelPosition) return;
+		await nextTick();
+		restoreNovelProgress();
+		setTimeout(restoreNovelProgress, 500);
+	},
+);
+
+const handleNovelPageHide = () => {
+	if (!isRestoringProgress.value) measureNovelPosition();
+	persistNovelProgress();
+};
+
+onMounted(() => {
+	window.addEventListener('scroll', handleNovelScroll, { passive: true });
+	window.addEventListener('pagehide', handleNovelPageHide);
+});
+
+onBeforeUnmount(() => {
+	window.removeEventListener('scroll', handleNovelScroll);
+	window.removeEventListener('pagehide', handleNovelPageHide);
+	if (progressSaveTimer) clearTimeout(progressSaveTimer);
+	handleNovelPageHide();
 });
 
 const currentIndex = computed(() =>

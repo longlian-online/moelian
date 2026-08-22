@@ -31,25 +31,25 @@
 
 			<!-- 信息区域 -->
 			<section class="mobile-info-section">
-			<!-- 标题 -->
-			<div class="mobile-title-row">
-				<h1
-					v-copy="workDetail.title"
-					v-tooltip="workDetail.title"
-					class="mobile-title"
-				>
-					{{ workDetail.title }}
-				</h1>
-				<v-btn
-					prepend-icon="mdi-share"
-					variant="text"
-					size="small"
-					class="share-btn"
-					@click="showShareDialog = true"
-				>
-					分享
-				</v-btn>
-			</div>
+				<!-- 标题 -->
+				<div class="mobile-title-row">
+					<h1
+						v-copy="workDetail.title"
+						v-tooltip="workDetail.title"
+						class="mobile-title"
+					>
+						{{ workDetail.title }}
+					</h1>
+					<v-btn
+						prepend-icon="mdi-share"
+						variant="text"
+						size="small"
+						class="share-btn"
+						@click="showShareDialog = true"
+					>
+						分享
+					</v-btn>
+				</div>
 
 				<!-- 作者和标签行 -->
 				<div class="mobile-info-row">
@@ -84,9 +84,7 @@
 							"
 						>
 							{{
-								workDetail.serialType === 'Serializing'
-									? '连载中'
-									: '已完结'
+								workDetail.serialType === 'Serializing' ? '连载中' : '已完结'
 							}}
 						</span>
 					</div>
@@ -111,25 +109,19 @@
 					<span
 						v-copy="
 							workDetail.chapterUpdatedAt
-								? dayjs(workDetail.chapterUpdatedAt).format(
-										'YYYY-MM-DD HH:mm',
-									)
+								? dayjs(workDetail.chapterUpdatedAt).format('YYYY-MM-DD HH:mm')
 								: '暂无更新'
 						"
 						v-tooltip="
 							workDetail.chapterUpdatedAt
-								? dayjs(workDetail.chapterUpdatedAt).format(
-										'YYYY-MM-DD HH:mm',
-									)
+								? dayjs(workDetail.chapterUpdatedAt).format('YYYY-MM-DD HH:mm')
 								: '暂无更新'
 						"
 						class="mobile-info-content"
 					>
 						{{
 							workDetail.chapterUpdatedAt
-								? dayjs(workDetail.chapterUpdatedAt).format(
-										'YYYY-MM-DD HH:mm',
-									)
+								? dayjs(workDetail.chapterUpdatedAt).format('YYYY-MM-DD HH:mm')
 								: '暂无更新'
 						}}
 					</span>
@@ -149,7 +141,7 @@
 					</p>
 				</div>
 
-				<!-- 百合指数 -->
+				<!-- 章节数 -->
 				<div class="mobile-concentration-box">
 					<div class="mobile-concentration-header">
 						<div class="mobile-concentration-label">
@@ -164,20 +156,17 @@
 									d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
 								/>
 							</svg>
-							<span class="mobile-concentration-text">百合指数</span>
+							<span class="mobile-concentration-text">章节数</span>
 						</div>
 						<span class="mobile-concentration-value">{{
-							workDetail?.lastNo || '999+'
+							workDetail.chapterList.length
 						}}</span>
 					</div>
 					<div class="mobile-progress-bar">
 						<div
 							class="mobile-progress-fill"
 							:style="{
-								width:
-									typeof workDetail?.lastNo === 'number'
-										? `${Math.min(100, Math.max(0, workDetail.lastNo))}%`
-										: workDetail?.lastNo || '100%',
+								width: `${Math.min(100, workDetail.chapterList.length)}%`,
 							}"
 						></div>
 					</div>
@@ -187,10 +176,19 @@
 				<div class="mobile-action-button">
 					<v-btn
 						class="mobile-start-read-btn"
-						:to="`/${props.contentType}/chapter/${sortedChapterList[0]?.id}`"
+						:class="{ 'has-progress': continueProgress }"
+						:to="primaryReadTo"
 						block
 					>
-						开始阅读
+						<div v-if="continueProgress" class="mobile-continue-read-content">
+							<span>继续阅读</span>
+							<span class="mobile-continue-read-progress">
+								<span class="mobile-continue-read-label">READ</span>
+								<span>{{ continueProgressLabel }}</span>
+								<span class="mobile-continue-read-underline"></span>
+							</span>
+						</div>
+						<template v-else>开始阅读</template>
 					</v-btn>
 				</div>
 			</section>
@@ -273,9 +271,7 @@
 								:spine-width="20"
 								:show-title="false"
 								:show-spine-text="false"
-								@click.stop="
-									router.push(`/${props.contentType}/${card.id}`)
-								"
+								@click.stop="router.push(`/${props.contentType}/${card.id}`)"
 							>
 								<template #overlay>
 									<AnimeTags
@@ -291,9 +287,7 @@
 								v-copy="card.title"
 								v-tooltip="card.title"
 								class="mobile-recommend-title"
-								@click.stop="
-									router.push(`/${props.contentType}/${card.id}`)
-								"
+								@click.stop="router.push(`/${props.contentType}/${card.id}`)"
 							>
 								{{ card.title }}
 							</h3>
@@ -302,7 +296,9 @@
 								<span class="mobile-recommend-author-name">{{
 									card.author
 								}}</span>
-								<div class="mobile-info-underline mobile-recommend-underline"></div>
+								<div
+									class="mobile-info-underline mobile-recommend-underline"
+								></div>
 							</div>
 						</div>
 					</div>
@@ -321,11 +317,7 @@
 			<v-window v-model="shareTab">
 				<v-window-item value="link">
 					<div class="share-link-row">
-						<input
-							:value="shareUrl"
-							readonly
-							class="share-link-input"
-						/>
+						<input :value="shareUrl" readonly class="share-link-input" />
 						<v-btn
 							:color="copied ? 'success' : 'primary'"
 							class="share-copy-btn"
@@ -350,6 +342,10 @@
 
 <script setup lang="ts">
 import type { WorkDetailRes, WorkListRes } from '~/shared/dto/web/work';
+import type {
+	ReadingContentType,
+	ReadingProgress,
+} from '~/shared/types/reading-progress';
 import dayjs from 'dayjs';
 import Book3D from '~/components/common/Book3D.vue';
 import AnimeTags from '~/components/common/AnimeTags.vue';
@@ -374,13 +370,18 @@ const props = defineProps({
 
 const router = useRouter();
 const route = useRoute();
+const { $tip } = useNuxtApp();
 const workId = computed(() => Number(route.params.id));
 const store = useWebWorkStore();
+const { findLatestProgress } = useReadingProgress();
+const continueProgress = ref<ReadingProgress | null>(null);
 
 const showShareDialog = ref(false);
 const shareTab = ref('link');
 const copied = ref(false);
-const shareCardRef = ref<InstanceType<typeof import('~/components/common/ShareCard.vue').default> | null>(null);
+const shareCardRef = ref<InstanceType<
+	typeof import('~/components/common/ShareCard.vue').default
+> | null>(null);
 let copyTimer: ReturnType<typeof setTimeout> | null = null;
 
 const shareUrl = computed(() => {
@@ -429,6 +430,28 @@ const { data, pending } = await useApiFetch<WorkDetailRes>(
 	},
 );
 const workDetail = data.value.data;
+
+onMounted(() => {
+	continueProgress.value = findLatestProgress(
+		props.contentType as ReadingContentType,
+		workDetail.chapterList.map((chapter) => chapter.id),
+	);
+});
+
+const continueProgressLabel = computed(() => {
+	const progress = continueProgress.value;
+	if (!progress) return '';
+	if (progress.position.kind === 'manga') {
+		return `第 ${progress.chapterNo} 章 · ${progress.position.pageIndex + 1}/${progress.position.totalPages} 页`;
+	}
+	return `第 ${progress.chapterNo} 章 · ${Math.round(progress.position.percentage * 100)}%`;
+});
+
+const primaryReadTo = computed(() => {
+	const chapterId =
+		continueProgress.value?.chapterId ?? sortedChapterList.value[0]?.id;
+	return `/${props.contentType}/chapter/${chapterId}`;
+});
 
 //排序数组根据no属性
 const sortedChapterList = computed(() => {
@@ -757,11 +780,46 @@ useHead({
 	margin-top: 20px;
 }
 
+.mobile-continue-read-content {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.mobile-continue-read-progress {
+	position: relative;
+	display: flex;
+	align-items: baseline;
+	gap: 7px;
+	padding: 0 0 4px 14px;
+	border-left: 1px solid rgba(255, 255, 255, 0.35);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+}
+
+.mobile-continue-read-label {
+	font-size: 9px;
+	font-weight: 900;
+	opacity: 0.72;
+}
+
+.mobile-continue-read-underline {
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	left: 14px;
+	height: 2px;
+	border-radius: 9999px;
+	background: linear-gradient(to right, rgba(255, 255, 255, 0.9), transparent);
+}
+
 .mobile-start-read-btn {
+	height: 48px !important;
 	background: #ff758c !important;
 	color: white !important;
 	font-weight: 900 !important;
-	padding: 12px 24px !important;
+	padding: 0 24px !important;
 	border-radius: 12px !important;
 	box-shadow: 0 10px 20px rgba(255, 117, 140, 0.2) !important;
 	letter-spacing: 0.1em !important;
@@ -1032,5 +1090,4 @@ useHead({
 	border-radius: 8px !important;
 	text-transform: none !important;
 }
-
 </style>
