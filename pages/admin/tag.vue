@@ -7,6 +7,35 @@
 			:speed="speed"
 			@cancel="cancelUpload"
 		></UploadProgressOverlay>
+		<ImageCropperDialog
+			v-model="cropDialogOpen"
+			:src="cropSourceUrl || ''"
+			:file-name="selectedCoverFile?.name || 'tag-cover'"
+			:mime-type="selectedCoverFile?.type || 'image/jpeg'"
+			@confirm="handleCropConfirm"
+			@cancel="handleCropCancel"
+		/>
+		<v-dialog v-model="imagePreviewDialog" max-width="960">
+			<v-card class="overflow-hidden" rounded="xl">
+				<v-toolbar density="compact" color="surface">
+					<v-toolbar-title class="text-subtitle-1">封面原图</v-toolbar-title>
+					<v-spacer />
+					<v-btn
+						icon="mdi-close"
+						variant="text"
+						@click="imagePreviewDialog = false"
+					/>
+				</v-toolbar>
+				<div class="image-preview-stage">
+					<v-img
+						:src="previewImageUrl || '/error-default.jpg'"
+						max-height="80vh"
+						width="100%"
+						contain
+					/>
+				</div>
+			</v-card>
+		</v-dialog>
 
 		<v-container>
 			<!-- 搜索与操作栏 -->
@@ -57,10 +86,11 @@
 							<v-img
 								v-if="item.cover"
 								:src="item.cover"
-								width="100"
-								height="56"
+								width="96"
+								height="72"
 								cover
-								class="rounded-lg bg-grey-lighten-2 border"
+								class="rounded-lg bg-grey-lighten-2 border cover-preview-trigger"
+								@click="openImagePreview(item.cover)"
 							>
 								<template #placeholder>
 									<div class="d-flex align-center justify-center fill-height">
@@ -85,7 +115,7 @@
 							<div
 								v-else
 								class="d-flex align-center justify-center rounded-lg bg-grey-lighten-2 border"
-								style="width: 100px; height: 56px"
+								style="width: 96px; height: 72px"
 							>
 								<v-icon
 									icon="mdi-image-off-outline"
@@ -160,9 +190,10 @@
 										<v-img
 											:src="currentCoverUrl"
 											width="200"
-											height="112"
+											height="150"
 											cover
-											class="rounded-lg bg-grey-lighten-2 border"
+											class="rounded-lg bg-grey-lighten-2 border cover-preview-trigger"
+											@click="openImagePreview(currentCoverUrl)"
 										>
 											<template #placeholder>
 												<div
@@ -179,7 +210,7 @@
 
 									<!-- 文件上传 -->
 									<v-file-input
-										v-model="coverFile"
+										v-model="selectedCoverFile"
 										label="选择新封面图片（可选）"
 										accept="image/*"
 										variant="outlined"
@@ -195,9 +226,10 @@
 										<v-img
 											:src="coverFilePreviewUrl"
 											width="200"
-											height="112"
+											height="150"
 											cover
-											class="rounded-lg bg-grey-lighten-2 border"
+											class="rounded-lg bg-grey-lighten-2 border cover-preview-trigger"
+											@click="openImagePreview(coverFilePreviewUrl)"
 										></v-img>
 									</div>
 								</v-col>
@@ -245,7 +277,7 @@
 							<!-- 第一步：上传图片 -->
 							<div v-if="currentStep === 1" class="pa-4">
 								<v-file-input
-									v-model="coverFile"
+									v-model="selectedCoverFile"
 									label="选择封面图片"
 									accept="image/*"
 									variant="outlined"
@@ -261,9 +293,10 @@
 									<v-img
 										:src="coverFilePreviewUrl"
 										width="300"
-										height="168"
+										height="225"
 										cover
-										class="rounded-lg bg-grey-lighten-2 border"
+										class="rounded-lg bg-grey-lighten-2 border cover-preview-trigger"
+										@click="openImagePreview(coverFilePreviewUrl)"
 									></v-img>
 								</div>
 
@@ -384,6 +417,11 @@ const editingTagId = ref<number | null>(null);
 
 // 文件上传相关状态
 const coverFile = ref<File | null>(null);
+const selectedCoverFile = ref<File | null>(null);
+const cropDialogOpen = ref(false);
+const cropSourceUrl = ref<string | null>(null);
+const imagePreviewDialog = ref(false);
+const previewImageUrl = ref<string | null>(null);
 const overlay = ref(false);
 const progress = ref(0);
 const speed = ref('0 B/s');
@@ -422,13 +460,50 @@ watch(coverFile, (newFile) => {
 	}
 });
 
+const releaseCropSource = () => {
+	if (!cropSourceUrl.value) return;
+	URL.revokeObjectURL(cropSourceUrl.value);
+	cropSourceUrl.value = null;
+};
+
+watch(selectedCoverFile, (newFile) => {
+	if (!newFile || !(newFile instanceof File)) return;
+	releaseCropSource();
+	coverFile.value = null;
+	cropSourceUrl.value = URL.createObjectURL(newFile);
+	cropDialogOpen.value = true;
+});
+
+const handleCropConfirm = (file: File) => {
+	coverFile.value = file;
+	selectedCoverFile.value = null;
+	cropDialogOpen.value = false;
+	releaseCropSource();
+	$tip('封面裁剪完成', {
+		color: 'success',
+		icon: 'mdi-crop',
+	});
+};
+
+const handleCropCancel = () => {
+	selectedCoverFile.value = null;
+	cropDialogOpen.value = false;
+	releaseCropSource();
+};
+
+const openImagePreview = (url: string | null) => {
+	if (!url) return;
+	previewImageUrl.value = url;
+	imagePreviewDialog.value = true;
+};
+
 // 组件卸载时清理预览URL
 onUnmounted(() => {
 	if (coverFilePreviewUrl.value) {
 		URL.revokeObjectURL(coverFilePreviewUrl.value);
 	}
+	releaseCropSource();
 });
-
 
 // 表格列定义
 const headers = [
@@ -503,6 +578,7 @@ const openCreateDialog = () => {
 	tagForm.content = '';
 	tagForm.cover_id = null;
 	coverFile.value = null;
+	selectedCoverFile.value = null;
 	currentCoverUrl.value = null;
 	currentStep.value = 1; // 重置到第一步
 	uploadedCoverId.value = null; // 重置上传的 cover_id
@@ -521,6 +597,7 @@ const openEditDialog = (item: {
 	tagForm.content = item.content;
 	tagForm.cover_id = item.cover_id ?? null;
 	coverFile.value = null;
+	selectedCoverFile.value = null;
 	currentCoverUrl.value = item.cover || null;
 	currentStep.value = 1;
 	uploadedCoverId.value = null;
@@ -572,8 +649,7 @@ const handleUploadAndNext = async (next: () => void) => {
 		}
 	} catch (err: unknown) {
 		// 捕获并处理用户取消的错误
-		const errorMessage =
-			err instanceof Error ? err.message : '封面上传失败';
+		const errorMessage = err instanceof Error ? err.message : '封面上传失败';
 		if (errorMessage === '用户取消了上传') {
 			$tip('用户取消上传', {
 				color: 'error',
@@ -639,11 +715,7 @@ const handleSubmit = async () => {
 						controller.signal,
 					);
 
-					if (
-						uploadedId &&
-						typeof uploadedId === 'number' &&
-						uploadedId > 0
-					) {
+					if (uploadedId && typeof uploadedId === 'number' && uploadedId > 0) {
 						finalCoverId = uploadedId;
 					} else {
 						$tip('封面上传失败：未获取到有效的资源ID', {
@@ -744,6 +816,7 @@ const handleSubmit = async () => {
 		tagForm.content = '';
 		tagForm.cover_id = null;
 		coverFile.value = null;
+		selectedCoverFile.value = null;
 		currentCoverUrl.value = null;
 		currentStep.value = 1;
 		uploadedCoverId.value = null;
@@ -836,4 +909,25 @@ useHead({
 });
 </script>
 
-<style scoped></style>
+<style scoped>
+.cover-preview-trigger {
+	cursor: zoom-in;
+	transition:
+		transform 0.2s ease,
+		box-shadow 0.2s ease;
+}
+
+.cover-preview-trigger:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+}
+
+.image-preview-stage {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 320px;
+	padding: 20px;
+	background: #171717;
+}
+</style>

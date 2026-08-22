@@ -246,7 +246,7 @@
 								}"
 								:to="`/${props.contentType}/chapter/${item.id}`"
 							>
-								{{ item.title }}
+								<span class="chapter-btn-text">{{ item.title }}</span>
 							</v-btn>
 						</div>
 					</div>
@@ -1119,23 +1119,26 @@ useHead({
 
 .detail-chapter-grid {
 	display: grid;
-	grid-template-columns: repeat(4, 1fr);
+	grid-template-columns: repeat(4, minmax(0, 1fr));
 	gap: 16px;
 }
 
 @media (max-width: 1200px) {
 	.detail-chapter-grid {
-		grid-template-columns: repeat(3, 1fr);
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 	}
 }
 
 @media (max-width: 768px) {
 	.detail-chapter-grid {
-		grid-template-columns: repeat(2, 1fr);
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 }
 
 .chapter-btn {
+	width: 100%;
+	min-width: 0 !important;
+	max-width: 100%;
 	border: 1px solid #f2ece6 !important;
 	transition: all 0.2s ease !important;
 	color: #7d5a5a !important;
@@ -1152,6 +1155,22 @@ useHead({
 	align-items: center !important;
 	justify-content: center !important;
 	background: transparent !important;
+}
+
+.chapter-btn-text {
+	display: block;
+	min-width: 0;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.chapter-btn :deep(.v-btn__content) {
+	display: block;
+	min-width: 0;
+	max-width: 100%;
+	overflow: hidden;
 }
 
 .chapter-btn:hover {

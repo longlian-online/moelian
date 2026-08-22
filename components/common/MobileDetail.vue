@@ -235,7 +235,7 @@
 							:to="`/${props.contentType}/chapter/${item.id}`"
 							block
 						>
-							{{ item.title }}
+							<span class="mobile-chapter-btn-text">{{ item.title }}</span>
 						</v-btn>
 					</div>
 				</div>
@@ -897,11 +897,14 @@ useHead({
 
 .mobile-chapter-grid {
 	display: grid;
-	grid-template-columns: repeat(2, 1fr);
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 12px;
 }
 
 .mobile-chapter-btn {
+	width: 100%;
+	min-width: 0 !important;
+	max-width: 100%;
 	border: 1px solid #f2ece6 !important;
 	transition: all 0.2s ease !important;
 	color: #7d5a5a !important;
@@ -915,6 +918,22 @@ useHead({
 	text-overflow: ellipsis;
 	white-space: nowrap;
 	background: transparent !important;
+}
+
+.mobile-chapter-btn-text {
+	display: block;
+	min-width: 0;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.mobile-chapter-btn :deep(.v-btn__content) {
+	display: block;
+	min-width: 0;
+	max-width: 100%;
+	overflow: hidden;
 }
 
 .mobile-chapter-btn:hover {
