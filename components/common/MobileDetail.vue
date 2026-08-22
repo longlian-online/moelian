@@ -141,7 +141,7 @@
 					</p>
 				</div>
 
-				<!-- 百合指数 -->
+				<!-- 章节数 -->
 				<div class="mobile-concentration-box">
 					<div class="mobile-concentration-header">
 						<div class="mobile-concentration-label">
@@ -156,20 +156,17 @@
 									d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
 								/>
 							</svg>
-							<span class="mobile-concentration-text">百合指数</span>
+							<span class="mobile-concentration-text">章节数</span>
 						</div>
 						<span class="mobile-concentration-value">{{
-							workDetail?.lastNo || '999+'
+							workDetail.chapterList.length
 						}}</span>
 					</div>
 					<div class="mobile-progress-bar">
 						<div
 							class="mobile-progress-fill"
 							:style="{
-								width:
-									typeof workDetail?.lastNo === 'number'
-										? `${Math.min(100, Math.max(0, workDetail.lastNo))}%`
-										: workDetail?.lastNo || '100%',
+								width: `${Math.min(100, workDetail.chapterList.length)}%`,
 							}"
 						></div>
 					</div>
@@ -179,10 +176,19 @@
 				<div class="mobile-action-button">
 					<v-btn
 						class="mobile-start-read-btn"
-						:to="`/${props.contentType}/chapter/${sortedChapterList[0]?.id}`"
+						:class="{ 'has-progress': continueProgress }"
+						:to="primaryReadTo"
 						block
 					>
-						开始阅读
+						<div v-if="continueProgress" class="mobile-continue-read-content">
+							<span>继续阅读</span>
+							<span class="mobile-continue-read-progress">
+								<span class="mobile-continue-read-label">READ</span>
+								<span>{{ continueProgressLabel }}</span>
+								<span class="mobile-continue-read-underline"></span>
+							</span>
+						</div>
+						<template v-else>开始阅读</template>
 					</v-btn>
 				</div>
 			</section>
@@ -229,7 +235,7 @@
 							:to="`/${props.contentType}/chapter/${item.id}`"
 							block
 						>
-							{{ item.title }}
+							<span class="mobile-chapter-btn-text">{{ item.title }}</span>
 						</v-btn>
 					</div>
 				</div>
@@ -337,6 +343,10 @@
 
 <script setup lang="ts">
 import type { WorkDetailRes, WorkListRes } from '~/shared/dto/web/work';
+import type {
+	ReadingContentType,
+	ReadingProgress,
+} from '~/shared/types/reading-progress';
 import dayjs from 'dayjs';
 import Book3D from '~/components/common/Book3D.vue';
 import AnimeTags from '~/components/common/AnimeTags.vue';
@@ -364,6 +374,8 @@ const route = useRoute();
 const { $tip } = useNuxtApp();
 const workId = computed(() => Number(route.params.id));
 const store = useWebWorkStore();
+const { findLatestProgress } = useReadingProgress();
+const continueProgress = ref<ReadingProgress | null>(null);
 
 const showShareDialog = ref(false);
 const shareTab = ref('link');
@@ -419,6 +431,28 @@ const { data, pending } = await useApiFetch<WorkDetailRes>(
 	},
 );
 const workDetail = data.value.data;
+
+onMounted(() => {
+	continueProgress.value = findLatestProgress(
+		props.contentType as ReadingContentType,
+		workDetail.chapterList.map((chapter) => chapter.id),
+	);
+});
+
+const continueProgressLabel = computed(() => {
+	const progress = continueProgress.value;
+	if (!progress) return '';
+	if (progress.position.kind === 'manga') {
+		return `第 ${progress.chapterNo} 章 · ${progress.position.pageIndex + 1}/${progress.position.totalPages} 页`;
+	}
+	return `第 ${progress.chapterNo} 章 · ${Math.round(progress.position.percentage * 100)}%`;
+});
+
+const primaryReadTo = computed(() => {
+	const chapterId =
+		continueProgress.value?.chapterId ?? sortedChapterList.value[0]?.id;
+	return `/${props.contentType}/chapter/${chapterId}`;
+});
 
 //排序数组根据no属性
 const sortedChapterList = computed(() => {
@@ -746,11 +780,46 @@ useSeoMeta({
 	margin-top: 20px;
 }
 
+.mobile-continue-read-content {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.mobile-continue-read-progress {
+	position: relative;
+	display: flex;
+	align-items: baseline;
+	gap: 7px;
+	padding: 0 0 4px 14px;
+	border-left: 1px solid rgba(255, 255, 255, 0.35);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+}
+
+.mobile-continue-read-label {
+	font-size: 9px;
+	font-weight: 900;
+	opacity: 0.72;
+}
+
+.mobile-continue-read-underline {
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	left: 14px;
+	height: 2px;
+	border-radius: 9999px;
+	background: linear-gradient(to right, rgba(255, 255, 255, 0.9), transparent);
+}
+
 .mobile-start-read-btn {
+	height: 48px !important;
 	background: #ff758c !important;
 	color: white !important;
 	font-weight: 900 !important;
-	padding: 12px 24px !important;
+	padding: 0 24px !important;
 	border-radius: 12px !important;
 	box-shadow: 0 10px 20px rgba(255, 117, 140, 0.2) !important;
 	letter-spacing: 0.1em !important;
@@ -828,11 +897,14 @@ useSeoMeta({
 
 .mobile-chapter-grid {
 	display: grid;
-	grid-template-columns: repeat(2, 1fr);
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 12px;
 }
 
 .mobile-chapter-btn {
+	width: 100%;
+	min-width: 0 !important;
+	max-width: 100%;
 	border: 1px solid #f2ece6 !important;
 	transition: all 0.2s ease !important;
 	color: #7d5a5a !important;
@@ -846,6 +918,22 @@ useSeoMeta({
 	text-overflow: ellipsis;
 	white-space: nowrap;
 	background: transparent !important;
+}
+
+.mobile-chapter-btn-text {
+	display: block;
+	min-width: 0;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.mobile-chapter-btn :deep(.v-btn__content) {
+	display: block;
+	min-width: 0;
+	max-width: 100%;
+	overflow: hidden;
 }
 
 .mobile-chapter-btn:hover {

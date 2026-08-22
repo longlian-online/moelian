@@ -152,7 +152,7 @@
 								</p>
 							</div>
 
-							<!-- 百合指数区 -->
+							<!-- 章节数 -->
 							<div class="yuri-concentration-box">
 								<div class="yuri-concentration-header">
 									<div class="yuri-concentration-label">
@@ -167,20 +167,17 @@
 												d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
 											/>
 										</svg>
-										<span class="yuri-concentration-text">百合指数</span>
+										<span class="yuri-concentration-text">章节数</span>
 									</div>
 									<span class="yuri-concentration-value">{{
-										workDetail?.lastNo || '999+'
+										workDetail.chapterList.length
 									}}</span>
 								</div>
 								<div class="yuri-progress-bar">
 									<div
 										class="yuri-progress-fill"
 										:style="{
-											width:
-												typeof workDetail?.lastNo === 'number'
-													? `${Math.min(100, Math.max(0, workDetail.lastNo))}%`
-													: workDetail?.lastNo || '100%',
+											width: `${Math.min(100, workDetail.chapterList.length)}%`,
 										}"
 									></div>
 								</div>
@@ -190,9 +187,18 @@
 						<div class="detail-action-button">
 							<v-btn
 								class="start-read-btn"
-								:to="`/${props.contentType}/chapter/${sortedChapterList[0]?.id}`"
+								:class="{ 'has-progress': continueProgress }"
+								:to="primaryReadTo"
 							>
-								开始阅读
+								<div v-if="continueProgress" class="continue-read-content">
+									<span>继续阅读</span>
+									<span class="continue-read-progress">
+										<span class="continue-read-label">READ</span>
+										<span>{{ continueProgressLabel }}</span>
+										<span class="continue-read-underline"></span>
+									</span>
+								</div>
+								<template v-else>开始阅读</template>
 							</v-btn>
 						</div>
 					</div>
@@ -240,7 +246,7 @@
 								}"
 								:to="`/${props.contentType}/chapter/${item.id}`"
 							>
-								{{ item.title }}
+								<span class="chapter-btn-text">{{ item.title }}</span>
 							</v-btn>
 						</div>
 					</div>
@@ -316,9 +322,9 @@
 							</div>
 							<div class="recommendation-progress">
 								<div class="recommendation-progress-header">
-									<span class="recommendation-progress-label">百合指数</span>
+									<span class="recommendation-progress-label">章节数</span>
 									<span class="recommendation-progress-value">{{
-										card?.lastNo || '1000'
+										`${card?.lastNo ?? 0} 章`
 									}}</span>
 								</div>
 								<div class="yuri-progress-bar recommendation-progress-bar">
@@ -375,6 +381,10 @@
 
 <script setup lang="ts">
 import type { WorkDetailRes, WorkListRes } from '~/shared/dto/web/work';
+import type {
+	ReadingContentType,
+	ReadingProgress,
+} from '~/shared/types/reading-progress';
 import dayjs from 'dayjs';
 
 const props = defineProps({
@@ -400,6 +410,8 @@ const route = useRoute();
 const { $tip } = useNuxtApp();
 const workId = computed(() => Number(route.params.id));
 const store = useWebWorkStore();
+const { findLatestProgress } = useReadingProgress();
+const continueProgress = ref<ReadingProgress | null>(null);
 
 const showShareDialog = ref(false);
 const shareTab = ref('link');
@@ -455,6 +467,28 @@ const { data, pending } = await useApiFetch<WorkDetailRes>(
 	},
 );
 const workDetail = data.value.data;
+
+onMounted(() => {
+	continueProgress.value = findLatestProgress(
+		props.contentType as ReadingContentType,
+		workDetail.chapterList.map((chapter) => chapter.id),
+	);
+});
+
+const continueProgressLabel = computed(() => {
+	const progress = continueProgress.value;
+	if (!progress) return '';
+	if (progress.position.kind === 'manga') {
+		return `第 ${progress.chapterNo} 章 · ${progress.position.pageIndex + 1}/${progress.position.totalPages} 页`;
+	}
+	return `第 ${progress.chapterNo} 章 · ${Math.round(progress.position.percentage * 100)}%`;
+});
+
+const primaryReadTo = computed(() => {
+	const chapterId =
+		continueProgress.value?.chapterId ?? sortedChapterList.value[0]?.id;
+	return `/${props.contentType}/chapter/${chapterId}`;
+});
 
 //排序数组根据no属性
 const sortedChapterList = computed(() => {
@@ -850,7 +884,7 @@ useSeoMeta({
 	overflow: hidden;
 }
 
-/* 百合指数区 */
+/* 章节数 */
 .yuri-concentration-box {
 	background: #fefcf9;
 	padding: 16px;
@@ -915,11 +949,46 @@ useSeoMeta({
 	justify-content: flex-start;
 }
 
+.continue-read-content {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.continue-read-progress {
+	position: relative;
+	display: flex;
+	align-items: baseline;
+	gap: 7px;
+	padding: 0 0 4px 14px;
+	border-left: 1px solid rgba(255, 255, 255, 0.35);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+}
+
+.continue-read-label {
+	font-size: 9px;
+	font-weight: 900;
+	opacity: 0.72;
+}
+
+.continue-read-underline {
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	left: 14px;
+	height: 2px;
+	border-radius: 9999px;
+	background: linear-gradient(to right, rgba(255, 255, 255, 0.9), transparent);
+}
+
 .start-read-btn {
+	height: 48px !important;
 	background: #ff758c !important;
 	color: white !important;
 	font-weight: 900 !important;
-	padding: 10px 48px !important;
+	padding: 0 48px !important;
 	border-radius: 12px !important;
 	box-shadow: 0 10px 20px rgba(255, 117, 140, 0.2) !important;
 	transition: all 0.2s ease !important;
@@ -933,6 +1002,11 @@ useSeoMeta({
 .start-read-btn:hover {
 	background: #ff5e78 !important;
 	transform: scale(0.98);
+}
+
+.start-read-btn.has-progress {
+	padding-right: 28px !important;
+	padding-left: 28px !important;
 }
 
 /* 章节列表 */
@@ -1045,23 +1119,26 @@ useSeoMeta({
 
 .detail-chapter-grid {
 	display: grid;
-	grid-template-columns: repeat(4, 1fr);
+	grid-template-columns: repeat(4, minmax(0, 1fr));
 	gap: 16px;
 }
 
 @media (max-width: 1200px) {
 	.detail-chapter-grid {
-		grid-template-columns: repeat(3, 1fr);
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 	}
 }
 
 @media (max-width: 768px) {
 	.detail-chapter-grid {
-		grid-template-columns: repeat(2, 1fr);
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 }
 
 .chapter-btn {
+	width: 100%;
+	min-width: 0 !important;
+	max-width: 100%;
 	border: 1px solid #f2ece6 !important;
 	transition: all 0.2s ease !important;
 	color: #7d5a5a !important;
@@ -1078,6 +1155,22 @@ useSeoMeta({
 	align-items: center !important;
 	justify-content: center !important;
 	background: transparent !important;
+}
+
+.chapter-btn-text {
+	display: block;
+	min-width: 0;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.chapter-btn :deep(.v-btn__content) {
+	display: block;
+	min-width: 0;
+	max-width: 100%;
+	overflow: hidden;
 }
 
 .chapter-btn:hover {

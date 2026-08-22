@@ -140,7 +140,7 @@
 							<div class="concentration-header">
 								<span class="concentration-label">章节数</span>
 								<span class="concentration-value">{{
-									card?.lastNo || '1000'
+									`${card?.lastNo ?? 0} 章`
 								}}</span>
 							</div>
 							<div class="yuri-progress-bar">

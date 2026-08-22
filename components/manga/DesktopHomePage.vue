@@ -159,7 +159,7 @@
 													<span class="yuri-concentration-text">章节数</span>
 												</div>
 												<span class="yuri-concentration-value">{{
-													card?.lastNo || '1000'
+													`${card?.lastNo ?? 0} 章`
 												}}</span>
 											</div>
 

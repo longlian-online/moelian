@@ -108,6 +108,7 @@
 </template>
 
 <script setup lang="ts">
+import type { PropType } from 'vue';
 import type { VWindow } from 'vuetify/components';
 import type { WorkDetailChapterItem } from '~/shared/dto/web/work';
 
@@ -144,20 +145,26 @@ const propsList = defineProps({
 		default: false,
 	},
 	goToPrevChapter: {
-		type: Function as () => () => void,
-		default: () => () => {},
+		type: Function as PropType<() => void>,
+		default: undefined,
 	},
 	goToNextChapter: {
-		type: Function as () => () => void,
-		default: () => () => {},
+		type: Function as PropType<() => void>,
+		default: undefined,
 	},
 	toggleFullscreen: {
-		type: Function as () => () => void,
-		default: () => () => {},
+		type: Function as PropType<() => void>,
+		default: undefined,
+	},
+	initialPageIndex: {
+		type: Number,
+		default: 0,
 	},
 });
 
-/** 此组件不对外 emit 事件 */
+const emit = defineEmits<{
+	progressChange: [pageIndex: number];
+}>();
 /** 此组件不对外暴露 slot */
 
 const { isMobile } = useDevice();
@@ -170,8 +177,6 @@ const sheet = ref(false);
 const onboarding = ref(0);
 const displayIndex = ref(1);
 
-const pageLayout = inject('pageLayout') as Ref<boolean>;
-const scrollDirection = inject('scrollDirection') as Ref<boolean>;
 const readingMode = inject('readingMode') as Ref<boolean>;
 
 const windowReverse = ref(false);
@@ -193,6 +198,12 @@ const getPageImage = (pageIndex: number) => {
 };
 
 onMounted(() => {
+	const initialIndex = Math.min(
+		Math.max(0, Math.floor(propsList.initialPageIndex)),
+		Math.max(0, totalPages.value - 1),
+	);
+	onboarding.value = initialIndex;
+	displayIndex.value = initialIndex + 1;
 	// 在组件挂载时，调用异步函数来加载数据
 	document.addEventListener('keydown', handleKeyDown);
 });
@@ -274,12 +285,12 @@ function handleKeyDown(event: KeyboardEvent) {
 
 watch(onboarding, (newVal) => {
 	displayIndex.value = newVal + 1;
+	emit('progressChange', newVal);
 });
 
 watch(displayIndex, (newVal) => {
 	onboarding.value = newVal - 1;
 });
-
 </script>
 
 <style scoped>
