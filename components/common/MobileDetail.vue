@@ -271,6 +271,7 @@
 								:spine-width="20"
 								:show-title="false"
 								:show-spine-text="false"
+								:to="`/${props.contentType}/${card.id}`"
 								@click.stop="router.push(`/${props.contentType}/${card.id}`)"
 							>
 								<template #overlay>
@@ -525,19 +526,18 @@ const { data: recommendationsData } = await useAsyncData<WorkListRes['list']>(
 	},
 );
 
-useHead({
-	title: `${workDetail.title || '作品详情'}`,
-	meta: [
-		{
-			name: 'description',
-			content: '百合作品详情页面，包含作品简介、章节列表和推荐作品。',
-		},
-		{
-			name: 'keywords',
-			content:
-				'百合, 百合漫画,夢怜龍華, 夢怜龙华, 百合小说, 百合轻小说, 百合漫画推荐, 百合漫画阅读, 百合漫画更新',
-		},
-	],
+useSeoMeta({
+	title: () =>
+		`${workDetail.title} - ${props.contentType === 'manga' ? '漫画' : '小说'}`,
+	description: () =>
+		workDetail.description ||
+		`${workDetail.title}，作者：${workDetail.author}。在线查看作品简介与最新章节。`,
+	ogTitle: () => workDetail.title,
+	ogDescription: () => workDetail.description,
+	ogImage: () => workDetail.coverUrl,
+	twitterTitle: () => workDetail.title,
+	twitterDescription: () => workDetail.description,
+	twitterImage: () => workDetail.coverUrl,
 });
 </script>
 

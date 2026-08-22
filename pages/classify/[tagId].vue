@@ -114,6 +114,7 @@
 								:spine-width="30"
 								:show-title="false"
 								:show-spine-text="false"
+								:to="`/${work.type === ContentType.Manga ? 'manga' : 'novel'}/${work.id}`"
 								@click.stop="handleWorkClick(work)"
 							>
 								<template #overlay>
