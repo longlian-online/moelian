@@ -1,7 +1,13 @@
 <template>
 	<div class="book-3d-container" :style="containerStyle">
 		<div class="book-3d-wrapper" :style="wrapperStyle">
-			<div class="book-cover-link" @click="handleClick($event)">
+			<component
+				:is="linkComponent"
+				class="book-cover-link"
+				:to="to"
+				:aria-label="to ? `查看${title}` : undefined"
+				@click="handleClick($event)"
+			>
 				<!-- 整个书体 -->
 				<div class="book-body">
 					<!-- 书脊（侧封） -->
@@ -54,7 +60,7 @@
 						</div>
 					</div>
 				</div>
-			</div>
+			</component>
 		</div>
 	</div>
 </template>
@@ -69,6 +75,7 @@ interface Props {
 	spineWidth?: number; // 书脊宽度，默认 50px
 	showTitle?: boolean; // 是否显示底部标题，默认 true
 	showSpineText?: boolean; // 是否显示书脊文字，默认 true
+	to?: string; // 详情地址；传入后服务端 HTML 会输出可抓取的链接
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -77,12 +84,17 @@ const props = withDefaults(defineProps<Props>(), {
 	spineWidth: 50,
 	showTitle: true,
 	showSpineText: true,
+	to: undefined,
 });
 
 const emit = defineEmits<{
 	click: [event?: Event];
 	imageLoad: [width: number];
 }>();
+
+const linkComponent = computed(() =>
+	props.to ? resolveComponent('NuxtLink') : 'div',
+);
 
 // 计算出的动态宽度
 const calculatedWidth = ref<number>(props.width);
@@ -131,7 +143,9 @@ const handleImageLoad = (src: string | Event) => {
 
 const handleClick = (event?: Event) => {
 	event?.stopPropagation();
-	emit('click', event);
+	if (!props.to) {
+		emit('click', event);
+	}
 };
 </script>
 
@@ -158,6 +172,8 @@ const handleClick = (event?: Event) => {
 	width: 100%;
 	height: 100%;
 	cursor: pointer;
+	color: inherit;
+	text-decoration: none;
 }
 
 /* 书体组合 - 绕交界线旋转 */

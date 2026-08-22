@@ -75,6 +75,9 @@ export default defineNuxtConfig({
 		privateRoute: ['/api/admin'],
 		public: {
 			appName: 'loc',
+			siteUrl:
+				process.env.NUXT_PUBLIC_SITE_URL ||
+				'https://moelian.neo.longlian.online',
 			logoUrl:
 				'https://loc-1308050490.cos.ap-guangzhou.myqcloud.com/Public/logo.png',
 			defaultAvatar:
@@ -99,7 +102,7 @@ export default defineNuxtConfig({
 	},
 
 	routeRules: {
-		'/': { redirect: '/manga' },
+		'/': { redirect: { to: '/manga', statusCode: 301 } },
 		// 匹配所有以 /admin/ 开头的路由,关闭ssr
 		'/admin/**': { ssr: false },
 		//  关闭 /login 路径的 SSR
@@ -108,6 +111,9 @@ export default defineNuxtConfig({
 
 	app: {
 		head: {
+			htmlAttrs: {
+				lang: 'zh-CN',
+			},
 			link: [
 				{
 					rel: 'icon',

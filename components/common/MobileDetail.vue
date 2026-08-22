@@ -31,25 +31,25 @@
 
 			<!-- 信息区域 -->
 			<section class="mobile-info-section">
-			<!-- 标题 -->
-			<div class="mobile-title-row">
-				<h1
-					v-copy="workDetail.title"
-					v-tooltip="workDetail.title"
-					class="mobile-title"
-				>
-					{{ workDetail.title }}
-				</h1>
-				<v-btn
-					prepend-icon="mdi-share"
-					variant="text"
-					size="small"
-					class="share-btn"
-					@click="showShareDialog = true"
-				>
-					分享
-				</v-btn>
-			</div>
+				<!-- 标题 -->
+				<div class="mobile-title-row">
+					<h1
+						v-copy="workDetail.title"
+						v-tooltip="workDetail.title"
+						class="mobile-title"
+					>
+						{{ workDetail.title }}
+					</h1>
+					<v-btn
+						prepend-icon="mdi-share"
+						variant="text"
+						size="small"
+						class="share-btn"
+						@click="showShareDialog = true"
+					>
+						分享
+					</v-btn>
+				</div>
 
 				<!-- 作者和标签行 -->
 				<div class="mobile-info-row">
@@ -84,9 +84,7 @@
 							"
 						>
 							{{
-								workDetail.serialType === 'Serializing'
-									? '连载中'
-									: '已完结'
+								workDetail.serialType === 'Serializing' ? '连载中' : '已完结'
 							}}
 						</span>
 					</div>
@@ -111,25 +109,19 @@
 					<span
 						v-copy="
 							workDetail.chapterUpdatedAt
-								? dayjs(workDetail.chapterUpdatedAt).format(
-										'YYYY-MM-DD HH:mm',
-									)
+								? dayjs(workDetail.chapterUpdatedAt).format('YYYY-MM-DD HH:mm')
 								: '暂无更新'
 						"
 						v-tooltip="
 							workDetail.chapterUpdatedAt
-								? dayjs(workDetail.chapterUpdatedAt).format(
-										'YYYY-MM-DD HH:mm',
-									)
+								? dayjs(workDetail.chapterUpdatedAt).format('YYYY-MM-DD HH:mm')
 								: '暂无更新'
 						"
 						class="mobile-info-content"
 					>
 						{{
 							workDetail.chapterUpdatedAt
-								? dayjs(workDetail.chapterUpdatedAt).format(
-										'YYYY-MM-DD HH:mm',
-									)
+								? dayjs(workDetail.chapterUpdatedAt).format('YYYY-MM-DD HH:mm')
 								: '暂无更新'
 						}}
 					</span>
@@ -273,9 +265,8 @@
 								:spine-width="20"
 								:show-title="false"
 								:show-spine-text="false"
-								@click.stop="
-									router.push(`/${props.contentType}/${card.id}`)
-								"
+								:to="`/${props.contentType}/${card.id}`"
+								@click.stop="router.push(`/${props.contentType}/${card.id}`)"
 							>
 								<template #overlay>
 									<AnimeTags
@@ -291,9 +282,7 @@
 								v-copy="card.title"
 								v-tooltip="card.title"
 								class="mobile-recommend-title"
-								@click.stop="
-									router.push(`/${props.contentType}/${card.id}`)
-								"
+								@click.stop="router.push(`/${props.contentType}/${card.id}`)"
 							>
 								{{ card.title }}
 							</h3>
@@ -302,7 +291,9 @@
 								<span class="mobile-recommend-author-name">{{
 									card.author
 								}}</span>
-								<div class="mobile-info-underline mobile-recommend-underline"></div>
+								<div
+									class="mobile-info-underline mobile-recommend-underline"
+								></div>
 							</div>
 						</div>
 					</div>
@@ -321,11 +312,7 @@
 			<v-window v-model="shareTab">
 				<v-window-item value="link">
 					<div class="share-link-row">
-						<input
-							:value="shareUrl"
-							readonly
-							class="share-link-input"
-						/>
+						<input :value="shareUrl" readonly class="share-link-input" />
 						<v-btn
 							:color="copied ? 'success' : 'primary'"
 							class="share-copy-btn"
@@ -374,13 +361,16 @@ const props = defineProps({
 
 const router = useRouter();
 const route = useRoute();
+const { $tip } = useNuxtApp();
 const workId = computed(() => Number(route.params.id));
 const store = useWebWorkStore();
 
 const showShareDialog = ref(false);
 const shareTab = ref('link');
 const copied = ref(false);
-const shareCardRef = ref<InstanceType<typeof import('~/components/common/ShareCard.vue').default> | null>(null);
+const shareCardRef = ref<InstanceType<
+	typeof import('~/components/common/ShareCard.vue').default
+> | null>(null);
 let copyTimer: ReturnType<typeof setTimeout> | null = null;
 
 const shareUrl = computed(() => {
@@ -502,19 +492,18 @@ const { data: recommendationsData } = await useAsyncData<WorkListRes['list']>(
 	},
 );
 
-useHead({
-	title: `${workDetail.title || '作品详情'}`,
-	meta: [
-		{
-			name: 'description',
-			content: '百合作品详情页面，包含作品简介、章节列表和推荐作品。',
-		},
-		{
-			name: 'keywords',
-			content:
-				'百合, 百合漫画,夢怜龍華, 夢怜龙华, 百合小说, 百合轻小说, 百合漫画推荐, 百合漫画阅读, 百合漫画更新',
-		},
-	],
+useSeoMeta({
+	title: () =>
+		`${workDetail.title} - ${props.contentType === 'manga' ? '漫画' : '小说'}`,
+	description: () =>
+		workDetail.description ||
+		`${workDetail.title}，作者：${workDetail.author}。在线查看作品简介与最新章节。`,
+	ogTitle: () => workDetail.title,
+	ogDescription: () => workDetail.description,
+	ogImage: () => workDetail.coverUrl,
+	twitterTitle: () => workDetail.title,
+	twitterDescription: () => workDetail.description,
+	twitterImage: () => workDetail.coverUrl,
 });
 </script>
 
@@ -1032,5 +1021,4 @@ useHead({
 	border-radius: 8px !important;
 	text-transform: none !important;
 }
-
 </style>

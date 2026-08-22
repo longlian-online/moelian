@@ -71,6 +71,7 @@
 											:width="260"
 											:height="400"
 											:show-title="false"
+											:to="`/manga/${card.id}`"
 											@click="handleBookClick(card.id)"
 										>
 											<template #overlay>
@@ -213,7 +214,7 @@ const handleAuthorClick = (author: string) => {
 	webWorkStore.triggerMangaSearch();
 };
 
-const { error } = useAsyncData(
+const { error } = await useAsyncData(
 	'manga-list-data',
 	async () => {
 		await webWorkStore.fetchWorkList(webWorkStore.mangaState);

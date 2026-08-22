@@ -1,6 +1,45 @@
 <script setup lang="ts">
+const route = useRoute();
+const requestUrl = useRequestURL();
+const config = useRuntimeConfig();
+
+const siteOrigin = computed(() => {
+	const configuredUrl = config.public.siteUrl?.trim();
+	return (configuredUrl || requestUrl.origin).replace(/\/$/, '');
+});
+
+const canonicalUrl = computed(
+	() => `${siteOrigin.value}${route.path === '/' ? '/' : route.path}`,
+);
+
+useHead({
+	titleTemplate: (title) => title || '夢怜龍華汉化组',
+	link: [{ rel: 'canonical', href: canonicalUrl }],
+	script: [
+		{
+			type: 'application/ld+json',
+			innerHTML: computed(() =>
+				JSON.stringify({
+					'@context': 'https://schema.org',
+					'@type': 'WebSite',
+					name: '夢怜龍華汉化组',
+					url: `${siteOrigin.value}/`,
+					inLanguage: 'zh-CN',
+				}),
+			),
+		},
+	],
+});
+
 useSeoMeta({
-	title: '',
+	description:
+		'夢怜龍華汉化组在线阅读平台，提供百合漫画、百合小说及其最新章节。',
+	robots: 'index, follow, max-image-preview:large',
+	ogSiteName: '夢怜龍華汉化组',
+	ogType: 'website',
+	ogLocale: 'zh_CN',
+	ogUrl: canonicalUrl,
+	twitterCard: 'summary_large_image',
 });
 </script>
 

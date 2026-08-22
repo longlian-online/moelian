@@ -20,6 +20,10 @@ useHead({
 		},
 	],
 });
+useSeoMeta({
+	ogTitle: '夢怜龍華汉化组 - 漫画列表',
+	ogDescription: '浏览和搜索漫画，发现新的漫画系列，并查看最新更新的章节。',
+});
 const { isMobile } = useDevice();
 </script>
 
