@@ -14,18 +14,29 @@
 			/>
 		</div>
 		<canvas ref="posterCanvas" class="share-poster-canvas"></canvas>
-		<v-btn
-			class="save-poster-btn"
-			color="primary"
-			prepend-icon="mdi-download"
-			size="large"
-			block
-			:disabled="!posterImage || isGenerating"
-			:loading="isGenerating"
-			@click="downloadPoster"
-		>
-			保存分享海报
-		</v-btn>
+		<div class="share-actions">
+			<v-btn
+				class="share-action-btn"
+				color="primary"
+				prepend-icon="mdi-download"
+				size="large"
+				:disabled="!posterImage || isGenerating"
+				:loading="isGenerating"
+				@click="downloadPoster"
+			>
+				下载海报
+			</v-btn>
+			<v-btn
+				class="share-action-btn"
+				color="primary"
+				prepend-icon="mdi-link-variant"
+				size="large"
+				variant="outlined"
+				@click="copyShareLink"
+			>
+				分享链接
+			</v-btn>
+		</div>
 		<p class="save-poster-tip">保存图片后，可发送到任意聊天或社交平台</p>
 	</div>
 </template>
@@ -500,6 +511,22 @@ function downloadPoster() {
 	$tip('分享海报已保存', { color: 'success', icon: 'mdi-download' });
 }
 
+async function copyShareLink() {
+	const shareText = `这部作品想推荐给喜欢百合的你：\n${props.shareUrl}`;
+	try {
+		await navigator.clipboard.writeText(shareText);
+		$tip('分享链接已复制', {
+			color: 'success',
+			icon: 'mdi-check-circle',
+		});
+	} catch {
+		$tip('复制失败，请稍后重试', {
+			color: 'error',
+			icon: 'mdi-alert-circle',
+		});
+	}
+}
+
 defineExpose({ generateCard, downloadPoster });
 </script>
 
@@ -530,7 +557,12 @@ defineExpose({ generateCard, downloadPoster });
 .share-poster-canvas {
 	display: none;
 }
-.save-poster-btn {
+.share-actions {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 10px;
+}
+.share-action-btn {
 	border-radius: 12px !important;
 	font-weight: 800 !important;
 	letter-spacing: 0.06em !important;

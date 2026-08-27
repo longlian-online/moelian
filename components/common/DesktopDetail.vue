@@ -350,10 +350,8 @@
 		<div class="share-dialog-content">
 			<div class="share-dialog-header">
 				<div>
-					<span class="share-dialog-eyebrow">SHARE</span>
-					<h3 class="share-dialog-title">
-						{{ shareTab === 'poster' ? '生成分享海报' : '分享作品链接' }}
-					</h3>
+					<span class="share-dialog-eyebrow">SHARE POSTER</span>
+					<h3 class="share-dialog-title">生成分享海报</h3>
 				</div>
 				<v-btn
 					icon="mdi-close"
@@ -361,20 +359,13 @@
 					@click="showShareDialog = false"
 				/>
 			</div>
-			<v-tabs v-model="shareTab" grow color="primary" class="share-tabs">
-				<v-tab value="poster" prepend-icon="mdi-image-outline">分享海报</v-tab>
-				<v-tab value="link" prepend-icon="mdi-link-variant">分享链接</v-tab>
-			</v-tabs>
-			<div v-show="shareTab === 'poster'">
-				<ShareCard
-					ref="shareCardRef"
-					:cover-url="workDetail?.coverUrl"
-					:share-url="shareUrl"
-					:title="workDetail?.title"
-					:author="workDetail?.author"
-				/>
-			</div>
-			<ShareLink v-show="shareTab === 'link'" :share-url="shareUrl" />
+			<ShareCard
+				ref="shareCardRef"
+				:cover-url="workDetail?.coverUrl"
+				:share-url="shareUrl"
+				:title="workDetail?.title"
+				:author="workDetail?.author"
+			/>
 		</div>
 	</v-dialog>
 </template>
@@ -413,7 +404,6 @@ const { findLatestProgress } = useReadingProgress();
 const continueProgress = ref<ReadingProgress | null>(null);
 
 const showShareDialog = ref(false);
-const shareTab = ref<'poster' | 'link'>('poster');
 const shareCardRef = ref<InstanceType<
 	typeof import('~/components/common/ShareCard.vue').default
 > | null>(null);
@@ -425,7 +415,6 @@ const shareUrl = computed(() => {
 
 watch(showShareDialog, (visible) => {
 	if (visible) {
-		shareTab.value = 'poster';
 		nextTick(() => {
 			shareCardRef.value?.generateCard();
 		});
@@ -1385,9 +1374,5 @@ useSeoMeta({
 	font-weight: 900;
 	color: #5a463d;
 	margin: 2px 0 0;
-}
-
-.share-tabs {
-	margin-bottom: 16px;
 }
 </style>
