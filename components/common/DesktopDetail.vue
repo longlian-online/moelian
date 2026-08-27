@@ -346,35 +346,26 @@
 		</template>
 	</div>
 
-	<v-dialog v-model="showShareDialog" max-width="460">
+	<v-dialog v-model="showShareDialog" max-width="520">
 		<div class="share-dialog-content">
-			<h3 class="share-dialog-title">{{ workDetail?.title }}</h3>
-			<v-tabs v-model="shareTab" class="share-tabs" align-tabs="center">
-				<v-tab value="link">链接分享</v-tab>
-				<v-tab value="qrcode">二维码分享</v-tab>
-			</v-tabs>
-			<v-window v-model="shareTab">
-				<v-window-item value="link">
-					<div class="share-link-row">
-						<input :value="shareUrl" readonly class="share-link-input" />
-						<v-btn
-							:color="copied ? 'success' : 'primary'"
-							class="share-copy-btn"
-							@click="handleCopyLink"
-						>
-							{{ copied ? '已复制✓' : '复制链接' }}
-						</v-btn>
-					</div>
-				</v-window-item>
-				<v-window-item value="qrcode">
-					<ShareCard
-						ref="shareCardRef"
-						:cover-url="workDetail?.coverUrl"
-						:share-url="shareUrl"
-						:title="workDetail?.title"
-					/>
-				</v-window-item>
-			</v-window>
+			<div class="share-dialog-header">
+				<div>
+					<span class="share-dialog-eyebrow">SHARE POSTER</span>
+					<h3 class="share-dialog-title">生成分享海报</h3>
+				</div>
+				<v-btn
+					icon="mdi-close"
+					variant="text"
+					@click="showShareDialog = false"
+				/>
+			</div>
+			<ShareCard
+				ref="shareCardRef"
+				:cover-url="workDetail?.coverUrl"
+				:share-url="shareUrl"
+				:title="workDetail?.title"
+				:author="workDetail?.author"
+			/>
 		</div>
 	</v-dialog>
 </template>
@@ -407,48 +398,23 @@ const props = defineProps({
 
 const router = useRouter();
 const route = useRoute();
-const { $tip } = useNuxtApp();
 const workId = computed(() => Number(route.params.id));
 const store = useWebWorkStore();
 const { findLatestProgress } = useReadingProgress();
 const continueProgress = ref<ReadingProgress | null>(null);
 
 const showShareDialog = ref(false);
-const shareTab = ref('link');
-const copied = ref(false);
 const shareCardRef = ref<InstanceType<
 	typeof import('~/components/common/ShareCard.vue').default
 > | null>(null);
-let copyTimer: ReturnType<typeof setTimeout> | null = null;
 
 const shareUrl = computed(() => {
 	if (typeof window === 'undefined') return '';
 	return `${window.location.origin}/${props.contentType}/${workId.value}`;
 });
 
-async function handleCopyLink() {
-	try {
-		await navigator.clipboard.writeText(shareUrl.value);
-		copied.value = true;
-		if (copyTimer) clearTimeout(copyTimer);
-		copyTimer = setTimeout(() => {
-			copied.value = false;
-		}, 2000);
-	} catch {
-		$tip('复制失败', { color: 'error', icon: 'mdi-alert-circle' });
-	}
-}
-
-watch(shareTab, (tab) => {
-	if (tab === 'qrcode') {
-		nextTick(() => {
-			shareCardRef.value?.generateCard();
-		});
-	}
-});
-
 watch(showShareDialog, (visible) => {
-	if (visible && shareTab.value === 'qrcode') {
+	if (visible) {
 		nextTick(() => {
 			shareCardRef.value?.generateCard();
 		});
@@ -1385,45 +1351,28 @@ useSeoMeta({
 
 .share-dialog-content {
 	background: white;
-	border-radius: 16px;
+	border-radius: 22px;
 	padding: 24px;
+}
+
+.share-dialog-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	margin-bottom: 16px;
+}
+
+.share-dialog-eyebrow {
+	color: #ff758c;
+	font-size: 10px;
+	font-weight: 900;
+	letter-spacing: 0.16em;
 }
 
 .share-dialog-title {
 	font-size: 18px;
 	font-weight: 900;
 	color: #5a463d;
-	margin-bottom: 16px;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.share-tabs {
-	margin-bottom: 16px;
-}
-
-.share-link-row {
-	display: flex;
-	gap: 12px;
-	align-items: center;
-}
-
-.share-link-input {
-	flex: 1;
-	padding: 10px 12px;
-	border: 1px solid #f2ece6;
-	border-radius: 8px;
-	font-size: 13px;
-	color: #7d5a5a;
-	background: #fdfaf8;
-	outline: none;
-}
-
-.share-copy-btn {
-	flex-shrink: 0;
-	font-weight: 900 !important;
-	border-radius: 8px !important;
-	text-transform: none !important;
+	margin: 2px 0 0;
 }
 </style>
