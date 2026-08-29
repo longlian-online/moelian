@@ -111,7 +111,6 @@ const { data: tagListData, pending: isPending } =
 // 标签列表
 const tagList = ref([]);
 
-
 // 更新标签列表
 watch(
 	() => tagListData.value?.data,
@@ -179,8 +178,8 @@ const handleTagClick = (tag) => {
 /* 网格布局 */
 .tag-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-	gap: 30px;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: 24px;
 }
 
 /* 标签卡片 */
@@ -198,7 +197,7 @@ const handleTagClick = (tag) => {
 .tag-cover-box {
 	position: relative;
 	width: 100%;
-	aspect-ratio: 16 / 9;
+	aspect-ratio: 4 / 3;
 	overflow: hidden;
 	background-color: #f2ece6;
 }
@@ -221,7 +220,7 @@ const handleTagClick = (tag) => {
 
 /* 卡片信息区 */
 .tag-content-area {
-	padding: 24px;
+	padding: 20px;
 	display: flex;
 	flex-direction: row;
 	align-items: flex-start;

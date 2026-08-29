@@ -19,9 +19,11 @@
 		</v-system-bar>
 		<v-sheet class="pa-2">
 			<div class="content-box">
-				<template
+				<div
 					v-for="({ content, isCenter, type, label }, index) in loadedContent"
 					:key="index"
+					:data-reading-block="index"
+					class="novel-reading-block"
 				>
 					<template v-if="type === 'img'">
 						<div class="d-flex flex-column align-center my-6 w-100">
@@ -30,11 +32,7 @@
 								class="pa-2 rounded-lg lily-frame"
 								max-width="92%"
 							>
-								<v-img
-									:src="content"
-									width="100%"
-									class="rounded-lg"
-								>
+								<v-img :src="content" width="100%" class="rounded-lg">
 									<template #placeholder>
 										<v-skeleton-loader
 											type="image"
@@ -53,12 +51,29 @@
 								</v-img>
 							</v-card>
 							<div class="lily-label-container mt-3 d-flex align-center">
-								<svg class="lily-icon" viewBox="0 0 100 100" width="16" height="16">
-									<path d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10" fill="#ff6b9d"/>
+								<svg
+									class="lily-icon"
+									viewBox="0 0 100 100"
+									width="16"
+									height="16"
+								>
+									<path
+										d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10"
+										fill="#ff6b9d"
+									/>
 								</svg>
 								<span v-if="label" class="lily-text mx-2">{{ label }}</span>
-								<svg class="lily-icon" viewBox="0 0 100 100" width="16" height="16" style="transform: scaleX(-1)">
-									<path d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10" fill="#ff6b9d"/>
+								<svg
+									class="lily-icon"
+									viewBox="0 0 100 100"
+									width="16"
+									height="16"
+									style="transform: scaleX(-1)"
+								>
+									<path
+										d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10"
+										fill="#ff6b9d"
+									/>
 								</svg>
 							</div>
 						</div>
@@ -72,7 +87,7 @@
 						</p>
 						<br />
 					</template>
-				</template>
+				</div>
 			</div>
 			<div class="d-flex justify-space-between align-center">
 				<v-btn
@@ -120,11 +135,7 @@
 				</v-btn>
 			</div>
 			<div class="d-flex justify-center">
-				<v-btn
-					elevation="0"
-					prepend-icon="mdi-home"
-					variant="text"
-					to="/novel"
+				<v-btn elevation="0" prepend-icon="mdi-home" variant="text" to="/novel"
 					>返回主页</v-btn
 				>
 			</div>
@@ -149,14 +160,21 @@ import type { WorkDetailChapterItem } from '~/shared/dto/web/work';
  * @prop navigateToChapter - 跳转到指定章节的方法
  */
 defineProps<{
-	loadedContent: { content: string; isCenter: boolean; type?: 'text' | 'img'; label?: string }[];
+	loadedContent: {
+		content: string;
+		isCenter: boolean;
+		type?: 'text' | 'img';
+		label?: string;
+	}[];
 	chapters: WorkDetailChapterItem[];
 	selectedChapterId: number | null;
 	isFirstChapter: boolean;
 	isLastChapter: boolean;
 	prevChapter: WorkDetailChapterItem | null;
 	nextChapter: WorkDetailChapterItem | null;
-	currentChapter: WorkDetailChapterItem | { id: number; no: number; title: string };
+	currentChapter:
+		| WorkDetailChapterItem
+		| { id: number; no: number; title: string };
 	formattedTime: string;
 	navigateToChapter: (chapter: WorkDetailChapterItem) => void;
 }>();

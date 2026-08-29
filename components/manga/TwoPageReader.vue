@@ -91,9 +91,7 @@
 					show-ticks
 				>
 					<template #prepend>
-						<div class="me-2 text-h6">
-							{{ displayIndex }}/{{ totalPages }}
-						</div>
+						<div class="me-2 text-h6">{{ displayIndex }}/{{ totalPages }}</div>
 					</template>
 				</v-slider>
 				<v-btn icon="mdi-chevron-right" variant="plain" @click="next" />
@@ -103,6 +101,7 @@
 </template>
 
 <script setup lang="ts">
+import type { PropType } from 'vue';
 import type { VWindow } from 'vuetify/components';
 import type { WorkDetailChapterItem } from '~/shared/dto/web/work';
 
@@ -127,12 +126,18 @@ const propsList = defineProps({
 		default: () => [],
 	},
 	toggleFullscreen: {
-		type: Function as () => () => void,
-		default: () => () => {},
+		type: Function as PropType<() => void>,
+		default: undefined,
+	},
+	initialPageIndex: {
+		type: Number,
+		default: 0,
 	},
 });
 
-/** 此组件不对外 emit 事件 */
+const emit = defineEmits<{
+	progressChange: [pageIndex: number];
+}>();
 /** 此组件不对外暴露 slot */
 
 const windowRef = ref<VWindow | null>(null);
@@ -143,7 +148,6 @@ const onboarding = ref(0);
 const displayIndex = ref(1);
 //tabs变量
 const pageLayout = inject('pageLayout') as Ref<boolean>;
-const scrollDirection = inject('scrollDirection') as Ref<boolean>;
 const readingMode = inject('readingMode') as Ref<boolean>;
 //切换左右页翻页 false为向左翻页
 const windowReverse = ref(false);
@@ -177,6 +181,12 @@ const getPageImages = (pageIndex: number) => {
 };
 
 onMounted(() => {
+	const initialSpread = Math.min(
+		Math.floor(Math.max(0, propsList.initialPageIndex) / 2),
+		Math.max(0, totalPages.value - 1),
+	);
+	onboarding.value = initialSpread;
+	displayIndex.value = initialSpread + 1;
 	// 添加键盘事件监听器
 	document.addEventListener('keydown', handleKeyDown);
 });
@@ -245,6 +255,7 @@ function handleKeyDown(event: KeyboardEvent) {
 //修改页码移动
 watch(onboarding, (newVal) => {
 	displayIndex.value = newVal + 1;
+	emit('progressChange', newVal * 2);
 });
 watch(displayIndex, (newVal) => {
 	onboarding.value = newVal - 1;
@@ -264,5 +275,4 @@ watch(displayIndex, (newVal) => {
 .cursor-next {
 	cursor: url('/right-arrow.png'), auto;
 }
-
 </style>

@@ -152,7 +152,7 @@
 								</p>
 							</div>
 
-							<!-- 百合指数区 -->
+							<!-- 章节数 -->
 							<div class="yuri-concentration-box">
 								<div class="yuri-concentration-header">
 									<div class="yuri-concentration-label">
@@ -170,17 +170,14 @@
 										<span class="yuri-concentration-text">章节数</span>
 									</div>
 									<span class="yuri-concentration-value">{{
-										workDetail?.lastNo || '999+'
+										workDetail.chapterList.length
 									}}</span>
 								</div>
 								<div class="yuri-progress-bar">
 									<div
 										class="yuri-progress-fill"
 										:style="{
-											width:
-												typeof workDetail?.lastNo === 'number'
-													? `${Math.min(100, Math.max(0, workDetail.lastNo))}%`
-													: workDetail?.lastNo || '100%',
+											width: `${Math.min(100, workDetail.chapterList.length)}%`,
 										}"
 									></div>
 								</div>
@@ -190,9 +187,18 @@
 						<div class="detail-action-button">
 							<v-btn
 								class="start-read-btn"
-								:to="`/${props.contentType}/chapter/${sortedChapterList[0]?.id}`"
+								:class="{ 'has-progress': continueProgress }"
+								:to="primaryReadTo"
 							>
-								开始阅读
+								<div v-if="continueProgress" class="continue-read-content">
+									<span>继续阅读</span>
+									<span class="continue-read-progress">
+										<span class="continue-read-label">READ</span>
+										<span>{{ continueProgressLabel }}</span>
+										<span class="continue-read-underline"></span>
+									</span>
+								</div>
+								<template v-else>开始阅读</template>
 							</v-btn>
 						</div>
 					</div>
@@ -240,7 +246,7 @@
 								}"
 								:to="`/${props.contentType}/chapter/${item.id}`"
 							>
-								{{ item.title }}
+								<span class="chapter-btn-text">{{ item.title }}</span>
 							</v-btn>
 						</div>
 					</div>
@@ -280,6 +286,7 @@
 										:spine-width="15"
 										:show-title="false"
 										:show-spine-text="false"
+										:to="`/${props.contentType}/${card.id}`"
 										@click.stop="
 											router.push(`/${props.contentType}/${card.id}`)
 										"
@@ -315,9 +322,9 @@
 							</div>
 							<div class="recommendation-progress">
 								<div class="recommendation-progress-header">
-									<span class="recommendation-progress-label">百合指数</span>
+									<span class="recommendation-progress-label">章节数</span>
 									<span class="recommendation-progress-value">{{
-										card?.lastNo || '1000'
+										`${card?.lastNo ?? 0} 章`
 									}}</span>
 								</div>
 								<div class="yuri-progress-bar recommendation-progress-bar">
@@ -339,45 +346,36 @@
 		</template>
 	</div>
 
-	<v-dialog v-model="showShareDialog" max-width="460">
+	<v-dialog v-model="showShareDialog" max-width="520">
 		<div class="share-dialog-content">
-			<h3 class="share-dialog-title">{{ workDetail?.title }}</h3>
-			<v-tabs v-model="shareTab" class="share-tabs" align-tabs="center">
-				<v-tab value="link">链接分享</v-tab>
-				<v-tab value="qrcode">二维码分享</v-tab>
-			</v-tabs>
-			<v-window v-model="shareTab">
-				<v-window-item value="link">
-					<div class="share-link-row">
-						<input
-							:value="shareUrl"
-							readonly
-							class="share-link-input"
-						/>
-						<v-btn
-							:color="copied ? 'success' : 'primary'"
-							class="share-copy-btn"
-							@click="handleCopyLink"
-						>
-							{{ copied ? '已复制✓' : '复制链接' }}
-						</v-btn>
-					</div>
-				</v-window-item>
-				<v-window-item value="qrcode">
-					<ShareCard
-						ref="shareCardRef"
-						:cover-url="workDetail?.coverUrl"
-						:share-url="shareUrl"
-						:title="workDetail?.title"
-					/>
-				</v-window-item>
-			</v-window>
+			<div class="share-dialog-header">
+				<div>
+					<span class="share-dialog-eyebrow">SHARE POSTER</span>
+					<h3 class="share-dialog-title">生成分享海报</h3>
+				</div>
+				<v-btn
+					icon="mdi-close"
+					variant="text"
+					@click="showShareDialog = false"
+				/>
+			</div>
+			<ShareCard
+				ref="shareCardRef"
+				:cover-url="workDetail?.coverUrl"
+				:share-url="shareUrl"
+				:title="workDetail?.title"
+				:author="workDetail?.author"
+			/>
 		</div>
 	</v-dialog>
 </template>
 
 <script setup lang="ts">
 import type { WorkDetailRes, WorkListRes } from '~/shared/dto/web/work';
+import type {
+	ReadingContentType,
+	ReadingProgress,
+} from '~/shared/types/reading-progress';
 import dayjs from 'dayjs';
 
 const props = defineProps({
@@ -402,41 +400,21 @@ const router = useRouter();
 const route = useRoute();
 const workId = computed(() => Number(route.params.id));
 const store = useWebWorkStore();
+const { findLatestProgress } = useReadingProgress();
+const continueProgress = ref<ReadingProgress | null>(null);
 
 const showShareDialog = ref(false);
-const shareTab = ref('link');
-const copied = ref(false);
-const shareCardRef = ref<InstanceType<typeof import('~/components/common/ShareCard.vue').default> | null>(null);
-let copyTimer: ReturnType<typeof setTimeout> | null = null;
+const shareCardRef = ref<InstanceType<
+	typeof import('~/components/common/ShareCard.vue').default
+> | null>(null);
 
 const shareUrl = computed(() => {
 	if (typeof window === 'undefined') return '';
 	return `${window.location.origin}/${props.contentType}/${workId.value}`;
 });
 
-async function handleCopyLink() {
-	try {
-		await navigator.clipboard.writeText(shareUrl.value);
-		copied.value = true;
-		if (copyTimer) clearTimeout(copyTimer);
-		copyTimer = setTimeout(() => {
-			copied.value = false;
-		}, 2000);
-	} catch {
-		$tip('复制失败', { color: 'error', icon: 'mdi-alert-circle' });
-	}
-}
-
-watch(shareTab, (tab) => {
-	if (tab === 'qrcode') {
-		nextTick(() => {
-			shareCardRef.value?.generateCard();
-		});
-	}
-});
-
 watch(showShareDialog, (visible) => {
-	if (visible && shareTab.value === 'qrcode') {
+	if (visible) {
 		nextTick(() => {
 			shareCardRef.value?.generateCard();
 		});
@@ -455,6 +433,28 @@ const { data, pending } = await useApiFetch<WorkDetailRes>(
 	},
 );
 const workDetail = data.value.data;
+
+onMounted(() => {
+	continueProgress.value = findLatestProgress(
+		props.contentType as ReadingContentType,
+		workDetail.chapterList.map((chapter) => chapter.id),
+	);
+});
+
+const continueProgressLabel = computed(() => {
+	const progress = continueProgress.value;
+	if (!progress) return '';
+	if (progress.position.kind === 'manga') {
+		return `第 ${progress.chapterNo} 章 · ${progress.position.pageIndex + 1}/${progress.position.totalPages} 页`;
+	}
+	return `第 ${progress.chapterNo} 章 · ${Math.round(progress.position.percentage * 100)}%`;
+});
+
+const primaryReadTo = computed(() => {
+	const chapterId =
+		continueProgress.value?.chapterId ?? sortedChapterList.value[0]?.id;
+	return `/${props.contentType}/chapter/${chapterId}`;
+});
 
 //排序数组根据no属性
 const sortedChapterList = computed(() => {
@@ -541,19 +541,18 @@ function handleCoverClick() {
 	}
 }
 
-useHead({
-	title: `${workDetail.title || '作品详情'}`,
-	meta: [
-		{
-			name: 'description',
-			content: '百合作品详情页面，包含作品简介、章节列表和推荐作品。',
-		},
-		{
-			name: 'keywords',
-			content:
-				'百合, 百合漫画,夢怜龍華, 夢怜龙华, 百合小说, 百合轻小说, 百合漫画推荐, 百合漫画阅读, 百合漫画更新',
-		},
-	],
+useSeoMeta({
+	title: () =>
+		`${workDetail.title} - ${props.contentType === 'manga' ? '漫画' : '小说'}`,
+	description: () =>
+		workDetail.description ||
+		`${workDetail.title}，作者：${workDetail.author}。在线查看作品简介与最新章节。`,
+	ogTitle: () => workDetail.title,
+	ogDescription: () => workDetail.description,
+	ogImage: () => workDetail.coverUrl,
+	twitterTitle: () => workDetail.title,
+	twitterDescription: () => workDetail.description,
+	twitterImage: () => workDetail.coverUrl,
 });
 </script>
 
@@ -851,7 +850,7 @@ useHead({
 	overflow: hidden;
 }
 
-/* 百合指数区 */
+/* 章节数 */
 .yuri-concentration-box {
 	background: #fefcf9;
 	padding: 16px;
@@ -916,11 +915,46 @@ useHead({
 	justify-content: flex-start;
 }
 
+.continue-read-content {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.continue-read-progress {
+	position: relative;
+	display: flex;
+	align-items: baseline;
+	gap: 7px;
+	padding: 0 0 4px 14px;
+	border-left: 1px solid rgba(255, 255, 255, 0.35);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+}
+
+.continue-read-label {
+	font-size: 9px;
+	font-weight: 900;
+	opacity: 0.72;
+}
+
+.continue-read-underline {
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	left: 14px;
+	height: 2px;
+	border-radius: 9999px;
+	background: linear-gradient(to right, rgba(255, 255, 255, 0.9), transparent);
+}
+
 .start-read-btn {
+	height: 48px !important;
 	background: #ff758c !important;
 	color: white !important;
 	font-weight: 900 !important;
-	padding: 10px 48px !important;
+	padding: 0 48px !important;
 	border-radius: 12px !important;
 	box-shadow: 0 10px 20px rgba(255, 117, 140, 0.2) !important;
 	transition: all 0.2s ease !important;
@@ -934,6 +968,11 @@ useHead({
 .start-read-btn:hover {
 	background: #ff5e78 !important;
 	transform: scale(0.98);
+}
+
+.start-read-btn.has-progress {
+	padding-right: 28px !important;
+	padding-left: 28px !important;
 }
 
 /* 章节列表 */
@@ -1046,23 +1085,26 @@ useHead({
 
 .detail-chapter-grid {
 	display: grid;
-	grid-template-columns: repeat(4, 1fr);
+	grid-template-columns: repeat(4, minmax(0, 1fr));
 	gap: 16px;
 }
 
 @media (max-width: 1200px) {
 	.detail-chapter-grid {
-		grid-template-columns: repeat(3, 1fr);
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 	}
 }
 
 @media (max-width: 768px) {
 	.detail-chapter-grid {
-		grid-template-columns: repeat(2, 1fr);
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 }
 
 .chapter-btn {
+	width: 100%;
+	min-width: 0 !important;
+	max-width: 100%;
 	border: 1px solid #f2ece6 !important;
 	transition: all 0.2s ease !important;
 	color: #7d5a5a !important;
@@ -1079,6 +1121,22 @@ useHead({
 	align-items: center !important;
 	justify-content: center !important;
 	background: transparent !important;
+}
+
+.chapter-btn-text {
+	display: block;
+	min-width: 0;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.chapter-btn :deep(.v-btn__content) {
+	display: block;
+	min-width: 0;
+	max-width: 100%;
+	overflow: hidden;
 }
 
 .chapter-btn:hover {
@@ -1293,46 +1351,28 @@ useHead({
 
 .share-dialog-content {
 	background: white;
-	border-radius: 16px;
+	border-radius: 22px;
 	padding: 24px;
+}
+
+.share-dialog-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	margin-bottom: 16px;
+}
+
+.share-dialog-eyebrow {
+	color: #ff758c;
+	font-size: 10px;
+	font-weight: 900;
+	letter-spacing: 0.16em;
 }
 
 .share-dialog-title {
 	font-size: 18px;
 	font-weight: 900;
 	color: #5a463d;
-	margin-bottom: 16px;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+	margin: 2px 0 0;
 }
-
-.share-tabs {
-	margin-bottom: 16px;
-}
-
-.share-link-row {
-	display: flex;
-	gap: 12px;
-	align-items: center;
-}
-
-.share-link-input {
-	flex: 1;
-	padding: 10px 12px;
-	border: 1px solid #f2ece6;
-	border-radius: 8px;
-	font-size: 13px;
-	color: #7d5a5a;
-	background: #fdfaf8;
-	outline: none;
-}
-
-.share-copy-btn {
-	flex-shrink: 0;
-	font-weight: 900 !important;
-	border-radius: 8px !important;
-	text-transform: none !important;
-}
-
 </style>

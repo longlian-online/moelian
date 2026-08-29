@@ -43,6 +43,7 @@
 		"radash": "^12.1.1",
 		"uuidv7": "^1.0.2",
 		"vue": "^3.5.17",
+		"vue-advanced-cropper": "2.8.9",
 		"vue-router": "^4.5.1",
 		"vuetify": "3.10.0",
 		"vuetify-nuxt-module": "^0.16.1",

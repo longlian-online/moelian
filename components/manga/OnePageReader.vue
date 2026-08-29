@@ -146,13 +146,18 @@ const propsList = defineProps({
 		type: Function as PropType<() => void>,
 		default: undefined,
 	},
+	initialPageIndex: {
+		type: Number,
+		default: 0,
+	},
 });
 
-/** 此组件不对外 emit 事件 */
+const emit = defineEmits<{
+	progressChange: [pageIndex: number];
+}>();
 /** 此组件不对外暴露 slot */
 
 const { isMobile } = useDevice();
-
 
 const chapterLength = computed(() => propsList.data?.length || 0);
 
@@ -161,6 +166,7 @@ const currentIndex = ref(0);
 const sheetRefs = ref<Element[]>([]);
 const goTo = useGoTo();
 const isUserSliding = ref(false);
+const isRestoring = ref(true);
 /** 使用父组件传入的 sortedUrls，若无则回退到本地计算 */
 const sortedUrls = computed(() =>
 	(propsList.sortedUrls?.length ?? 0) > 0
@@ -208,6 +214,18 @@ onMounted(() => {
 	// 开始观察所有图片
 	sheetRefs.value.forEach((el) => {
 		if (el) observer?.observe(el);
+	});
+
+	nextTick(() => {
+		const initialIndex = Math.min(
+			Math.max(0, Math.floor(propsList.initialPageIndex)),
+			Math.max(0, chapterLength.value - 1),
+		);
+		currentIndex.value = initialIndex;
+		scrollToImage(initialIndex);
+		requestAnimationFrame(() => {
+			isRestoring.value = false;
+		});
 	});
 });
 
@@ -266,6 +284,7 @@ const scrollToImage = (index: number) => {
 
 //实时预览
 watch(currentIndex, (newIndex) => {
+	if (!isRestoring.value) emit('progressChange', newIndex);
 	if (isUserSliding.value) {
 		// 如果用户正在拖动滑块，直接滚动到新位置
 		scrollToImage(newIndex);
@@ -274,7 +293,6 @@ watch(currentIndex, (newIndex) => {
 
 // 双页模式锁定逻辑已移至父组件
 // sheet 与 isNavbarVisible 的同步已移至 MangaReaderBottomSheet
-
 </script>
 
 <style scoped>

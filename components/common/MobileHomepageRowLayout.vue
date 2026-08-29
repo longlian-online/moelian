@@ -30,6 +30,7 @@
 							:spine-width="25"
 							:show-title="false"
 							:show-spine-text="false"
+							:to="`/${props.workType.toLowerCase()}/${card.id}`"
 							@click="handleCardClick(card.id)"
 						>
 							<template #overlay>
