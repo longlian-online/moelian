@@ -17,8 +17,13 @@
 				class="manga-reader-menu rounded-xl pa-2 d-flex justify-center align-center"
 			>
 				<v-menu transition="slide-x-transition">
-					<template #activator="{ props }">
-						<v-btn v-bind="props" stacked prepend-icon="mdi-cog-outline" flat>
+					<template #activator="{ props: menuProps }">
+						<v-btn
+							v-bind="menuProps"
+							stacked
+							prepend-icon="mdi-cog-outline"
+							flat
+						>
 							阅读设置
 						</v-btn>
 					</template>

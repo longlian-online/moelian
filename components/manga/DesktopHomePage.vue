@@ -71,6 +71,7 @@
 											:width="260"
 											:height="400"
 											:show-title="false"
+											:to="`/manga/${card.id}`"
 											@click="handleBookClick(card.id)"
 										>
 											<template #overlay>
@@ -158,7 +159,7 @@
 													<span class="yuri-concentration-text">章节数</span>
 												</div>
 												<span class="yuri-concentration-value">{{
-													card?.lastNo || '1000'
+													`${card?.lastNo ?? 0} 章`
 												}}</span>
 											</div>
 
@@ -213,7 +214,7 @@ const handleAuthorClick = (author: string) => {
 	webWorkStore.triggerMangaSearch();
 };
 
-const { error } = useAsyncData(
+const { error } = await useAsyncData(
 	'manga-list-data',
 	async () => {
 		await webWorkStore.fetchWorkList(webWorkStore.mangaState);

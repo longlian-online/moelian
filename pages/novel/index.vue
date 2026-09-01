@@ -22,6 +22,10 @@ useHead({
 		},
 	],
 });
+useSeoMeta({
+	ogTitle: '夢怜龍華汉化组 - 小说列表',
+	ogDescription: '浏览和搜索小说，发现新的小说系列，并查看最新更新的章节。',
+});
 </script>
 
 <style scoped></style>

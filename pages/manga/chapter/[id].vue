@@ -8,6 +8,8 @@
 				:chapters="chapters"
 				:sorted-urls="sortedUrls"
 				:toggle-fullscreen="toggleFullscreen"
+				:initial-page-index="initialPageIndex"
+				@progress-change="savePageProgress"
 			/>
 			<!-- 单页 上下滚动 -->
 			<OnePageReader
@@ -20,6 +22,8 @@
 				:go-to-prev-chapter="goToPrevChapter"
 				:go-to-next-chapter="goToNextChapter"
 				:toggle-fullscreen="toggleFullscreen"
+				:initial-page-index="initialPageIndex"
+				@progress-change="savePageProgress"
 			/>
 			<!-- 单页 左右滚动 -->
 			<SinglePageReader
@@ -32,6 +36,8 @@
 				:go-to-prev-chapter="goToPrevChapter"
 				:go-to-next-chapter="goToNextChapter"
 				:toggle-fullscreen="toggleFullscreen"
+				:initial-page-index="initialPageIndex"
+				@progress-change="savePageProgress"
 			/>
 		</div>
 	</ClientOnly>
@@ -97,7 +103,7 @@ const chapters = computed(() => {
 		return [];
 	}
 	// 2. 使用 slice() 创建数组副本，避免修改原始数据
-	return rawChapters.value.slice()
+	return rawChapters.value.slice();
 });
 
 /** 按文件名自然排序后的图片 URL 列表（公共逻辑） */
@@ -127,7 +133,10 @@ function goToPrevChapter() {
 
 /** 跳转到下一章（公共逻辑） */
 function goToNextChapter() {
-	if (currentChapterIndex.value < 0 || currentChapterIndex.value >= chapters.value.length - 1)
+	if (
+		currentChapterIndex.value < 0 ||
+		currentChapterIndex.value >= chapters.value.length - 1
+	)
 		return;
 	const nextChapter = chapters.value[currentChapterIndex.value + 1];
 	navigateTo(`/manga/chapter/${nextChapter.id}`);
@@ -179,6 +188,41 @@ const currentChapter = ref<WorkDetailChapterItem | null>(null);
 currentChapter.value =
 	(data.value.data.chapters || []).find((c) => c.id === chapterId.value) ||
 	null;
+
+const { getProgress, saveMangaProgress } = useReadingProgress();
+const savedProgress = getProgress('manga', chapterId.value);
+const initialPageIndex = ref(
+	savedProgress?.position.kind === 'manga'
+		? savedProgress.position.pageIndex
+		: 0,
+);
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingPageIndex = initialPageIndex.value;
+
+const persistPageProgress = () => {
+	if (!currentChapter.value) return;
+	saveMangaProgress({
+		chapterId: chapterId.value,
+		chapterNo: currentChapter.value.no,
+		pageIndex: pendingPageIndex,
+		totalPages: sortedUrls.value.length,
+	});
+};
+
+const savePageProgress = (pageIndex: number) => {
+	pendingPageIndex = pageIndex;
+	if (saveTimer) clearTimeout(saveTimer);
+	saveTimer = setTimeout(persistPageProgress, 400);
+};
+
+const handlePageHide = () => persistPageProgress();
+
+onMounted(() => window.addEventListener('pagehide', handlePageHide));
+onBeforeUnmount(() => {
+	window.removeEventListener('pagehide', handlePageHide);
+	if (saveTimer) clearTimeout(saveTimer);
+	persistPageProgress();
+});
 
 watchEffect(() => {
 	const chapter = currentChapter.value;

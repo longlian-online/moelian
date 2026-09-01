@@ -35,6 +35,7 @@
 							:spine-width="25"
 							:show-title="false"
 							:show-spine-text="false"
+							:to="`/novel/${card.id}`"
 							@click.stop="gotoNovalId(card.id)"
 						>
 							<template #overlay>
@@ -154,7 +155,7 @@
 									<span class="novel-concentration-text">章节数</span>
 								</div>
 								<span class="novel-concentration-value">{{
-									card?.lastNo || '1000'
+									`${card?.lastNo ?? 0} 章`
 								}}</span>
 							</div>
 							<!-- 进度条 -->

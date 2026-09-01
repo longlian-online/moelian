@@ -1,0 +1,111 @@
+# OpenCodeReview - GitHub Actions PR 自动评审
+#
+# 基于上游官方示例（alibaba/open-code-review examples/github_actions/ocr-review.yml）：
+# - pull_request_target: opened/synchronize/reopened 自动评审
+# - PR 评论以 /open-code-review 或 @open-code-review 开头时手动重跑（仅成员）
+# - LLM 使用 OpenCode Go（OpenAI 兼容端点）
+#
+# 所需 secrets（Settings -> Secrets and variables -> Actions）：
+#   OCR_LLM_URL            https://opencode.ai/zen/go/v1/chat/completions
+#   OCR_LLM_AUTH_TOKEN     OpenCode Go API key
+#   OCR_LLM_MODEL          deepseek-v4-pro（或 deepseek-v4-flash）
+#   OCR_LLM_USE_ANTHROPIC  false
+#
+# 完整输入/输出与四种评论发布模式（sticky / incremental）见上游 action.yml。
+
+name: OpenCodeReview PR Review
+
+# 条件并发组：PR 事件与 /open-code-review 评论共享 per-PR 组（新评审取消同 PR 的过期评审）；
+# 不匹配的普通评论落入唯一 noop-<run_id> 组，立即跳过且不会干扰进行中的评审。
+concurrency:
+  group: >-
+    ${{
+      (
+        github.event_name == 'pull_request_target'
+        || (
+          github.event_name == 'issue_comment'
+          && github.event.issue.pull_request
+          && github.event.comment.user.type != 'Bot'
+          && (
+            github.event.comment.author_association == 'MEMBER'
+            || github.event.comment.author_association == 'OWNER'
+            || github.event.comment.author_association == 'COLLABORATOR'
+          )
+          && (
+            startsWith(github.event.comment.body, '/open-code-review')
+            || startsWith(github.event.comment.body, '@open-code-review')
+          )
+        )
+      )
+      && format('ocr-{0}', github.event.pull_request.number || github.event.issue.number)
+      || format('noop-{0}', github.run_id)
+    }}
+  cancel-in-progress: true
+
+on:
+  # 用 pull_request_target 而非 pull_request：fork PR 也能访问 secrets。
+  # 安全：reusable action 只读 diff，不执行 PR 中的任何代码。
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  code-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # PR 事件，或人发表的触发关键词评论。排除 Bot 评论作为保险（GITHUB_TOKEN 本身
+    # 已抑制 bot 评论事件，但 PAT/App token 不会）；issue_comment 触发器进一步
+    # 限制为 MEMBER/OWNER/COLLABORATOR，防止外部用户消耗 LLM 额度。
+    if: |
+      github.event_name == 'pull_request_target'
+      || (
+        github.event_name == 'issue_comment'
+        && github.event.issue.pull_request
+        && github.event.comment.user.type != 'Bot'
+        && (
+          github.event.comment.author_association == 'MEMBER'
+          || github.event.comment.author_association == 'OWNER'
+          || github.event.comment.author_association == 'COLLABORATOR'
+        )
+        && (
+          startsWith(github.event.comment.body, '/open-code-review')
+          || startsWith(github.event.comment.body, '@open-code-review')
+        )
+      )
+    steps:
+      - name: Get PR context
+        id: pr-context
+        if: github.event_name == 'issue_comment'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // issue_comment 事件没有顶层 pull_request 字段，需要解析 PR base/head
+            // 供 action 评审正确的 diff。
+            const prNumber = context.issue.number;
+            const { data: pullRequest } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+            core.setOutput('base_ref', pullRequest.base.ref);
+            core.setOutput('head_sha', pullRequest.head.sha);
+
+      - name: Run OpenCodeReview
+        uses: alibaba/open-code-review@v1.9.2
+        with:
+          llm_url: ${{ secrets.OCR_LLM_URL }}
+          llm_auth_token: ${{ secrets.OCR_LLM_AUTH_TOKEN }}
+          llm_model: ${{ secrets.OCR_LLM_MODEL }}
+          llm_use_anthropic: ${{ secrets.OCR_LLM_USE_ANTHROPIC }}
+          language: 'Chinese'
+          # OpenCode Go 为 OpenAI 兼容端点，清空默认的 thinking extra_body 避免未知字段被拒
+          llm_extra_body: '{}'
+          ocr_version: '1.9.2'
+          # issue_comment 触发时传入解析出的 refs；pull_request_target 由 action 自行解析
+          base_ref: ${{ steps.pr-context.outputs.base_ref }}
+          head_sha: ${{ steps.pr-context.outputs.head_sha }}

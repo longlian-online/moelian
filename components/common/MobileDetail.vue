@@ -31,25 +31,25 @@
 
 			<!-- 信息区域 -->
 			<section class="mobile-info-section">
-			<!-- 标题 -->
-			<div class="mobile-title-row">
-				<h1
-					v-copy="workDetail.title"
-					v-tooltip="workDetail.title"
-					class="mobile-title"
-				>
-					{{ workDetail.title }}
-				</h1>
-				<v-btn
-					prepend-icon="mdi-share"
-					variant="text"
-					size="small"
-					class="share-btn"
-					@click="showShareDialog = true"
-				>
-					分享
-				</v-btn>
-			</div>
+				<!-- 标题 -->
+				<div class="mobile-title-row">
+					<h1
+						v-copy="workDetail.title"
+						v-tooltip="workDetail.title"
+						class="mobile-title"
+					>
+						{{ workDetail.title }}
+					</h1>
+					<v-btn
+						prepend-icon="mdi-share"
+						variant="text"
+						size="small"
+						class="share-btn"
+						@click="showShareDialog = true"
+					>
+						分享
+					</v-btn>
+				</div>
 
 				<!-- 作者和标签行 -->
 				<div class="mobile-info-row">
@@ -84,9 +84,7 @@
 							"
 						>
 							{{
-								workDetail.serialType === 'Serializing'
-									? '连载中'
-									: '已完结'
+								workDetail.serialType === 'Serializing' ? '连载中' : '已完结'
 							}}
 						</span>
 					</div>
@@ -111,25 +109,19 @@
 					<span
 						v-copy="
 							workDetail.chapterUpdatedAt
-								? dayjs(workDetail.chapterUpdatedAt).format(
-										'YYYY-MM-DD HH:mm',
-									)
+								? dayjs(workDetail.chapterUpdatedAt).format('YYYY-MM-DD HH:mm')
 								: '暂无更新'
 						"
 						v-tooltip="
 							workDetail.chapterUpdatedAt
-								? dayjs(workDetail.chapterUpdatedAt).format(
-										'YYYY-MM-DD HH:mm',
-									)
+								? dayjs(workDetail.chapterUpdatedAt).format('YYYY-MM-DD HH:mm')
 								: '暂无更新'
 						"
 						class="mobile-info-content"
 					>
 						{{
 							workDetail.chapterUpdatedAt
-								? dayjs(workDetail.chapterUpdatedAt).format(
-										'YYYY-MM-DD HH:mm',
-									)
+								? dayjs(workDetail.chapterUpdatedAt).format('YYYY-MM-DD HH:mm')
 								: '暂无更新'
 						}}
 					</span>
@@ -149,7 +141,7 @@
 					</p>
 				</div>
 
-				<!-- 百合指数 -->
+				<!-- 章节数 -->
 				<div class="mobile-concentration-box">
 					<div class="mobile-concentration-header">
 						<div class="mobile-concentration-label">
@@ -164,20 +156,17 @@
 									d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
 								/>
 							</svg>
-							<span class="mobile-concentration-text">百合指数</span>
+							<span class="mobile-concentration-text">章节数</span>
 						</div>
 						<span class="mobile-concentration-value">{{
-							workDetail?.lastNo || '999+'
+							workDetail.chapterList.length
 						}}</span>
 					</div>
 					<div class="mobile-progress-bar">
 						<div
 							class="mobile-progress-fill"
 							:style="{
-								width:
-									typeof workDetail?.lastNo === 'number'
-										? `${Math.min(100, Math.max(0, workDetail.lastNo))}%`
-										: workDetail?.lastNo || '100%',
+								width: `${Math.min(100, workDetail.chapterList.length)}%`,
 							}"
 						></div>
 					</div>
@@ -187,10 +176,19 @@
 				<div class="mobile-action-button">
 					<v-btn
 						class="mobile-start-read-btn"
-						:to="`/${props.contentType}/chapter/${sortedChapterList[0]?.id}`"
+						:class="{ 'has-progress': continueProgress }"
+						:to="primaryReadTo"
 						block
 					>
-						开始阅读
+						<div v-if="continueProgress" class="mobile-continue-read-content">
+							<span>继续阅读</span>
+							<span class="mobile-continue-read-progress">
+								<span class="mobile-continue-read-label">READ</span>
+								<span>{{ continueProgressLabel }}</span>
+								<span class="mobile-continue-read-underline"></span>
+							</span>
+						</div>
+						<template v-else>开始阅读</template>
 					</v-btn>
 				</div>
 			</section>
@@ -237,7 +235,7 @@
 							:to="`/${props.contentType}/chapter/${item.id}`"
 							block
 						>
-							{{ item.title }}
+							<span class="mobile-chapter-btn-text">{{ item.title }}</span>
 						</v-btn>
 					</div>
 				</div>
@@ -273,9 +271,8 @@
 								:spine-width="20"
 								:show-title="false"
 								:show-spine-text="false"
-								@click.stop="
-									router.push(`/${props.contentType}/${card.id}`)
-								"
+								:to="`/${props.contentType}/${card.id}`"
+								@click.stop="router.push(`/${props.contentType}/${card.id}`)"
 							>
 								<template #overlay>
 									<AnimeTags
@@ -291,9 +288,7 @@
 								v-copy="card.title"
 								v-tooltip="card.title"
 								class="mobile-recommend-title"
-								@click.stop="
-									router.push(`/${props.contentType}/${card.id}`)
-								"
+								@click.stop="router.push(`/${props.contentType}/${card.id}`)"
 							>
 								{{ card.title }}
 							</h3>
@@ -302,7 +297,9 @@
 								<span class="mobile-recommend-author-name">{{
 									card.author
 								}}</span>
-								<div class="mobile-info-underline mobile-recommend-underline"></div>
+								<div
+									class="mobile-info-underline mobile-recommend-underline"
+								></div>
 							</div>
 						</div>
 					</div>
@@ -311,45 +308,36 @@
 		</template>
 	</div>
 
-	<v-dialog v-model="showShareDialog" max-width="440">
+	<v-dialog v-model="showShareDialog" max-width="460">
 		<div class="share-dialog-content">
-			<h3 class="share-dialog-title">{{ workDetail?.title }}</h3>
-			<v-tabs v-model="shareTab" class="share-tabs" align-tabs="center">
-				<v-tab value="link">链接分享</v-tab>
-				<v-tab value="qrcode">二维码分享</v-tab>
-			</v-tabs>
-			<v-window v-model="shareTab">
-				<v-window-item value="link">
-					<div class="share-link-row">
-						<input
-							:value="shareUrl"
-							readonly
-							class="share-link-input"
-						/>
-						<v-btn
-							:color="copied ? 'success' : 'primary'"
-							class="share-copy-btn"
-							@click="handleCopyLink"
-						>
-							{{ copied ? '已复制✓' : '复制链接' }}
-						</v-btn>
-					</div>
-				</v-window-item>
-				<v-window-item value="qrcode">
-					<ShareCard
-						ref="shareCardRef"
-						:cover-url="workDetail?.coverUrl"
-						:share-url="shareUrl"
-						:title="workDetail?.title"
-					/>
-				</v-window-item>
-			</v-window>
+			<div class="share-dialog-header">
+				<div>
+					<span class="share-dialog-eyebrow">SHARE POSTER</span>
+					<h3 class="share-dialog-title">生成分享海报</h3>
+				</div>
+				<v-btn
+					icon="mdi-close"
+					variant="text"
+					@click="showShareDialog = false"
+				/>
+			</div>
+			<ShareCard
+				ref="shareCardRef"
+				:cover-url="workDetail?.coverUrl"
+				:share-url="shareUrl"
+				:title="workDetail?.title"
+				:author="workDetail?.author"
+			/>
 		</div>
 	</v-dialog>
 </template>
 
 <script setup lang="ts">
 import type { WorkDetailRes, WorkListRes } from '~/shared/dto/web/work';
+import type {
+	ReadingContentType,
+	ReadingProgress,
+} from '~/shared/types/reading-progress';
 import dayjs from 'dayjs';
 import Book3D from '~/components/common/Book3D.vue';
 import AnimeTags from '~/components/common/AnimeTags.vue';
@@ -376,41 +364,21 @@ const router = useRouter();
 const route = useRoute();
 const workId = computed(() => Number(route.params.id));
 const store = useWebWorkStore();
+const { findLatestProgress } = useReadingProgress();
+const continueProgress = ref<ReadingProgress | null>(null);
 
 const showShareDialog = ref(false);
-const shareTab = ref('link');
-const copied = ref(false);
-const shareCardRef = ref<InstanceType<typeof import('~/components/common/ShareCard.vue').default> | null>(null);
-let copyTimer: ReturnType<typeof setTimeout> | null = null;
+const shareCardRef = ref<InstanceType<
+	typeof import('~/components/common/ShareCard.vue').default
+> | null>(null);
 
 const shareUrl = computed(() => {
 	if (typeof window === 'undefined') return '';
 	return `${window.location.origin}/${props.contentType}/${workId.value}`;
 });
 
-async function handleCopyLink() {
-	try {
-		await navigator.clipboard.writeText(shareUrl.value);
-		copied.value = true;
-		if (copyTimer) clearTimeout(copyTimer);
-		copyTimer = setTimeout(() => {
-			copied.value = false;
-		}, 2000);
-	} catch {
-		$tip('复制失败', { color: 'error', icon: 'mdi-alert-circle' });
-	}
-}
-
-watch(shareTab, (tab) => {
-	if (tab === 'qrcode') {
-		nextTick(() => {
-			shareCardRef.value?.generateCard();
-		});
-	}
-});
-
 watch(showShareDialog, (visible) => {
-	if (visible && shareTab.value === 'qrcode') {
+	if (visible) {
 		nextTick(() => {
 			shareCardRef.value?.generateCard();
 		});
@@ -429,6 +397,28 @@ const { data, pending } = await useApiFetch<WorkDetailRes>(
 	},
 );
 const workDetail = data.value.data;
+
+onMounted(() => {
+	continueProgress.value = findLatestProgress(
+		props.contentType as ReadingContentType,
+		workDetail.chapterList.map((chapter) => chapter.id),
+	);
+});
+
+const continueProgressLabel = computed(() => {
+	const progress = continueProgress.value;
+	if (!progress) return '';
+	if (progress.position.kind === 'manga') {
+		return `第 ${progress.chapterNo} 章 · ${progress.position.pageIndex + 1}/${progress.position.totalPages} 页`;
+	}
+	return `第 ${progress.chapterNo} 章 · ${Math.round(progress.position.percentage * 100)}%`;
+});
+
+const primaryReadTo = computed(() => {
+	const chapterId =
+		continueProgress.value?.chapterId ?? sortedChapterList.value[0]?.id;
+	return `/${props.contentType}/chapter/${chapterId}`;
+});
 
 //排序数组根据no属性
 const sortedChapterList = computed(() => {
@@ -502,19 +492,18 @@ const { data: recommendationsData } = await useAsyncData<WorkListRes['list']>(
 	},
 );
 
-useHead({
-	title: `${workDetail.title || '作品详情'}`,
-	meta: [
-		{
-			name: 'description',
-			content: '百合作品详情页面，包含作品简介、章节列表和推荐作品。',
-		},
-		{
-			name: 'keywords',
-			content:
-				'百合, 百合漫画,夢怜龍華, 夢怜龙华, 百合小说, 百合轻小说, 百合漫画推荐, 百合漫画阅读, 百合漫画更新',
-		},
-	],
+useSeoMeta({
+	title: () =>
+		`${workDetail.title} - ${props.contentType === 'manga' ? '漫画' : '小说'}`,
+	description: () =>
+		workDetail.description ||
+		`${workDetail.title}，作者：${workDetail.author}。在线查看作品简介与最新章节。`,
+	ogTitle: () => workDetail.title,
+	ogDescription: () => workDetail.description,
+	ogImage: () => workDetail.coverUrl,
+	twitterTitle: () => workDetail.title,
+	twitterDescription: () => workDetail.description,
+	twitterImage: () => workDetail.coverUrl,
 });
 </script>
 
@@ -757,11 +746,46 @@ useHead({
 	margin-top: 20px;
 }
 
+.mobile-continue-read-content {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.mobile-continue-read-progress {
+	position: relative;
+	display: flex;
+	align-items: baseline;
+	gap: 7px;
+	padding: 0 0 4px 14px;
+	border-left: 1px solid rgba(255, 255, 255, 0.35);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+}
+
+.mobile-continue-read-label {
+	font-size: 9px;
+	font-weight: 900;
+	opacity: 0.72;
+}
+
+.mobile-continue-read-underline {
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	left: 14px;
+	height: 2px;
+	border-radius: 9999px;
+	background: linear-gradient(to right, rgba(255, 255, 255, 0.9), transparent);
+}
+
 .mobile-start-read-btn {
+	height: 48px !important;
 	background: #ff758c !important;
 	color: white !important;
 	font-weight: 900 !important;
-	padding: 12px 24px !important;
+	padding: 0 24px !important;
 	border-radius: 12px !important;
 	box-shadow: 0 10px 20px rgba(255, 117, 140, 0.2) !important;
 	letter-spacing: 0.1em !important;
@@ -839,11 +863,14 @@ useHead({
 
 .mobile-chapter-grid {
 	display: grid;
-	grid-template-columns: repeat(2, 1fr);
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 12px;
 }
 
 .mobile-chapter-btn {
+	width: 100%;
+	min-width: 0 !important;
+	max-width: 100%;
 	border: 1px solid #f2ece6 !important;
 	transition: all 0.2s ease !important;
 	color: #7d5a5a !important;
@@ -857,6 +884,22 @@ useHead({
 	text-overflow: ellipsis;
 	white-space: nowrap;
 	background: transparent !important;
+}
+
+.mobile-chapter-btn-text {
+	display: block;
+	min-width: 0;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.mobile-chapter-btn :deep(.v-btn__content) {
+	display: block;
+	min-width: 0;
+	max-width: 100%;
+	overflow: hidden;
 }
 
 .mobile-chapter-btn:hover {
@@ -991,46 +1034,28 @@ useHead({
 
 .share-dialog-content {
 	background: white;
-	border-radius: 16px;
-	padding: 20px;
+	border-radius: 22px;
+	padding: 16px;
+}
+
+.share-dialog-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.share-dialog-eyebrow {
+	color: #ff758c;
+	font-size: 9px;
+	font-weight: 900;
+	letter-spacing: 0.15em;
 }
 
 .share-dialog-title {
 	font-size: 16px;
 	font-weight: 900;
 	color: #5a463d;
-	margin-bottom: 12px;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+	margin: 2px 0 0;
 }
-
-.share-tabs {
-	margin-bottom: 12px;
-}
-
-.share-link-row {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-}
-
-.share-link-input {
-	width: 100%;
-	padding: 10px 12px;
-	border: 1px solid #f2ece6;
-	border-radius: 8px;
-	font-size: 12px;
-	color: #7d5a5a;
-	background: #fdfaf8;
-	outline: none;
-	box-sizing: border-box;
-}
-
-.share-copy-btn {
-	font-weight: 900 !important;
-	border-radius: 8px !important;
-	text-transform: none !important;
-}
-
 </style>
