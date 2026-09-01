@@ -145,6 +145,15 @@ pnpm dev
 pnpm build
 ```
 
+## 🤝 贡献与分支保护
+
+贡献代码前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。提交 Pull Request 到 `main` 时，GitHub Actions 会自动执行静态检查、测试和构建。
+
+请在 GitHub 仓库设置中启用以下分支规则：
+
+- `main`：禁止直接 push，只能通过 Pull Request 合并；要求 `Pull Request Validation / validate` 检查通过，并将允许合并者限制为仓库管理员或指定维护者团队。
+- `sit`：不要求 Pull Request 验证，但禁止非管理员直接 push，仅允许管理员维护该分支。
+
 ## 📊 项目特色
 
 ### 💻 前端开发亮点
