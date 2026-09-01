@@ -28,6 +28,9 @@ pnpm build
 
 ## 提交与 Pull Request
 
+- Git commit message 和 Pull Request 标题、描述必须使用中文。
+- 提交格式为 `<type>(<scope>): <中文主题>`，主题不超过 50 个字符；详细规则见根目录 `AGENTS.md`。
+- 首次使用前启用提交检查：`git config core.hooksPath .githooks`。
 - 保持改动聚焦，避免夹带无关格式化或重构。
 - 新增或修复业务逻辑时，尽量补充对应测试。
 - Pull Request 请说明改动内容、验证方式，以及尚未执行的检查。
