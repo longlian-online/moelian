@@ -124,6 +124,11 @@ export const getById = async (id: Chapter['id']) => {
 export const getEnableById = async (id: Chapter['id']) => {
 	return useDB().chapter.findFirst({
 		where: { id, status: Status.Enable, deleted_at: { equals: null } },
+		include: {
+			Work: {
+				select: { id: true, title: true, author: true },
+			},
+		},
 	});
 };
 

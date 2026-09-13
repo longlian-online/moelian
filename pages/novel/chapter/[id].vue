@@ -12,6 +12,7 @@
 			:current-chapter="currentChapter"
 			:formatted-time="formattedTime"
 			:navigate-to-chapter="navigateToChapter"
+			@share-selection="openSharePoster"
 		/>
 
 		<DesktopNovelReader
@@ -27,10 +28,19 @@
 			:breadcrumb-items="items"
 			:navigate-to-chapter="navigateToChapter"
 			@open-theme-setting="isChangeTheme = true"
+			@share-selection="openSharePoster"
 		/>
 
 		<v-dialog v-model="isChangeTheme" max-width="600">
 			<ThemeSetting />
+		</v-dialog>
+
+		<v-dialog v-model="isShareDialog" max-width="560" scrollable>
+			<NovelQuoteShareCard
+				v-if="shareData"
+				ref="quoteShareCardRef"
+				v-bind="shareData"
+			/>
 		</v-dialog>
 	</div>
 </template>
@@ -42,6 +52,7 @@ import type {
 	WorkContentRes,
 	WorkDetailChapterItem,
 } from '~/shared/dto/web/work';
+import { createNovelShareData, type NovelShareData } from '~/utils/novelShare';
 
 definePageMeta({
 	readerTheme: 'novel',
@@ -67,6 +78,11 @@ const selectedChapterId = ref<number | null>(null);
 const isNavbarVisible = inject('isNavbarVisible') as Ref<boolean>;
 const { isMobile } = useDevice();
 const isChangeTheme = ref(false);
+const isShareDialog = ref(false);
+const shareData = ref<NovelShareData | null>(null);
+const quoteShareCardRef = ref<InstanceType<
+	typeof import('~/components/novel/NovelQuoteShareCard.vue').default
+> | null>(null);
 const { getProgress, saveNovelProgress } = useReadingProgress();
 const savedProgress = getProgress('novel', chapterId.value);
 const initialNovelPosition =
@@ -384,6 +400,28 @@ const nextChapter = computed(() => {
 function navigateToChapter(chapter: WorkDetailChapterItem) {
 	navigateTo(`/novel/chapter/${chapter.id}`);
 }
+
+function openSharePoster(quote: string) {
+	const work = chapterData.value?.work;
+	const chapter = currentChapter.value;
+	if (!work || chapter.id === 0 || !import.meta.client) return;
+
+	shareData.value = createNovelShareData({
+		quote,
+		title: work.title,
+		author: work.author,
+		chapterNo: chapter.no,
+		chapterTitle: chapter.title,
+		shareUrl: `${window.location.origin}${route.fullPath}`,
+	});
+	isShareDialog.value = true;
+}
+
+watch(isShareDialog, async (visible) => {
+	if (!visible || !shareData.value) return;
+	await nextTick();
+	await quoteShareCardRef.value?.generateCard();
+});
 
 onMounted(() => {
 	if (isNavbarVisible) isNavbarVisible.value = false;

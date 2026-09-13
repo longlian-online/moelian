@@ -96,3 +96,21 @@ pnpm build
 - 不编辑生成目录 `.nuxt/`、`.output/`、`node_modules/`，也不提交运行日志、临时文件或真实 `.env`。
 - 新增依赖前先确认现有依赖与 Nuxt 内建能力无法满足需求，并说明引入理由及客户端体积/服务端兼容影响。
 - 注释应解释业务原因、边界条件或非显然取舍，不复述代码本身。
+
+## Git 提交与 Pull Request
+
+- Git commit message 和 Pull Request 标题、描述必须使用中文。
+- commit 格式为 `<type>(<scope>): <中文主题>`，主题不超过 50 个字符。
+- 允许的 `type`：`upd`、`feat`、`fix`、`docs`、`style`、`refactor`、`chore`、`revert`。
+- Merge commit 可使用 Git 默认生成的 `Merge ...` message。
+- 首次使用前启用提交检查：`git config core.hooksPath .githooks`。
+- AI 提交代码时必须使用中文 commit，并在 PR 描述中说明改动和验证结果。
+- `main` 只能通过 PR 合并；`sit` 不需要 PR 验证，但只允许管理员直接 push。
+
+示例：
+
+```text
+feat(阅读器): 增加双页阅读模式
+fix(登录): 修复会话过期处理
+docs: 补充本地开发说明
+```

@@ -18,77 +18,79 @@
 			</ClientOnly>
 		</v-system-bar>
 		<v-sheet class="pa-2">
-			<div class="content-box">
-				<div
-					v-for="({ content, isCenter, type, label }, index) in loadedContent"
-					:key="index"
-					:data-reading-block="index"
-					class="novel-reading-block"
-				>
-					<template v-if="type === 'img'">
-						<div class="d-flex flex-column align-center my-6 w-100">
-							<v-card
-								elevation="4"
-								class="pa-2 rounded-lg lily-frame"
-								max-width="92%"
-							>
-								<v-img :src="content" width="100%" class="rounded-lg">
-									<template #placeholder>
-										<v-skeleton-loader
-											type="image"
-											width="100%"
-											height="250"
-											class="rounded-lg"
-										></v-skeleton-loader>
-									</template>
-									<template #error>
-										<v-img
-											src="/error-default.jpg"
-											width="100%"
-											class="rounded-lg"
-										></v-img>
-									</template>
-								</v-img>
-							</v-card>
-							<div class="lily-label-container mt-3 d-flex align-center">
-								<svg
-									class="lily-icon"
-									viewBox="0 0 100 100"
-									width="16"
-									height="16"
+			<NovelSelectionShare @share="$emit('shareSelection', $event)">
+				<div class="content-box">
+					<div
+						v-for="({ content, isCenter, type, label }, index) in loadedContent"
+						:key="index"
+						:data-reading-block="index"
+						class="novel-reading-block"
+					>
+						<template v-if="type === 'img'">
+							<div class="d-flex flex-column align-center my-6 w-100">
+								<v-card
+									elevation="4"
+									class="pa-2 rounded-lg lily-frame"
+									max-width="92%"
 								>
-									<path
-										d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10"
-										fill="#ff6b9d"
-									/>
-								</svg>
-								<span v-if="label" class="lily-text mx-2">{{ label }}</span>
-								<svg
-									class="lily-icon"
-									viewBox="0 0 100 100"
-									width="16"
-									height="16"
-									style="transform: scaleX(-1)"
-								>
-									<path
-										d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10"
-										fill="#ff6b9d"
-									/>
-								</svg>
+									<v-img :src="content" width="100%" class="rounded-lg">
+										<template #placeholder>
+											<v-skeleton-loader
+												type="image"
+												width="100%"
+												height="250"
+												class="rounded-lg"
+											></v-skeleton-loader>
+										</template>
+										<template #error>
+											<v-img
+												src="/error-default.jpg"
+												width="100%"
+												class="rounded-lg"
+											></v-img>
+										</template>
+									</v-img>
+								</v-card>
+								<div class="lily-label-container mt-3 d-flex align-center">
+									<svg
+										class="lily-icon"
+										viewBox="0 0 100 100"
+										width="16"
+										height="16"
+									>
+										<path
+											d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10"
+											fill="#ff6b9d"
+										/>
+									</svg>
+									<span v-if="label" class="lily-text mx-2">{{ label }}</span>
+									<svg
+										class="lily-icon"
+										viewBox="0 0 100 100"
+										width="16"
+										height="16"
+										style="transform: scaleX(-1)"
+									>
+										<path
+											d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10"
+											fill="#ff6b9d"
+										/>
+									</svg>
+								</div>
 							</div>
-						</div>
-					</template>
-					<template v-else>
-						<p
-							class="my-content"
-							:style="{ textAlign: isCenter ? 'center' : 'left' }"
-						>
-							<span>{{ content }}</span>
-						</p>
-						<br />
-					</template>
+						</template>
+						<template v-else>
+							<p
+								class="my-content"
+								:style="{ textAlign: isCenter ? 'center' : 'left' }"
+							>
+								<span>{{ content }}</span>
+							</p>
+							<br />
+						</template>
+					</div>
 				</div>
-			</div>
+			</NovelSelectionShare>
 			<div class="d-flex justify-space-between align-center">
 				<v-btn
 					elevation="0"
@@ -185,6 +187,7 @@ defineProps<{
  */
 defineEmits<{
 	'update:selectedChapterId': [value: number | null];
+	shareSelection: [quote: string];
 }>();
 
 /** 此组件不对外暴露 slot */
