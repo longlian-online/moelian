@@ -16,25 +16,25 @@
 		<canvas ref="posterCanvas" class="novel-quote-share-card__canvas"></canvas>
 		<v-fade-transition>
 			<div v-if="posterImage && !isGenerating" class="novel-quote-share-card__actions">
-			<v-btn
-				v-if="canSystemShare"
-				color="primary"
-				prepend-icon="mdi-share-variant-outline"
-				aria-label="系统分享"
-				title="系统分享"
-				@click="sharePoster"
-			>
-				系统分享
-			</v-btn>
-			<v-btn
-				color="primary"
-				prepend-icon="mdi-download"
-				aria-label="保存海报"
-				title="保存海报"
-				@click="downloadPoster"
-			>
-				保存海报
-			</v-btn>
+				<v-btn
+					v-if="canSystemShare"
+					color="primary"
+					prepend-icon="mdi-share-variant-outline"
+					aria-label="系统分享"
+					title="系统分享"
+					@click="sharePoster"
+				>
+					系统分享
+				</v-btn>
+				<v-btn
+					color="primary"
+					prepend-icon="mdi-download"
+					aria-label="保存海报"
+					title="保存海报"
+					@click="downloadPoster"
+				>
+					保存海报
+				</v-btn>
 			</div>
 		</v-fade-transition>
 		<p class="novel-quote-share-card__tip">保存后可发送到任意聊天或社交平台</p>
@@ -43,7 +43,13 @@
 
 <script setup lang="ts">
 import QRCode from 'qrcode';
-import { getNovelPosterLayout } from '~/utils/novelShare';
+import { getNovelPosterLayout, NOVEL_POSTER_METRICS } from '~/utils/novelShare';
+import {
+	downloadPosterImage,
+	drawImageContain,
+	loadImage,
+	roundedRect,
+} from '~/utils/posterCanvas';
 
 const props = defineProps<{
 	quote: string;
@@ -59,28 +65,7 @@ const posterImage = ref('');
 const isGenerating = ref(false);
 const canSystemShare = ref(false);
 
-const POSTER_WIDTH = 900;
-
-function roundedRect(
-	ctx: CanvasRenderingContext2D,
-	x: number,
-	y: number,
-	width: number,
-	height: number,
-	radius: number,
-) {
-	ctx.beginPath();
-	ctx.roundRect(x, y, width, height, radius);
-}
-
-function loadImage(src: string): Promise<HTMLImageElement> {
-	return new Promise((resolve, reject) => {
-		const image = new Image();
-		image.onload = () => resolve(image);
-		image.onerror = reject;
-		image.src = src;
-	});
-}
+const POSTER_WIDTH = NOVEL_POSTER_METRICS.width;
 
 function getWrappedLines(
 	ctx: CanvasRenderingContext2D,
@@ -137,11 +122,23 @@ async function generateCard() {
 		canvas.height = 1;
 		let ctx = canvas.getContext('2d');
 		if (!ctx) throw new Error('浏览器不支持生成分享海报');
-		ctx.font = '600 42px "Noto Serif SC", "Songti SC", serif';
-		const quoteLines = getWrappedLines(ctx, props.quote, 660);
-		ctx.font = '700 24px "Noto Serif SC", "Songti SC", serif';
-		const titleLines = getWrappedLines(ctx, props.title, 430);
-		const authorLines = getWrappedLines(ctx, props.author, 430);
+		ctx.font = NOVEL_POSTER_METRICS.quoteFont;
+		const quoteLines = getWrappedLines(
+			ctx,
+			props.quote,
+			NOVEL_POSTER_METRICS.quoteMaxWidth,
+		);
+		ctx.font = NOVEL_POSTER_METRICS.detailFont;
+		const titleLines = getWrappedLines(
+			ctx,
+			props.title,
+			NOVEL_POSTER_METRICS.detailMaxWidth,
+		);
+		const authorLines = getWrappedLines(
+			ctx,
+			props.author,
+			NOVEL_POSTER_METRICS.detailMaxWidth,
+		);
 		const layout = getNovelPosterLayout({
 			quoteLineCount: quoteLines.length,
 			titleLineCount: titleLines.length,
@@ -162,35 +159,39 @@ async function generateCard() {
 		ctx.fillStyle = background;
 		ctx.fillRect(0, 0, POSTER_WIDTH, layout.canvasHeight);
 
-		const cardTop = 48;
-		const cardLeft = 54;
-		const cardWidth = 792;
+		const cardTop = NOVEL_POSTER_METRICS.cardTop;
+		const cardLeft = NOVEL_POSTER_METRICS.cardLeft;
+		const cardWidth = NOVEL_POSTER_METRICS.cardWidth;
 		const cardBottom = layout.footerTop + layout.footerHeight;
 		ctx.fillStyle = '#f1bed1';
 		ctx.shadowColor = 'rgba(98, 70, 84, 0.13)';
 		ctx.shadowBlur = 30;
-		roundedRect(ctx, cardLeft, cardTop, cardWidth, cardBottom - cardTop, 28);
+		roundedRect(
+			ctx,
+			cardLeft,
+			cardTop,
+			cardWidth,
+			cardBottom - cardTop,
+			NOVEL_POSTER_METRICS.cardRadius,
+		);
 		ctx.fill();
 		ctx.shadowColor = 'transparent';
 		try {
 			const hands = await loadImage('/novel-share-yuri-hands.png');
 			const cardHeight = cardBottom - cardTop;
-			const scale = Math.min(
-				cardWidth / hands.naturalWidth,
-				cardHeight / hands.naturalHeight,
-			);
 			ctx.globalCompositeOperation = 'source-over';
 			ctx.globalAlpha = 0.5;
 			ctx.save();
-			roundedRect(ctx, cardLeft, cardTop, cardWidth, cardHeight, 28);
-			ctx.clip();
-			ctx.drawImage(
-				hands,
-				cardLeft + (cardWidth - hands.naturalWidth * scale) / 2,
-				cardTop + (cardHeight - hands.naturalHeight * scale) / 2,
-				hands.naturalWidth * scale,
-				hands.naturalHeight * scale,
+			roundedRect(
+				ctx,
+				cardLeft,
+				cardTop,
+				cardWidth,
+				cardHeight,
+				NOVEL_POSTER_METRICS.cardRadius,
 			);
+			ctx.clip();
+			drawImageContain(ctx, hands, cardLeft, cardTop, cardWidth, cardHeight);
 			const tintCanvas = document.createElement('canvas');
 			tintCanvas.width = hands.naturalWidth;
 			tintCanvas.height = hands.naturalHeight;
@@ -201,13 +202,7 @@ async function generateCard() {
 				tintContext.fillStyle = '#e58fb5';
 				tintContext.fillRect(0, 0, tintCanvas.width, tintCanvas.height);
 				ctx.globalAlpha = 0.22;
-				ctx.drawImage(
-					tintCanvas,
-					cardLeft + (cardWidth - hands.naturalWidth * scale) / 2,
-					cardTop + (cardHeight - hands.naturalHeight * scale) / 2,
-					hands.naturalWidth * scale,
-					hands.naturalHeight * scale,
-				);
+				drawImageContain(ctx, tintCanvas, cardLeft, cardTop, cardWidth, cardHeight);
 			}
 			ctx.restore();
 			ctx.globalAlpha = 1;
@@ -218,20 +213,31 @@ async function generateCard() {
 			// 装饰素材加载失败时不影响海报生成。
 		}
 		ctx.fillStyle = 'rgba(255, 241, 248, 0.78)';
-		roundedRect(ctx, cardLeft, cardTop, cardWidth, layout.cardBottom - cardTop, [28, 28, 0, 0]);
+		roundedRect(ctx, cardLeft, cardTop, cardWidth, layout.cardBottom - cardTop, [
+			NOVEL_POSTER_METRICS.cardRadius,
+			NOVEL_POSTER_METRICS.cardRadius,
+			0,
+			0,
+		]);
 		ctx.fill();
 
 		ctx.fillStyle = '#d85a9a';
 		ctx.font = '900 96px Georgia, serif';
 		ctx.fillText('“', 94, layout.quoteTop - 38);
 		ctx.fillStyle = '#322d31';
-		ctx.font = '600 42px "Noto Serif SC", "Songti SC", serif';
-		drawTextLines(ctx, quoteLines, 120, layout.quoteTop, 68);
+		ctx.font = NOVEL_POSTER_METRICS.quoteFont;
+		drawTextLines(
+			ctx,
+			quoteLines,
+			120,
+			layout.quoteTop,
+			NOVEL_POSTER_METRICS.quoteLineHeight,
+		);
 
 		const chapter = props.chapterLabel.split(' · ')[0] ?? props.chapterLabel;
 		drawLabel(ctx, '章节', 120, layout.metadataTop);
 		ctx.fillStyle = '#97727e';
-		ctx.font = '700 24px "Noto Serif SC", "Songti SC", serif';
+		ctx.font = NOVEL_POSTER_METRICS.detailFont;
 		ctx.fillText(chapter, 120, layout.metadataTop + 36);
 		try {
 			const logo = await loadImage('/image.png');
@@ -254,7 +260,12 @@ async function generateCard() {
 		}
 
 		ctx.fillStyle = 'rgba(249, 218, 235, 0.82)';
-		roundedRect(ctx, cardLeft, layout.footerTop, cardWidth, layout.footerHeight, [0, 0, 28, 28]);
+		roundedRect(ctx, cardLeft, layout.footerTop, cardWidth, layout.footerHeight, [
+			0,
+			0,
+			NOVEL_POSTER_METRICS.cardRadius,
+			NOVEL_POSTER_METRICS.cardRadius,
+		]);
 		ctx.fill();
 		ctx.fillStyle = '#c6879b';
 		roundedRect(
@@ -268,13 +279,29 @@ async function generateCard() {
 		ctx.fill();
 		drawLabel(ctx, '作品', 120, layout.footerTop + 54);
 		ctx.fillStyle = '#513f44';
-		ctx.font = '700 24px "Noto Serif SC", "Songti SC", serif';
-		drawTextLines(ctx, titleLines, 120, layout.footerTop + 88, 36);
-		const authorLabelY = layout.footerTop + 88 + titleLines.length * 36 + 30;
+		ctx.font = NOVEL_POSTER_METRICS.detailFont;
+		drawTextLines(
+			ctx,
+			titleLines,
+			120,
+			layout.footerTop + 88,
+			NOVEL_POSTER_METRICS.detailLineHeight,
+		);
+		const authorLabelY =
+			layout.footerTop +
+			88 +
+			titleLines.length * NOVEL_POSTER_METRICS.detailLineHeight +
+			30;
 		drawLabel(ctx, '作者', 120, authorLabelY);
 		ctx.fillStyle = '#513f44';
-		ctx.font = '700 24px "Noto Serif SC", "Songti SC", serif';
-		drawTextLines(ctx, authorLines, 120, authorLabelY + 34, 36);
+		ctx.font = NOVEL_POSTER_METRICS.detailFont;
+		drawTextLines(
+			ctx,
+			authorLines,
+			120,
+			authorLabelY + 34,
+			NOVEL_POSTER_METRICS.detailLineHeight,
+		);
 		const qrDataUrl = await QRCode.toDataURL(props.shareUrl, {
 			width: 180,
 			margin: 1,
@@ -283,7 +310,7 @@ async function generateCard() {
 		const qr = await loadImage(qrDataUrl);
 		const qrX = 664;
 		const qrY = layout.qrTop;
-		ctx.drawImage(qr, qrX, qrY, 132, 132);
+		ctx.drawImage(qr, qrX, qrY, NOVEL_POSTER_METRICS.qrSize, NOVEL_POSTER_METRICS.qrSize);
 		try {
 			const lily = await loadImage('/novel-share-yuri-lily.png');
 			ctx.globalCompositeOperation = 'multiply';
@@ -299,7 +326,7 @@ async function generateCard() {
 		ctx.fillStyle = '#9d8189';
 		ctx.font = '600 14px sans-serif';
 		ctx.textAlign = 'center';
-		ctx.fillText('推荐给喜欢百合的你', 730, qrY + 156);
+		ctx.fillText('推荐给喜欢百合的你', 730, qrY + NOVEL_POSTER_METRICS.qrSize + 24);
 		ctx.textAlign = 'left';
 
 		posterImage.value = canvas.toDataURL('image/png');
@@ -313,13 +340,7 @@ async function generateCard() {
 
 function downloadPoster() {
 	if (!posterImage.value) return;
-	const safeTitle = props.title.replace(/[\\/:*?"<>|]/g, '-');
-	const link = document.createElement('a');
-	link.href = posterImage.value;
-	link.download = `${safeTitle}-选段分享.png`;
-	document.body.appendChild(link);
-	link.click();
-	link.remove();
+	downloadPosterImage(posterImage.value, props.title, '选段分享');
 	$tip('分享海报已保存', { color: 'success', icon: 'mdi-download' });
 }
 
@@ -397,19 +418,6 @@ defineExpose({ generateCard, downloadPoster });
 	display: flex;
 	justify-content: center;
 	gap: 12px;
-}
-
-.novel-quote-share-card__fab {
-	width: 64px;
-	height: 64px;
-	border-radius: 50%;
-	box-shadow: 0 8px 18px rgba(211, 91, 151, 0.28);
-	transition: transform 180ms ease, box-shadow 180ms ease;
-}
-
-.novel-quote-share-card__fab:hover {
-	transform: translateY(-3px);
-	box-shadow: 0 12px 24px rgba(211, 91, 151, 0.36);
 }
 
 .novel-quote-share-card__tip {

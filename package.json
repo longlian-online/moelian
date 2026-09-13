@@ -9,13 +9,13 @@
 	},
 	"scripts": {
 		"build": "prisma generate && nuxt build",
-		"dev": "prisma generate && nuxi prepare && tsc --noEmit && nuxt dev",
-		"dev:mobile": "prisma generate && nuxi prepare && tsc --noEmit && nuxt dev --host 0.0.0.0",
+		"dev": "prisma generate && nuxi prepare && pnpm static-check && nuxt dev",
+		"dev:mobile": "prisma generate && nuxi prepare && pnpm static-check && nuxt dev --host 0.0.0.0",
 		"generate": "nuxt generate",
 		"preview": "nuxt preview",
 		"test": "vitest run",
 		"dev-generate": "prisma generate",
-		"static-check": "tsc --noEmit"
+		"static-check": "vue-tsc --noEmit"
 	},
 	"dependencies": {
 		"@mdi/font": "^7.4.47",

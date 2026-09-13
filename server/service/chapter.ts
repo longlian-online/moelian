@@ -49,7 +49,10 @@ export const updateStatus = async (id: Chapter['id'], status: Status) => {
 };
 
 export const productReady = (chapter: Chapter): boolean => {
-	return chapter.product_id !== null;
+	if (chapter.content_type === ContentType.Novel) {
+		return chapter.product_id != null || chapter.content_id != null;
+	}
+	return chapter.product_id != null;
 };
 
 export type UpdateChapterInput = Pick<Chapter, 'title'>;

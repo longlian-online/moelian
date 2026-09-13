@@ -8,8 +8,10 @@ import bcrypt from "bcrypt";
 import { Status, Role } from "_db";
 import { findUserByUsernameWithAvatar } from "~/server/repository/user";
 import { ResourceType } from "~/server/lib/prisma";
+import { getPresignedReadUrl } from "~/server/service/cos";
 
 vi.mock("~/server/repository/user");
+vi.mock("~/server/service/cos");
 
 describe("session service", () => {
   describe("createSession", () => {
@@ -67,6 +69,7 @@ describe("session service", () => {
 
     test("登录成功时返回UserSession", async () => {
       vi.mocked(findUserByUsernameWithAvatar).mockResolvedValue(mockUser);
+      vi.mocked(getPresignedReadUrl).mockReturnValue("https://cos.example.com/123");
 
       const result = await login({
         username: mockUser.username,
@@ -74,7 +77,12 @@ describe("session service", () => {
         cosBaseUrl: "xx"
       });
 
-      expect(result).not.toBeUndefined();
+      expect(result).toMatchObject({
+        id: 1,
+        nickname: "Test User",
+        avatar: "https://cos.example.com/123",
+        role: Role.SuperAdmin,
+      });
     });
   });
 });

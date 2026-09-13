@@ -142,12 +142,25 @@ describe('章节服务', () => {
 		test('启用章节，小说内容未准备，更新失败', async () => {
 			vi.mocked(dao.getById).mockResolvedValue({
 				content_id: null,
+				product_id: null,
 				content_type: ContentType.Novel,
 			} as Chapter);
 
 			const p = updateStatus(1, Status.Enable);
 
 			await expect(p).rejects.toThrowError();
+		});
+
+		test('启用章节，旧版小说已有源文件时更新成功', async () => {
+			vi.mocked(dao.getById).mockResolvedValue({
+				content_id: 9,
+				product_id: null,
+				content_type: ContentType.Novel,
+			} as Chapter);
+			vi.mocked(dao.update).mockClear();
+
+			await expect(updateStatus(1, Status.Enable)).resolves.toBeUndefined();
+			expect(dao.update).toHaveBeenCalledWith(1, { status: Status.Enable });
 		});
 
 		test('更新状态成功', async () => {
@@ -252,10 +265,13 @@ describe('章节服务', () => {
 		});
 
 		test('漫画内容，获取成功', async () => {
-			vi.mocked(dao.getById).mockResolvedValue({
+			vi.mocked(dao.getEnableById).mockResolvedValue({
+				work_id: 2,
 				content_type: ContentType.Manga,
 				product_id: 1,
-			} as Chapter);
+				Work: { id: 2, title: '漫画作品', author: '作者' },
+			} as Awaited<ReturnType<typeof dao.getEnableById>>);
+			vi.mocked(dao.listChapterForIndex).mockResolvedValue([]);
 			vi.mocked(resourceRepo.getResourceById).mockResolvedValue({
 				key: 'key',
 			} as Resource);
@@ -267,10 +283,13 @@ describe('章节服务', () => {
 		});
 
 		test('小说内容，获取成功', async () => {
-			vi.mocked(dao.getById).mockResolvedValue({
+			vi.mocked(dao.getEnableById).mockResolvedValue({
+				work_id: 2,
 				content_type: ContentType.Novel,
 				content_id: 1,
-			} as Chapter);
+				Work: { id: 2, title: '小说作品', author: '作者' },
+			} as Awaited<ReturnType<typeof dao.getEnableById>>);
+			vi.mocked(dao.listChapterForIndex).mockResolvedValue([]);
 			vi.mocked(getResourceURLByID).mockResolvedValue('url');
 
 			const result = await getContentByID(1, 'baseURL');
