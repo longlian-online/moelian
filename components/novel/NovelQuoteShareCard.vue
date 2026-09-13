@@ -14,12 +14,14 @@
 			/>
 		</div>
 		<canvas ref="posterCanvas" class="novel-quote-share-card__canvas"></canvas>
-		<div class="novel-quote-share-card__actions">
+		<v-fade-transition>
+			<div v-if="posterImage && !isGenerating" class="novel-quote-share-card__actions">
 			<v-btn
 				v-if="canSystemShare"
 				color="primary"
 				prepend-icon="mdi-share-variant-outline"
-				:disabled="!posterImage || isGenerating"
+				aria-label="系统分享"
+				title="系统分享"
 				@click="sharePoster"
 			>
 				系统分享
@@ -27,13 +29,14 @@
 			<v-btn
 				color="primary"
 				prepend-icon="mdi-download"
-				variant="outlined"
-				:disabled="!posterImage || isGenerating"
+				aria-label="保存海报"
+				title="保存海报"
 				@click="downloadPoster"
 			>
 				保存海报
 			</v-btn>
-		</div>
+			</div>
+		</v-fade-transition>
 		<p class="novel-quote-share-card__tip">保存后可发送到任意聊天或社交平台</p>
 	</div>
 </template>
@@ -394,6 +397,19 @@ defineExpose({ generateCard, downloadPoster });
 	display: flex;
 	justify-content: center;
 	gap: 12px;
+}
+
+.novel-quote-share-card__fab {
+	width: 64px;
+	height: 64px;
+	border-radius: 50%;
+	box-shadow: 0 8px 18px rgba(211, 91, 151, 0.28);
+	transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.novel-quote-share-card__fab:hover {
+	transform: translateY(-3px);
+	box-shadow: 0 12px 24px rgba(211, 91, 151, 0.36);
 }
 
 .novel-quote-share-card__tip {

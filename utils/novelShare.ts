@@ -22,14 +22,14 @@ export function getNovelPosterLayout(input: {
 	const quoteLineCount = Math.max(1, input.quoteLineCount);
 	const titleLineCount = Math.max(1, input.titleLineCount);
 	const authorLineCount = Math.max(1, input.authorLineCount);
-	const quoteTop = 228;
+	const quoteTop = 180;
 	const quoteBottom = quoteTop + (quoteLineCount - 1) * 68;
-	const metadataTop = quoteBottom + 46;
-	const cardBottom = metadataTop + 82;
+	const metadataTop = quoteBottom + 32;
+	const cardBottom = metadataTop + 64;
 	const footerTop = cardBottom;
 	const footerHeight = Math.max(
-		218,
-		144 + (titleLineCount + authorLineCount) * 36,
+		180,
+		120 + (titleLineCount + authorLineCount) * 36,
 	);
 	const qrBlockHeight = 160;
 	const metadataContentCenterY = 79.5 + 18 * (titleLineCount + authorLineCount);

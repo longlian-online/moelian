@@ -17,6 +17,7 @@
 				color="primary"
 				prepend-icon="mdi-share-variant-outline"
 				size="small"
+				aria-label="分享选中文本"
 				@click="shareSelection"
 			>
 				分享
@@ -145,4 +146,6 @@ onBeforeUnmount(() => {
 	z-index: 3000;
 	box-shadow: 0 8px 22px rgba(104, 69, 121, 0.24);
 }
+
+
 </style>
