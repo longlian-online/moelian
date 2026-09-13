@@ -154,23 +154,59 @@ async function generateCard() {
 			POSTER_WIDTH,
 			layout.canvasHeight,
 		);
-		background.addColorStop(0, '#fff0df');
-		background.addColorStop(1, '#f6c28f');
+		background.addColorStop(0, '#fff5fb');
+		background.addColorStop(1, '#f0e7f5');
 		ctx.fillStyle = background;
 		ctx.fillRect(0, 0, POSTER_WIDTH, layout.canvasHeight);
 
-		ctx.fillStyle = '#fff0dd';
+		const cardTop = 48;
+		const cardLeft = 54;
+		const cardWidth = 792;
+		const cardBottom = layout.footerTop + layout.footerHeight;
+		ctx.fillStyle = '#f1bed1';
 		ctx.shadowColor = 'rgba(98, 70, 84, 0.13)';
 		ctx.shadowBlur = 30;
-		roundedRect(ctx, 54, 48, 792, layout.cardBottom - 48, 28);
+		roundedRect(ctx, cardLeft, cardTop, cardWidth, cardBottom - cardTop, 28);
 		ctx.fill();
 		ctx.shadowColor = 'transparent';
 		try {
-			const ornaments = await loadImage('/novel-share-yuri-ornaments.png');
 			const hands = await loadImage('/novel-share-yuri-hands.png');
-			ctx.globalCompositeOperation = 'multiply';
-			ctx.globalAlpha = 0.16;
-			ctx.drawImage(hands, 250, 118, 400, 228);
+			const cardHeight = cardBottom - cardTop;
+			const scale = Math.min(
+				cardWidth / hands.naturalWidth,
+				cardHeight / hands.naturalHeight,
+			);
+			ctx.globalCompositeOperation = 'source-over';
+			ctx.globalAlpha = 0.5;
+			ctx.save();
+			roundedRect(ctx, cardLeft, cardTop, cardWidth, cardHeight, 28);
+			ctx.clip();
+			ctx.drawImage(
+				hands,
+				cardLeft + (cardWidth - hands.naturalWidth * scale) / 2,
+				cardTop + (cardHeight - hands.naturalHeight * scale) / 2,
+				hands.naturalWidth * scale,
+				hands.naturalHeight * scale,
+			);
+			const tintCanvas = document.createElement('canvas');
+			tintCanvas.width = hands.naturalWidth;
+			tintCanvas.height = hands.naturalHeight;
+			const tintContext = tintCanvas.getContext('2d');
+			if (tintContext) {
+				tintContext.drawImage(hands, 0, 0);
+				tintContext.globalCompositeOperation = 'source-in';
+				tintContext.fillStyle = '#e58fb5';
+				tintContext.fillRect(0, 0, tintCanvas.width, tintCanvas.height);
+				ctx.globalAlpha = 0.22;
+				ctx.drawImage(
+					tintCanvas,
+					cardLeft + (cardWidth - hands.naturalWidth * scale) / 2,
+					cardTop + (cardHeight - hands.naturalHeight * scale) / 2,
+					hands.naturalWidth * scale,
+					hands.naturalHeight * scale,
+				);
+			}
+			ctx.restore();
 			ctx.globalAlpha = 1;
 			ctx.globalCompositeOperation = 'source-over';
 		} catch {
@@ -178,8 +214,11 @@ async function generateCard() {
 			ctx.globalCompositeOperation = 'source-over';
 			// 装饰素材加载失败时不影响海报生成。
 		}
+		ctx.fillStyle = 'rgba(255, 241, 248, 0.78)';
+		roundedRect(ctx, cardLeft, cardTop, cardWidth, layout.cardBottom - cardTop, [28, 28, 0, 0]);
+		ctx.fill();
 
-		ctx.fillStyle = '#eadde5';
+		ctx.fillStyle = '#d85a9a';
 		ctx.font = '900 96px Georgia, serif';
 		ctx.fillText('“', 94, layout.quoteTop - 38);
 		ctx.fillStyle = '#322d31';
@@ -211,8 +250,8 @@ async function generateCard() {
 			ctx.textAlign = 'left';
 		}
 
-		ctx.fillStyle = '#f8d3aa';
-		roundedRect(ctx, 54, layout.footerTop, 792, layout.footerHeight, 0);
+		ctx.fillStyle = 'rgba(249, 218, 235, 0.82)';
+		roundedRect(ctx, cardLeft, layout.footerTop, cardWidth, layout.footerHeight, [0, 0, 28, 28]);
 		ctx.fill();
 		ctx.fillStyle = '#c6879b';
 		roundedRect(
@@ -243,10 +282,10 @@ async function generateCard() {
 		const qrY = layout.qrTop;
 		ctx.drawImage(qr, qrX, qrY, 132, 132);
 		try {
-			const ornaments = await loadImage('/novel-share-yuri-ornaments.png');
+			const lily = await loadImage('/novel-share-yuri-lily.png');
 			ctx.globalCompositeOperation = 'multiply';
-			ctx.globalAlpha = 0.2;
-			ctx.drawImage(ornaments, 0, 0, 687, 572, 550, qrY + 20, 92, 77);
+			ctx.globalAlpha = 0.32;
+			ctx.drawImage(lily, 480, qrY - 4, 170, 143);
 			ctx.globalAlpha = 1;
 			ctx.globalCompositeOperation = 'source-over';
 		} catch {

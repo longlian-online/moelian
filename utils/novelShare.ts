@@ -26,7 +26,7 @@ export function getNovelPosterLayout(input: {
 	const quoteBottom = quoteTop + (quoteLineCount - 1) * 68;
 	const metadataTop = quoteBottom + 46;
 	const cardBottom = metadataTop + 82;
-	const footerTop = cardBottom + 38;
+	const footerTop = cardBottom;
 	const footerHeight = Math.max(
 		218,
 		144 + (titleLineCount + authorLineCount) * 36,
