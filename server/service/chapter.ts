@@ -49,7 +49,10 @@ export const updateStatus = async (id: Chapter['id'], status: Status) => {
 };
 
 export const productReady = (chapter: Chapter): boolean => {
-	return chapter.product_id !== null;
+	if (chapter.content_type === ContentType.Novel) {
+		return chapter.product_id != null || chapter.content_id != null;
+	}
+	return chapter.product_id != null;
 };
 
 export type UpdateChapterInput = Pick<Chapter, 'title'>;
@@ -218,6 +221,11 @@ export const getContentByID = async (id: Chapter['id'], baseURL: string) => {
 
 	let res: WorkContentRes = {
 		type: 'Manga',
+		work: {
+			id: chapter.Work.id,
+			title: chapter.Work.title,
+			author: chapter.Work.author,
+		},
 		chapters: [],
 	};
 	switch (chapter.content_type) {
@@ -227,6 +235,7 @@ export const getContentByID = async (id: Chapter['id'], baseURL: string) => {
 				manga: {
 					urls: await getMangaContent(chapter.product_id),
 				},
+				work: res.work,
 				chapters: [],
 			};
 			break;
@@ -238,6 +247,7 @@ export const getContentByID = async (id: Chapter['id'], baseURL: string) => {
 				novel: {
 					...content,
 				},
+				work: res.work,
 				chapters: [],
 			};
 		}
@@ -278,7 +288,6 @@ const getDirResourceWithDefault = async (
 	return await getDirAllObjectURLs(key);
 };
 
-
 /**
  * 获取文件夹类型资源的所有文件链接，当该资源在数据库中无法获取时，返回默认的文件地址列表
  * @param resourceID 资源ID
@@ -318,7 +327,7 @@ const getNovelContent = async (novel: Chapter, baseUrl: string) => {
 
 		const urlMap: Record<string, string> = {};
 		for (const url of urls) {
-			urlMap[url.key] = url.url
+			urlMap[url.key] = url.url;
 		}
 
 		return {

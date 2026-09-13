@@ -43,6 +43,12 @@
 
 <script setup lang="ts">
 import QRCode from 'qrcode';
+import {
+	downloadPosterImage,
+	drawImageContain,
+	loadImage,
+	roundedRect,
+} from '~/utils/posterCanvas';
 
 const { $tip } = useNuxtApp();
 const props = defineProps<{
@@ -64,51 +70,6 @@ const COVER_X = 218;
 const COVER_Y = 182;
 const COVER_WIDTH = 500;
 const COVER_HEIGHT = 750;
-
-function roundedRect(
-	ctx: CanvasRenderingContext2D,
-	x: number,
-	y: number,
-	width: number,
-	height: number,
-	radius: number,
-) {
-	ctx.beginPath();
-	ctx.roundRect(x, y, width, height, radius);
-}
-
-function loadImage(src: string): Promise<HTMLImageElement> {
-	return new Promise((resolve, reject) => {
-		const image = new Image();
-		image.crossOrigin = 'anonymous';
-		image.onload = () => resolve(image);
-		image.onerror = reject;
-		image.src = src;
-	});
-}
-
-function drawImageContain(
-	ctx: CanvasRenderingContext2D,
-	image: HTMLImageElement,
-	x: number,
-	y: number,
-	width: number,
-	height: number,
-) {
-	const scale = Math.min(
-		width / image.naturalWidth,
-		height / image.naturalHeight,
-	);
-	const drawWidth = image.naturalWidth * scale;
-	const drawHeight = image.naturalHeight * scale;
-	ctx.drawImage(
-		image,
-		x + (width - drawWidth) / 2,
-		y + (height - drawHeight) / 2,
-		drawWidth,
-		drawHeight,
-	);
-}
 
 function getBookCoverSource(image: HTMLImageElement) {
 	const targetRatio = (COVER_WIDTH + SPINE_TEXTURE_WIDTH) / COVER_HEIGHT;
@@ -377,7 +338,7 @@ async function generateCard() {
 		ctx.fillRect(0, 0, POSTER_WIDTH, POSTER_HEIGHT);
 		ctx.translate(-70, -80);
 		try {
-			const headerLogo = await loadImage('/image.png');
+			const headerLogo = await loadImage('/image.png', 'anonymous');
 			ctx.save();
 			ctx.globalCompositeOperation = 'multiply';
 			drawImageContain(ctx, headerLogo, 180, 96, 220, 70);
@@ -413,7 +374,7 @@ async function generateCard() {
 		let coverImage: HTMLImageElement | undefined;
 		if (props.coverUrl) {
 			try {
-				coverImage = await loadImage(props.coverUrl);
+				coverImage = await loadImage(props.coverUrl, 'anonymous');
 			} catch {
 				coverImage = undefined;
 			}
@@ -482,7 +443,7 @@ async function generateCard() {
 			margin: 1,
 			color: { dark: '#5a463d', light: '#ffffff' },
 		});
-		const qrImage = await loadImage(qrDataUrl);
+		const qrImage = await loadImage(qrDataUrl, 'anonymous');
 		drawLilyAccent(ctx);
 		ctx.drawImage(qrImage, 570, 972, 150, 150);
 		ctx.fillStyle = '#9b7f7f';
@@ -501,13 +462,7 @@ async function generateCard() {
 
 function downloadPoster() {
 	if (!posterImage.value) return;
-	const safeTitle = (props.title || '作品分享').replace(/[\\/:*?"<>|]/g, '-');
-	const link = document.createElement('a');
-	link.href = posterImage.value;
-	link.download = `${safeTitle}-分享海报.png`;
-	document.body.appendChild(link);
-	link.click();
-	link.remove();
+	downloadPosterImage(posterImage.value, props.title || '作品分享', '分享海报');
 	$tip('分享海报已保存', { color: 'success', icon: 'mdi-download' });
 }
 
