@@ -19,79 +19,83 @@
 				</div>
 
 				<v-sheet elevation="1" class="pa-6">
-					<div class="content-box">
-						<div
-							v-for="(
-								{ content, isCenter, type, label }, index
-							) in loadedContent"
-							:key="index"
-							:data-reading-block="index"
-							class="novel-reading-block"
-						>
-							<template v-if="type === 'img'">
-								<div class="d-flex flex-column align-center my-8 w-100">
-									<v-card
-										elevation="4"
-										class="pa-3 rounded-xl lily-frame"
-										max-width="85%"
-									>
-										<v-img :src="content" width="100%" class="rounded-lg">
-											<template #placeholder>
-												<v-skeleton-loader
-													type="image"
-													width="100%"
-													height="400"
-													class="rounded-lg"
-												></v-skeleton-loader>
-											</template>
-											<template #error>
-												<v-img
-													src="/error-default.jpg"
-													width="100%"
-													class="rounded-lg"
-												></v-img>
-											</template>
-										</v-img>
-									</v-card>
-									<div class="lily-label-container mt-4 d-flex align-center">
-										<svg
-											class="lily-icon"
-											viewBox="0 0 100 100"
-											width="20"
-											height="20"
+					<NovelSelectionShare @share="$emit('shareSelection', $event)">
+						<div class="content-box">
+							<div
+								v-for="(
+									{ content, isCenter, type, label }, index
+								) in loadedContent"
+								:key="index"
+								:data-reading-block="index"
+								class="novel-reading-block"
+							>
+								<template v-if="type === 'img'">
+									<div class="d-flex flex-column align-center my-8 w-100">
+										<v-card
+											elevation="4"
+											class="pa-3 rounded-xl lily-frame"
+											max-width="85%"
 										>
-											<path
-												d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10"
-												fill="#ff6b9d"
-											/>
-										</svg>
-										<span v-if="label" class="lily-text mx-3">{{ label }}</span>
-										<svg
-											class="lily-icon"
-											viewBox="0 0 100 100"
-											width="20"
-											height="20"
-											style="transform: scaleX(-1)"
-										>
-											<path
-												d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10"
-												fill="#ff6b9d"
-											/>
-										</svg>
+											<v-img :src="content" width="100%" class="rounded-lg">
+												<template #placeholder>
+													<v-skeleton-loader
+														type="image"
+														width="100%"
+														height="400"
+														class="rounded-lg"
+													></v-skeleton-loader>
+												</template>
+												<template #error>
+													<v-img
+														src="/error-default.jpg"
+														width="100%"
+														class="rounded-lg"
+													></v-img>
+												</template>
+											</v-img>
+										</v-card>
+										<div class="lily-label-container mt-4 d-flex align-center">
+											<svg
+												class="lily-icon"
+												viewBox="0 0 100 100"
+												width="20"
+												height="20"
+											>
+												<path
+													d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10"
+													fill="#ff6b9d"
+												/>
+											</svg>
+											<span v-if="label" class="lily-text mx-3">{{
+												label
+											}}</span>
+											<svg
+												class="lily-icon"
+												viewBox="0 0 100 100"
+												width="20"
+												height="20"
+												style="transform: scaleX(-1)"
+											>
+												<path
+													d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10"
+													fill="#ff6b9d"
+												/>
+											</svg>
+										</div>
 									</div>
-								</div>
-							</template>
-							<template v-else>
-								<p
-									class="my-content"
-									:style="{ textAlign: isCenter ? 'center' : 'left' }"
-								>
-									<span>{{ content }}</span>
-								</p>
-								<br />
-							</template>
+								</template>
+								<template v-else>
+									<p
+										class="my-content"
+										:style="{ textAlign: isCenter ? 'center' : 'left' }"
+									>
+										<span>{{ content }}</span>
+									</p>
+									<br />
+								</template>
+							</div>
 						</div>
-					</div>
+					</NovelSelectionShare>
 					<div class="d-flex justify-space-between align-center">
 						<v-btn
 							elevation="0"
@@ -197,6 +201,7 @@ defineProps<{
 defineEmits<{
 	'update:selectedChapterId': [value: number | null];
 	openThemeSetting: [];
+	shareSelection: [quote: string];
 }>();
 
 /** 此组件不对外暴露 slot */

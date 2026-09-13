@@ -63,6 +63,11 @@ export type WorkDetailChapterItem = {
  */
 export type WorkContentRes = {
 	type: ContentType;
+	work: {
+		id: number;
+		title: string;
+		author: string;
+	};
 	manga?: {
 		urls: string[];
 	};
