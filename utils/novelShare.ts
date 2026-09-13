@@ -28,8 +28,8 @@ export function getNovelPosterLayout(input: {
 	const cardBottom = metadataTop + 64;
 	const footerTop = cardBottom;
 	const footerHeight = Math.max(
-		180,
-		120 + (titleLineCount + authorLineCount) * 36,
+		204,
+		150 + (titleLineCount + authorLineCount) * 36,
 	);
 	const qrBlockHeight = 160;
 	const metadataContentCenterY = 79.5 + 18 * (titleLineCount + authorLineCount);
