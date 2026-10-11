@@ -9,7 +9,7 @@ import {
 	TAG_NOT_EXISTS,
 } from '../types/business_exception';
 import {
-	getLastChapterByWorkID,
+	getLastChapterByWorkIDs,
 	listChapterForIndex,
 	listLastChapterByWorkIDs,
 } from '~/server/repository/chapter';
@@ -99,10 +99,10 @@ export const updateStatus = async (id: Work['id'], status: Work['status']) => {
 export type ListForWebInput = dao.ListForWebInput;
 export const listForWeb = async (input: ListForWebInput) => {
 	const { list, total } = await dao.listForWeb(input);
-	if (total === 0) {
+	if (list.length === 0) {
 		return {
 			list: [],
-			total: 0,
+			total,
 		};
 	}
 	const workIDs = list.map((item) => item.id);
@@ -126,7 +126,7 @@ export const detailForWeb = async (id: Work['id']) => {
 	if (!work) {
 		throw new DATA_NOT_EXISTS();
 	}
-	const lastChapter = await getLastChapterByWorkID(work.id);
+	const lastChapter = await getLastChapterByWorkIDs(work.id);
 
 	const chapters = await listChapterForIndex({ workID: id });
 
