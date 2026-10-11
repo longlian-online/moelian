@@ -454,7 +454,10 @@ async function submitFile() {
 			uploadController.value = null; // 清除 controller
 		}
 	} else {
-		$tip('文件验证失败');
+		$tip('文件验证失败', {
+			color: 'error',
+			icon: 'mdi-alert-circle',
+		});
 	}
 }
 

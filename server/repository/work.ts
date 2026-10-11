@@ -1,6 +1,6 @@
 import type { PageRequestSchema } from '~/shared/dto';
-import type { Prisma, Resource, Work, ContentType } from '_db';
-import { Status } from '_db';
+import type { Resource, Work, ContentType } from '_db';
+import { Prisma, Status } from '_db';
 import dayjs from 'dayjs';
 import { pagination } from '~/server/utils/db';
 import type { SortType } from '#shared/dto/web/work';
@@ -236,25 +236,65 @@ export const listForWeb = async (params: ListForWebInput) => {
 			},
 		}));
 	}
-	const sortType = params.sortType || 'UPDATE'; // 默认最新更新
-	const orderBy = {
-		[sortType === 'UPDATE' ? 'updated_at' : 'created_at']: 'desc',
+	const sortType = params.sortType || 'UPDATE';
+	const include = {
+		Cover: true,
+		workTags: {
+			where: { tag: { deleted_at: null } },
+			select: { tag: { select: { content: true } } },
+		},
 	};
+	if (sortType === 'UPDATE') {
+		const filters = [
+			Prisma.sql`w."content_type" = ${params.type}::"ContentType"`,
+			Prisma.sql`w."status" = 'Enable'`,
+			Prisma.sql`w."deleted_at" IS NULL`,
+		];
+		if (params.key) {
+			const pattern = `%${params.key}%`;
+			filters.push(
+				Prisma.sql`(w."title" LIKE ${pattern} OR w."author" LIKE ${pattern})`,
+			);
+		}
+		for (const tag of params.tags ?? []) {
+			filters.push(Prisma.sql`EXISTS (
+				SELECT 1 FROM "WorkTags" wt JOIN "Tag" t ON t."id" = wt."tag_id"
+				WHERE wt."work_id" = w."id" AND t."content" = ${tag} AND t."deleted_at" IS NULL
+			)`);
+		}
+		const { skip, take } = pagination(params.page);
+		// 与 listLastChapterByWorkIDs 一致，取 ID 最新的可见章节；先排序再分页。
+		const [orderedWorks, total] = await Promise.all([
+			useDB().$queryRaw<Pick<Work, 'id'>[]>(Prisma.sql`
+				WITH candidates AS (
+					SELECT w."id" FROM "Work" w WHERE ${Prisma.join(filters, ' AND ')}
+				)
+				SELECT w."id" FROM candidates w
+				LEFT JOIN (
+					SELECT DISTINCT ON (c."work_id") c."work_id", c."created_at" FROM "Chapter" c
+					JOIN candidates candidate ON candidate."id" = c."work_id"
+					WHERE c."status" = 'Enable' AND c."deleted_at" IS NULL
+					ORDER BY c."work_id", c."id" DESC
+				) latest ON latest."work_id" = w."id"
+				ORDER BY latest."created_at" DESC NULLS LAST, w."id" DESC
+				LIMIT ${take} OFFSET ${skip}
+			`),
+			useDB().work.count({ where }),
+		]);
+		if (!orderedWorks.length) return { list: [], total };
+		const list = await useDB().work.findMany({
+			include,
+			where: { ...where, id: { in: orderedWorks.map((item) => item.id) } },
+		});
+		const order = new Map(orderedWorks.map((item, index) => [item.id, index]));
+		list.sort((a, b) => order.get(a.id)! - order.get(b.id)!);
+		return { list, total };
+	}
 	const [list, total] = await Promise.all([
 		useDB().work.findMany({
-			include: {
-				Cover: true,
-				workTags: {
-					where: {
-						tag: { deleted_at: null },
-					},
-					select: {
-						tag: { select: { content: true } },
-					},
-				},
-			},
+			include,
 			where,
-			orderBy,
+			orderBy: { created_at: 'desc' },
 			...pagination(params.page),
 		}),
 		useDB().work.count({ where }),

@@ -1,9 +1,15 @@
 import { describe, expect, test, vi } from 'vitest';
-import { create, updateByID } from '~/server/service/work';
+import {
+	create,
+	updateByID,
+	listForWeb,
+	detailForWeb,
+} from '~/server/service/work';
 import * as dao from '~/server/repository/work';
 import type { Work } from '_db';
 
 vi.mock('~/server/repository/work');
+vi.mock('~/server/repository/chapter');
 
 describe('作品', () => {
 	describe('创建作品', () => {
@@ -89,4 +95,76 @@ describe('作品', () => {
 			});
 		});
 	});
+});
+
+describe('作品列表空页', () => {
+	test('超出最后一页时保留总数并跳过章节查询', async () => {
+		vi.mocked(dao.listForWeb).mockResolvedValue({ list: [], total: 30 });
+		const { listLastChapterByWorkIDs } =
+			await import('~/server/repository/chapter');
+		vi.mocked(listLastChapterByWorkIDs).mockClear();
+		expect(
+			await listForWeb({ type: 'Manga', page: { page: 3, limit: 24 } }),
+		).toEqual({ list: [], total: 30 });
+		expect(listLastChapterByWorkIDs).not.toHaveBeenCalled();
+	});
+});
+
+describe('前台作品详情最新章节', () => {
+	test.each([true, false])(
+		'仅使用已发布章节查询（有已发布章节：%s）',
+		async (hasPublished) => {
+			const chapterDao = await import('~/server/repository/chapter');
+			vi.mocked(dao.detailForWeb).mockResolvedValue({
+				id: 10,
+				biz_no: 'work',
+				title: '作品',
+				type_id: null,
+				content_type: 'Novel',
+				author: '作者',
+				description: '',
+				status: 'Enable',
+				serial_status: 'Serializing',
+				length_type: 'Short',
+				creator_id: null,
+				cover_id: null,
+				created_at: new Date('2026-10-01'),
+				updated_at: null,
+				deleted_at: null,
+				Cover: null,
+				workTags: [],
+			});
+			const published = {
+				id: 1,
+				biz_no: 'chapter',
+				work_id: 10,
+				no: 1,
+				priority: 10,
+				title: '已发布章节',
+				total_page: null,
+				product_id: null,
+				content_type: 'Novel' as const,
+				status: 'Enable' as const,
+				uploader_id: null,
+				created_at: new Date('2026-10-01'),
+				updated_at: null,
+				deleted_at: null,
+				content_id: null,
+			};
+			vi.mocked(chapterDao.getLastChapterByWorkID).mockResolvedValue({
+				...published,
+				id: 2,
+				status: 'Disable',
+			});
+			vi.mocked(chapterDao.getLastChapterByWorkIDs).mockResolvedValue(
+				hasPublished ? published : null,
+			);
+			vi.mocked(chapterDao.listChapterForIndex).mockResolvedValue(
+				hasPublished ? [published] : [],
+			);
+			const result = await detailForWeb(10);
+			expect(result.lastChapter).toEqual(hasPublished ? published : null);
+			expect(result.chapters).toEqual(hasPublished ? [published] : []);
+		},
+	);
 });
