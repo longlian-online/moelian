@@ -293,92 +293,41 @@
 			</main>
 
 			<!-- 右侧 25% 推荐区 -->
-			<aside class="detail-right-panel">
-				<div class="yuri-card detail-recommend-card">
+			<aside class="detail-right-panel" :aria-label="props.recommendedTitle">
+				<div class="detail-recommend-card recommendation-paper">
 					<div class="detail-recommend-header">
-						<h2 class="detail-recommend-title">{{ props.recommendedTitle }}</h2>
-						<v-btn
-							class="detail-recommend-more"
-							:to="`/${props.contentType}`"
-							variant="text"
-						>
-							MORE +
-						</v-btn>
+						<h2 class="detail-recommend-title">
+							<svg class="recommendation-orange" viewBox="600 165 300 400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><image href="/image.png" width="2172" height="724" /></svg>
+							你可能也喜欢
+						</h2>
+						<NuxtLink class="detail-recommend-more" :to="`/${props.contentType}`">更多 ›</NuxtLink>
 					</div>
-
-					<!-- 推荐列表垂直均匀分布 -->
 					<div class="recommendation-list">
-						<div
-							v-for="card in recommendationsData"
-							:key="card.id"
-							class="recommendation-item"
-							@click="router.push(`/${props.contentType}/${card.id}`)"
-						>
+						<NuxtLink v-for="card in recommendationsData" :key="card.id" class="recommendation-item" :to="`/${props.contentType}/${card.id}`">
 							<div class="recommendation-content">
 								<div class="recommendation-cover">
-									<Book3D
+									<Book3D homepage
 										:cover-url="card.coverUrl"
 										:title="card.title"
 										:author="card.author"
-										:height="112"
-										:width="80"
-										:spine-width="15"
+										:height="110"
+										:width="78"
 										:show-title="false"
 										:show-spine-text="false"
-										:to="`/${props.contentType}/${card.id}`"
-										@click.stop="
-											router.push(`/${props.contentType}/${card.id}`)
-										"
-									>
-										<template #overlay>
-											<AnimeTags
-												:tags="card.tags"
-												size="small"
-												position="bottom-left"
-											/>
-										</template>
-									</Book3D>
+									/>
 								</div>
 								<div class="recommendation-info">
-									<h3
-										v-copy="card.title"
-										v-tooltip="card.title"
-										class="recommendation-title"
-										@click.stop="
-											router.push(`/${props.contentType}/${card.id}`)
-										"
-									>
-										{{ card.title }}
-									</h3>
-									<div class="color-pink recommendation-author">
-										<span class="recommendation-by">BY</span>
-										<span class="recommendation-author-name">{{
-											card.author
-										}}</span>
-										<div class="info-underline recommendation-underline"></div>
+									<h3 class="recommendation-title">{{ card.title }}</h3>
+									<span class="recommendation-author-name">{{ card.author || '未知作者' }}</span>
+									<div class="recommendation-meta">
+										<span :class="{ 'recommendation-meta--finished': card.serialType !== 'Serializing' }">{{ card.serialType === 'Serializing' ? '连载中' : '已完结' }}</span>
+										<span>共 {{ card.lastNo ?? 0 }} 章</span>
 									</div>
+									<p class="recommendation-description">{{ card.description || '暂无简介，点击了解作品详情。' }}</p>
 								</div>
 							</div>
-							<div class="recommendation-progress">
-								<div class="recommendation-progress-header">
-									<span class="recommendation-progress-label">章节数</span>
-									<span class="recommendation-progress-value">{{
-										`${card?.lastNo ?? 0} 章`
-									}}</span>
-								</div>
-								<div class="yuri-progress-bar recommendation-progress-bar">
-									<div
-										class="yuri-progress-fill"
-										:style="{
-											width:
-												typeof card?.lastNo === 'number'
-													? `${Math.min(100, Math.max(0, card.lastNo))}%`
-													: card?.lastNo || '100%',
-										}"
-									></div>
-								</div>
-							</div>
-						</div>
+						</NuxtLink>
+						<p v-if="!recommendationsData?.length" class="recommendation-empty">暂时没有更多推荐</p>
 					</div>
 				</div>
 			</aside>
@@ -1658,5 +1607,124 @@ useSeoMeta({
 	.notebook-opening .notebook-binding {
 		animation: notebook-open-rings 1s ease-out both;
 	}
+}
+/* 推荐采用轻量纸质书签栏，避免和主详情重复展示信息。 */
+.detail-right-panel { align-items: flex-start; }
+.recommendation-paper {
+	position: relative;
+	height: auto;
+	margin-top: 8px;
+	background: #fffdf8;
+	border: 1px solid #ebe2d6;
+	border-radius: 3px 10px 10px 3px;
+	box-shadow: 2px 5px 14px rgba(108, 82, 57, 0.06);
+}
+.recommendation-paper::before {
+	content: '';
+	position: absolute;
+	top: -9px;
+	left: 22px;
+	width: 21px;
+	height: 31px;
+	background: #c3c6af;
+	clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+}
+.recommendation-paper .detail-recommend-header {
+	padding: 30px 16px 14px;
+	background: transparent;
+	border-bottom: 1px solid #eee6da;
+	gap: 8px;
+}
+.recommendation-paper .detail-recommend-title {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-family: "Songti SC", "STSong", serif;
+	font-size: 16px;
+	font-weight: 600;
+	letter-spacing: 0;
+	color: #765b46;
+}
+.recommendation-orange { width: 18px; height: 24px; flex-shrink: 0; }
+.recommendation-paper .detail-recommend-more {
+	font-size: 11px !important;
+	font-weight: 400 !important;
+	text-decoration: none;
+	white-space: nowrap;
+	color: #a28b73 !important;
+}
+.recommendation-paper .recommendation-list { padding: 0 16px; justify-content: flex-start; }
+.recommendation-paper .recommendation-item {
+	display: block;
+	padding: 17px 0;
+	margin: 0;
+	border-bottom: 1px dashed #e5dacb;
+	text-decoration: none;
+	color: inherit;
+}
+.recommendation-paper .recommendation-item:last-child { border-bottom: 0; }
+.recommendation-paper .recommendation-content { gap: 12px; margin: 0; }
+.recommendation-paper .recommendation-cover {
+	width: 78px;
+	height: 110px;
+	border-radius: 2px 4px 4px 2px;
+	overflow: hidden;
+	box-shadow: 2px 3px 5px rgba(91, 67, 45, 0.1);
+	transition: transform 180ms ease;
+}
+.recommendation-paper .recommendation-info { padding: 2px 0; }
+.recommendation-paper .recommendation-title {
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1.6;
+	margin-bottom: 8px;
+}
+.recommendation-paper .recommendation-author-name {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 400;
+	color: #aa927b;
+}
+.recommendation-empty { padding: 24px 0; color: #aa927b; font-size: 13px; }
+.recommendation-image-placeholder { width: 100%; height: 100%; background: #e9dfd1; }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+	.recommendation-paper .recommendation-item:hover .recommendation-cover { transform: translateY(-3px); }
+}
+.recommendation-paper .recommendation-item:focus-visible { outline: 2px solid #c3c6af; outline-offset: 3px; }
+.recommendation-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 10px;
+	margin-top: 8px;
+	font-size: 11px;
+	line-height: 1.5;
+	color: #a28b73;
+}
+.recommendation-meta > span:first-child { color: #cc8c91; }
+.recommendation-meta > .recommendation-meta--finished:first-child { color: #8d9c7c; }
+.recommendation-description {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	overflow: hidden;
+	margin: 8px 0 0;
+	font-size: 12px;
+	line-height: 1.7;
+	color: #9b8674;
+	overflow-wrap: anywhere;
+}
+.recommendation-paper .recommendation-cover {
+	overflow: visible;
+	box-shadow: none;
+}
+.recommendation-paper .recommendation-cover :deep(.book-3d-container) {
+	width: 100%;
+	height: 110px;
+	margin: 0;
+}
+.recommendation-paper .recommendation-cover :deep(.book-3d-container.book-3d-home .book-3d-wrapper) {
+	width: 100% !important;
+	max-width: 100%;
 }
 </style>
