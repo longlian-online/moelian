@@ -26,7 +26,7 @@
 				>
 					<!-- 左侧：3D 书籍封面预览区 -->
 					<div class="novel-cover-wrapper">
-						<Book3D
+						<Book3D homepage
 							:cover-url="card.coverUrl"
 							:title="card.title"
 							:author="card.author"

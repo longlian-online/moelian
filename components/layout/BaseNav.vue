@@ -1,5 +1,5 @@
 <template>
-	<v-app-bar color="#A6A897">
+	<v-app-bar color="#A6A897" :elevation="route.name === 'manga' && !isMobile ? 0 : undefined">
 		<v-container class="d-flex align-center py-0" style="max-width: 1200px">
 			<v-app-bar-nav-icon
 				v-if="isMobile"

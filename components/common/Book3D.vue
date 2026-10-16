@@ -1,5 +1,5 @@
 <template>
-	<div class="book-3d-container" :style="containerStyle">
+	<div class="book-3d-container" :class="{ 'book-3d-home': homepage }" :style="containerStyle">
 		<div class="book-3d-wrapper" :style="wrapperStyle">
 			<component
 				:is="linkComponent"
@@ -17,7 +17,7 @@
 							backgroundImage: `url(${coverUrl})`,
 						}"
 					>
-						<div v-if="showSpineText" class="book-spine-content">
+						<div v-if="showSpineText && !homepage" class="book-spine-content">
 							<div class="book-spine-title">
 								{{ title }}
 							</div>
@@ -26,6 +26,10 @@
 							</div>
 						</div>
 					</div>
+					<template v-if="homepage">
+						<div class="book-stack-layer book-stack-back" aria-hidden="true"></div>
+						<div class="book-stack-layer book-stack-middle" aria-hidden="true"></div>
+					</template>
 					<!-- 封面（正面） -->
 					<div class="book-cover-main">
 						<v-img
@@ -67,6 +71,7 @@
 
 <script setup lang="ts">
 interface Props {
+	homepage?: boolean;
 	coverUrl: string;
 	title: string;
 	author: string;
@@ -79,6 +84,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+	homepage: false,
 	height: 400,
 	width: 260,
 	spineWidth: 50,
@@ -98,14 +104,14 @@ const linkComponent = computed(() =>
 
 // 计算出的动态宽度
 const calculatedWidth = ref<number>(props.width);
-
 const containerStyle = computed(() => ({
-	'--spine-width': `${props.spineWidth}px`,
+	'--spine-width': `${props.homepage ? props.height * 0.05 : props.spineWidth}px`,
 	height: `${props.height}px`,
 }));
 
 const wrapperStyle = computed(() => ({
-	width: `${calculatedWidth.value}px`,
+	width: `${props.homepage ? props.height * 0.665 : calculatedWidth.value}px`,
+	...(props.homepage ? { aspectRatio: '266 / 369' } : {}),
 }));
 
 // 当封面图加载完成时，计算其物理比例
@@ -131,7 +137,7 @@ const handleImageLoad = (src: string | Event) => {
 
 		// 书本封面部分的显示宽度 = 总宽度 - 书脊宽度
 		// 设定一个合理的范围限制，防止极端比例
-		const newWidth = Math.max(
+		const newWidth = props.homepage ? props.height * 0.6655 : Math.max(
 			150,
 			Math.min(320, totalWidth - props.spineWidth),
 		);
@@ -382,6 +388,68 @@ const handleClick = (event?: Event) => {
 	}
 	.book-3d-container {
 		--spine-width: 35px;
+	}
+}
+/* 主页采用两层完整底板，悬停时围绕左边缘依次翻开。 */
+.book-3d-container.book-3d-home .book-3d-wrapper {
+	max-width: calc(100% - 32px);
+	height: auto !important;
+	flex: 0 1 auto;
+}
+.book-3d-home .book-body {
+	transform: none;
+	transform-style: flat;
+	will-change: auto;
+	filter: drop-shadow(0 2px 12px rgba(0, 0, 0, 0.1));
+}
+.book-3d-home .book-cover-image {
+	height: 100% !important;
+}
+.book-3d-container.book-3d-home .book-stack-layer,
+.book-3d-container.book-3d-home .book-cover-main {
+	position: absolute;
+	width: 94% !important;
+	height: 96.2% !important;
+	border-radius: 6px;
+	transform-origin: left center;
+}
+.book-3d-home .book-stack-back {
+	bottom: 0;
+	right: 0;
+	background: #e3dfe1;
+}
+.book-3d-home .book-stack-middle {
+	top: 2%;
+	left: 3%;
+	background: #eeedee;
+	transition: transform 0.6s cubic-bezier(0.19, 1.74, 0.47, 0.62) 0.05s;
+}
+.book-3d-home .book-cover-main {
+	top: 0;
+	left: 0;
+	background: white;
+	box-shadow: none;
+	transform: none;
+	transition: transform 0.6s cubic-bezier(0.19, 1.74, 0.47, 0.62);
+}
+.book-3d-home :deep(.book-cover-image .v-img__img) {
+	width: 100% !important;
+	left: 0 !important;
+	object-fit: cover !important;
+	object-position: center !important;
+}
+.book-3d-home .book-spine,
+.book-3d-home .book-cover-main::before,
+.book-3d-home .book-cover-main::after,
+.book-3d-home .book-body::before {
+	display: none;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+	.book-3d-home .book-cover-link:hover .book-cover-main {
+		transform: perspective(3000px) rotateY(-30deg);
+	}
+	.book-3d-home .book-cover-link:hover .book-stack-middle {
+		transform: perspective(3000px) rotateY(-20deg);
 	}
 }
 </style>

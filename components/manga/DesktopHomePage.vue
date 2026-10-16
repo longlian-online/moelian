@@ -1,5 +1,5 @@
 <template>
-	<v-container max-width="1200px">
+	<v-container fluid class="shelf-page">
 		<v-row justify="center" class="content-row">
 			<v-col>
 				<!-- 加载状态 -->
@@ -43,10 +43,22 @@
 				</template>
 
 				<template v-else>
-					<v-card class="mx-auto my-card-container" flat hover>
+					<v-card class="mx-auto my-card-container bookshelf" flat>
+						<template v-for="(shelf, shelfIndex) in shelves" :key="shelfIndex">
 						<v-row dense class="cards-grid" no-gutters>
+
+							<div class="shelf-decoration" aria-hidden="true">
+								<div v-for="n in 3" :key="n" class="decoration-spine">
+									<div class="spine-brand">
+										<svg class="spine-brand-orange" viewBox="600 165 300 400" xmlns="http://www.w3.org/2000/svg">
+											<image href="/image.png" width="2172" height="724" />
+										</svg>
+									</div>
+								</div>
+							</div>
+							<div class="shelf-books-grid">
 							<v-col
-								v-for="card in cards"
+								v-for="card in shelf"
 								:key="card.id"
 								class="mb-4 book-col"
 								cols="12"
@@ -63,7 +75,7 @@
 										transition="fade-transition"
 										style="margin: 0 12px"
 									>
-										<Book3D
+										<Book3D homepage
 											:cover-url="card.coverUrl"
 											:title="card.title"
 											:author="card.author"
@@ -74,111 +86,33 @@
 											:to="`/manga/${card.id}`"
 											@click="handleBookClick(card.id)"
 										>
-											<template #overlay>
-												<!-- 左上角分类标签 -->
-												<AnimeTags :tags="card.tags" position="bottom-left" />
-											</template>
 										</Book3D>
 									</v-lazy>
 
-									<!-- 百合二次元风格卡片信息区 -->
-									<div class="yuri-card-info">
-										<!-- 标题 -->
-										<h3
-											v-copy="card.title"
-											v-tooltip="card.title"
-											class="yuri-title truncate"
-										>
-											{{ card.title }}
-										</h3>
-
-										<!-- 作者与标签整合行：作者在左，标签在右 -->
-										<div class="yuri-author-tags-row">
-											<!-- 左侧：作者信息 -->
-											<div class="yuri-author-info">
-												<div class="yuri-author-line">
-													<span class="yuri-by-text">By</span>
-													<span
-														v-copy="card.author"
-														v-tooltip="'点击搜索作者/右键复制'"
-														class="yuri-author-name truncate"
-														@click="handleAuthorClick(card.author)"
-													>
-														{{ card.author }}
-													</span>
-												</div>
-												<!-- 作者下方的装饰长线：宽度修改为 w-full -->
-												<div class="yuri-author-underline"></div>
-											</div>
-
-											<!-- 右侧：标签组 -->
-											<div class="yuri-tags-group">
-												<span class="yuri-tag length-tag">
-													{{
-														card.lengthType === 'Long'
-															? '长篇'
-															: card.lengthType === 'Medium'
-																? '中篇'
-																: '短篇'
-													}}
-												</span>
-												<span
-													class="yuri-tag"
-													:class="
-														card.serialType === 'Serializing'
-															? 'serializing-tag'
-															: 'finished-tag'
-													"
-												>
-													{{
-														card.serialType === 'Serializing'
-															? '连载中'
-															: '已完结'
-													}}
-												</span>
-											</div>
-										</div>
-
-										<!-- 百合浓度：独立展示区 -->
-										<div class="yuri-concentration-section">
-											<div class="yuri-concentration-header">
-												<div class="yuri-concentration-label">
-													<svg
-														class="yuri-heart-icon"
-														fill="currentColor"
-														viewBox="0 0 20 20"
-														width="14"
-														height="14"
-													>
-														<path
-															fillRule="evenodd"
-															d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-															clipRule="evenodd"
-														/>
-													</svg>
-													<span class="yuri-concentration-text">章节数</span>
-												</div>
-												<span class="yuri-concentration-value">{{
-													`${card?.lastNo ?? 0} 章`
-												}}</span>
-											</div>
-
-											<div class="yuri-progress-bar">
-												<div
-													class="yuri-progress-fill"
-													:style="{
-														width:
-															typeof card?.lastNo === 'number'
-																? `${Math.min(100, Math.max(0, card.lastNo))}%`
-																: card?.lastNo || '100%',
-													}"
-												></div>
-											</div>
-										</div>
-									</div>
+									<v-tooltip activator="parent" location="top" :open-delay="300" :max-width="320" content-class="shelf-work-tooltip">
+										<div class="shelf-tooltip-title">{{ card.title }}</div>
+										<div>作者：{{ card.author || '未知' }}</div>
+										<div>{{ card.serialType === 'Serializing' ? '连载中' : '已完结' }} · {{ card.lastNo ?? 0 }} 章</div>
+									</v-tooltip>
 								</v-card>
 							</v-col>
+							</div>
 						</v-row>
+						<div class="shelf-board">
+							<div class="shelf-labels">
+								<NuxtLink v-for="card in shelf" :key="card.id" :to="`/manga/${card.id}`" class="shelf-title-label" :title="`${card.title} · ${card.author || '未知作者'}`">
+									<span class="shelf-book-title">{{ card.title }}</span>
+									<span class="shelf-book-author">{{ card.author || '未知作者' }}</span>
+								</NuxtLink>
+							</div>
+
+							<div v-for="side in ['left', 'right']" :key="side" class="shelf-bracket" aria-hidden="true" :class="`shelf-bracket--${side}`">
+								<svg class="shelf-bracket-orange" viewBox="600 165 300 400" xmlns="http://www.w3.org/2000/svg">
+									<image href="/image.png" width="2172" height="724" />
+								</svg>
+							</div>
+						</div>
+						</template>
 					</v-card>
 				</template>
 			</v-col>
@@ -203,6 +137,13 @@ const page = computed({
 	},
 });
 const cards = computed<WorkItemType[]>(() => webWorkStore.mangaList);
+const shelves = computed(() => {
+	const rows: WorkItemType[][] = [];
+	for (let index = 0; index < cards.value.length; index += 4) {
+		rows.push(cards.value.slice(index, index + 4));
+	}
+	return rows;
+});
 
 const handleBookClick = (bookId: number) => {
 	router.push(`/manga/${bookId}`);
@@ -479,9 +420,231 @@ if (error.value) {
 .my-card:hover .yuri-progress-fill {
 	background: linear-gradient(to right, #ff9a9e, #ff758c, #ff9a9e);
 }
+/* 固定书本尺寸、横向陈列与独立层板，避免将书架切成卡片。 */
+.shelf-page {
+	padding: 0;
+}
+.shelf-page > .content-row {
+	margin: 0;
+}
+.shelf-page > .content-row > .v-col {
+	padding: 0;
+}
+.bookshelf {
+	--wood: repeating-linear-gradient(1deg, transparent 0 3px, rgba(142, 104, 56, 0.055) 4px 5px, transparent 6px 11px), linear-gradient(95deg, #eedec0, #f6e9cc 35%, #e9d8b7 75%, #f3e5c6);
+	border-radius: 0;
+	border-top: 0;
+	padding-top: 38px !important;
+	padding-bottom: 100px !important;
+	background:
+		repeating-linear-gradient(0deg, transparent 0 13px, rgba(255,255,255,0.035) 14px 17px, transparent 18px 33px),
+		linear-gradient(#bfa598, #d3bbae 100px, #d1b9ab);
+	box-shadow: inset 0 16px 25px rgba(79, 50, 32, 0.12) !important;
+}
+.bookshelf::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 38px;
+	background: var(--wood);
+}
+.bookshelf .cards-grid {
+	position: relative;
+	--decoration-width: clamp(100px, 13vw, 190px);
+	--shelf-book-height: clamp(180px, calc(28vw - 55px), 330px);
+	display: block;
+	padding: 32px 40px 0 calc(var(--decoration-width) + 24px);
+	/* 层板遮住向下错开的底板，让封面底边直接落在板面上。 */
+	margin: 0 auto -14px;
+}
+.shelf-books-grid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 238px));
+	gap: clamp(14px, 2.4vw, 34px);
+	justify-content: center;
+	align-items: end;
+	width: 100%;
+}
+.bookshelf .book-col {
+	width: 100%;
+	min-width: 0;
+	max-width: none;
+	padding: 0 !important;
+	margin: 0 !important;
+}
+.bookshelf .my-card,
+.bookshelf .my-card:hover {
+	background: transparent !important;
+	box-shadow: none !important;
+	transform: none;
+	border-radius: 0;
+	overflow: visible !important;
+}
+.bookshelf .my-card :deep(.v-lazy) {
+	min-height: 0 !important;
+	margin: 0 !important;
+}
+.bookshelf .my-card :deep(.book-3d-container) {
+	height: var(--shelf-book-height) !important;
+	align-items: flex-end;
+	overflow: visible;
+	background: transparent;
+}
+.bookshelf .my-card :deep(.book-3d-wrapper) {
+	width: calc(var(--shelf-book-height) * 0.72) !important;
+	max-width: 100%;
+}
+.shelf-decoration {
+	position: absolute;
+	left: 4px;
+	bottom: 14px;
+	width: var(--decoration-width);
+	display: flex;
+	align-items: flex-end;
+	gap: 1px;
+
+	height: calc(var(--shelf-book-height) - 14px);
+	margin-bottom: 0;
+	padding-right: calc(var(--decoration-width) * 0.36);
+}
+.decoration-spine {
+	position: relative;
+	flex: 1;
+	height: 100%;
+	border-radius: 7px 7px 2px 2px;
+	background: linear-gradient(to bottom, #ae8589 0 17%, #bd9c8c 17% 34%, #fff6e6 34% 35.5%, #bd9c8c 35.5% 66%, #fff6e6 66% 67.5%, #bd9c8c 67.5% 83%, #ae8589 83%);
+}
+.decoration-spine:last-child {
+	transform: translateY(9px) rotate(-14deg);
+	transform-origin: left top;
+	margin-left: -3px;
+}
+.spine-brand {
+	position: absolute;
+	inset: 0;
+	container-type: inline-size;
+	pointer-events: none;
+}
+.spine-brand-orange {
+	position: absolute;
+	width: 68%;
+	height: auto;
+	aspect-ratio: 3 / 4;
+	left: 16%;
+	top: 50%;
+	transform: translateY(-50%);
+	overflow: hidden;
+}
+.shelf-board {
+	position: relative;
+	z-index: 1;
+	height: 56px;
+	background: var(--wood);
+	border-top: 2px solid #f9eed9;
+	box-shadow: 0 16px 22px rgba(89, 59, 39, 0.14);
+}
+.shelf-labels {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 20;
+	--decoration-width: clamp(100px, 13vw, 190px);
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 238px));
+	gap: clamp(14px, 2.4vw, 34px);
+	justify-content: center;
+	align-items: center;
+	height: 100%;
+	padding: 0 40px 0 calc(var(--decoration-width) + 24px);
+}
+.shelf-title-label {
+	display: block;
+	justify-self: center;
+	max-width: calc(100% - 16px);
+	padding: 2px 16px;
+	border: 1px solid transparent;
+	background: transparent;
+	color: #78563d;
+	font-family: "Songti SC", "STSong", "Noto Serif CJK SC", "SimSun", serif;
+	font-size: 16px;
+	font-weight: 500;
+	letter-spacing: 1.5px;
+	text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
+	line-height: 23px;
+	text-align: center;
+	text-decoration: none;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.shelf-book-title,
+.shelf-book-author {
+	display: block;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.shelf-book-author {
+	margin-top: 3px;
+	font-size: 12px;
+	line-height: 16px;
+	letter-spacing: 0.5px;
+	color: #a17d5d;
+}
+.shelf-title-label:hover,
+.shelf-title-label:focus-visible {
+	background: #fff8e8;
+	outline: 1px solid #c8a276;
+	outline-offset: 1px;
+}
+.shelf-bracket {
+	position: absolute;
+	top: 100%;
+	width: 64px;
+	height: 52px;
+	background:
+		linear-gradient(#ac8874 0 13px, transparent 13px),
+		linear-gradient(90deg, transparent 13px, #b99681 13px 51px, transparent 51px);
+	border-radius: 0 0 4px 4px;
+}
+.shelf-bracket--left { left: 10%; }
+.shelf-bracket--right { right: 10%; }
+.shelf-bracket-orange {
+	position: absolute;
+	width: 15px;
+	height: 20px;
+	left: 50%;
+	top: 25px;
+	transform: translateX(-50%);
+	overflow: hidden;
+}
+@media (max-width: 960px) {
+	.bookshelf .cards-grid { padding: 28px 24px 0 calc(var(--decoration-width) + 16px); }
+	.shelf-labels { padding-inline: calc(var(--decoration-width) + 16px) 24px; }
+}
 </style>
 
 <style>
+.v-overlay__content.shelf-work-tooltip {
+	background: #fffaf2;
+	color: #705247;
+	border: 1px solid #e7d4bc;
+	border-radius: 8px;
+	padding: 12px 16px;
+	box-shadow: 0 5px 18px rgba(78, 53, 35, 0.15);
+	font-size: 13px;
+	line-height: 1.8;
+}
+.shelf-work-tooltip .shelf-tooltip-title {
+	font-weight: 700;
+	font-size: 15px;
+	line-height: 1.5;
+	margin-bottom: 4px;
+	overflow-wrap: anywhere;
+}
 /* 全局样式 - 强制骨架屏高度 */
 .skeleton-book .v-skeleton-loader__bone.v-skeleton-loader__image {
 	height: 400px !important;
