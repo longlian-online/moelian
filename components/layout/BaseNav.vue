@@ -1,5 +1,5 @@
 <template>
-	<v-app-bar color="#A6A897" :elevation="['manga', 'novel'].includes(String(route.name)) && !isMobile ? 0 : undefined">
+	<v-app-bar color="#A6A897" :elevation="['manga', 'novel'].includes(String(route.name)) ? 0 : undefined">
 		<v-container class="d-flex align-center py-0" style="max-width: 1200px">
 			<v-app-bar-nav-icon
 				v-if="isMobile"

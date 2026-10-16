@@ -31,7 +31,14 @@
 						<div class="book-stack-layer book-stack-middle" aria-hidden="true"></div>
 					</template>
 					<!-- 封面（正面） -->
-					<div class="book-cover-main">
+					<div class="book-cover-main" :aria-busy="imagePending">
+						<Transition name="book-cover-reveal">
+						<div v-if="imagePending" class="simple-skeleton book-image-loading" role="status" :aria-label="`正在加载${title}封面`">
+							<img class="skeleton-cover-symbol" src="/image.png" alt="" aria-hidden="true" />
+							<span class="skeleton-cover-line skeleton-cover-line--title" aria-hidden="true"></span>
+							<span class="skeleton-cover-line skeleton-cover-line--subtitle" aria-hidden="true"></span>
+						</div>
+						</Transition>
 						<v-img
 							:src="coverUrl"
 							:alt="title"
@@ -40,10 +47,8 @@
 							cover
 							eager
 							@load="handleImageLoad"
+							@error="imagePending = false"
 						>
-							<template #placeholder>
-								<div class="simple-skeleton"></div>
-							</template>
 							<template #error>
 								<v-img
 									cover
@@ -102,6 +107,9 @@ const linkComponent = computed(() =>
 	props.to ? resolveComponent('NuxtLink') : 'div',
 );
 
+const imagePending = ref(true);
+watch(() => props.coverUrl, () => { imagePending.value = true; });
+
 // 计算出的动态宽度
 const calculatedWidth = ref<number>(props.width);
 const containerStyle = computed(() => ({
@@ -116,6 +124,7 @@ const wrapperStyle = computed(() => ({
 
 // 当封面图加载完成时，计算其物理比例
 const handleImageLoad = (src: string | Event) => {
+	imagePending.value = false;
 	// v-img 的 load 事件可能传递 src 字符串或 Event 对象
 	let img: HTMLImageElement | null = null;
 
@@ -276,13 +285,66 @@ const handleClick = (event?: Event) => {
 	letter-spacing: 1px;
 }
 
-/* 简单骨架屏 */
+.book-cover-reveal-leave-active {
+	transition: opacity 360ms ease;
+}
+.book-cover-reveal-leave-to {
+	opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+	.book-cover-reveal-leave-active { transition: none; }
+}
+.book-image-loading {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+	.book-image-loading { animation: none; }
+}
+/* 暖灰封面占位，加载状态与书页底板区分。 */
 .simple-skeleton {
 	width: 100%;
 	height: 100%;
-	background: linear-gradient(90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
-	background-size: 200% 100%;
-	animation: skeleton-loading 1.5s ease-in-out infinite;
+	background: #ddd2c3;
+	overflow: hidden;
+}
+.book-image-loading {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+}
+.book-image-loading::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(100deg, transparent 15%, rgba(255, 250, 240, 0.6) 48%, transparent 80%);
+	transform: translateX(-100%);
+	animation: cover-skeleton-shimmer 1.7s ease-in-out infinite;
+}
+.skeleton-cover-symbol {
+	width: 72%;
+	max-width: 190px;
+	height: auto;
+	object-fit: contain;
+	margin-bottom: 14px;
+}
+.skeleton-cover-line {
+	display: block;
+	height: 9px;
+	border-radius: 5px;
+	background: #c7b8a4;
+}
+.skeleton-cover-line--title { width: 54%; }
+.skeleton-cover-line--subtitle { width: 32%; height: 6px; }
+@keyframes cover-skeleton-shimmer {
+	to { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+	.book-image-loading::after { animation: none; }
 }
 
 @keyframes skeleton-loading {

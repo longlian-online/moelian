@@ -1,5 +1,5 @@
 <template>
-	<v-container fluid class="shelf-page">
+	<v-container fluid class="shelf-page" :class="{ 'shelf-page--mobile': props.mobile }">
 		<v-row justify="center" class="content-row">
 			<v-col>
 				<!-- 加载状态 -->
@@ -13,7 +13,7 @@
 							v-for="n in 8"
 							:key="n"
 							class="mb-4 px-2"
-							cols="12"
+							:cols="props.mobile ? 6 : 12"
 							sm="6"
 							md="3"
 						>
@@ -43,6 +43,10 @@
 
 				<template v-else>
 					<v-card class="mx-auto my-card-container bookshelf" flat>
+						<nav v-if="props.mobile" class="mobile-bookshelf-tabs" aria-label="作品类型">
+							<NuxtLink to="/manga" class="mobile-bookshelf-tab" :class="{ 'mobile-bookshelf-tab--active': props.contentType === 'manga' }" :aria-current="props.contentType === 'manga' ? 'page' : undefined">漫画</NuxtLink>
+							<NuxtLink to="/novel" class="mobile-bookshelf-tab" :class="{ 'mobile-bookshelf-tab--active': props.contentType === 'novel' }" :aria-current="props.contentType === 'novel' ? 'page' : undefined">小说</NuxtLink>
+						</nav>
 						<template v-for="(shelf, shelfIndex) in shelves" :key="shelfIndex">
 						<v-row dense class="cards-grid" no-gutters>
 
@@ -68,12 +72,7 @@
 								style="padding: 0 2px"
 							>
 								<v-card ripple class="my-card">
-									<v-lazy
-										:options="{ threshold: 0.1 }"
-										min-height="400"
-										transition="fade-transition"
-										style="margin: 0 12px"
-									>
+									<div class="book-preview">
 										<Book3D homepage
 											:cover-url="card.coverUrl"
 											:title="card.title"
@@ -86,9 +85,9 @@
 											@click="handleBookClick(card.id)"
 										>
 										</Book3D>
-									</v-lazy>
+									</div>
 
-									<v-tooltip activator="parent" location="top" :open-delay="300" :max-width="320" content-class="shelf-work-tooltip">
+									<v-tooltip v-if="!props.mobile" activator="parent" location="top" :open-delay="300" :max-width="320" content-class="shelf-work-tooltip">
 										<div class="shelf-tooltip-title">{{ card.title }}</div>
 										<div>作者：{{ card.author || '未知' }}</div>
 										<div>{{ card.serialType === 'Serializing' ? '连载中' : '已完结' }} · {{ card.lastNo ?? 0 }} 章</div>
@@ -127,7 +126,7 @@
 import type { WorkListRes } from '~/shared/dto/web/work';
 export type WorkItemType = WorkListRes['list'][number];
 
-const props = defineProps<{ contentType: 'manga' | 'novel' }>();
+const props = withDefaults(defineProps<{ contentType: 'manga' | 'novel'; mobile?: boolean }>(), { mobile: false });
 const webWorkStore = useWebWorkStore();
 const workState = computed(() => props.contentType === 'manga' ? webWorkStore.mangaState : webWorkStore.novelState);
 const totalItems = computed(() => workState.value.data?.total ?? 0);
@@ -142,8 +141,9 @@ const page = computed({
 const cards = computed<WorkItemType[]>(() => workState.value.data?.list ?? []);
 const shelves = computed(() => {
 	const rows: WorkItemType[][] = [];
-	for (let index = 0; index < cards.value.length; index += 4) {
-		rows.push(cards.value.slice(index, index + 4));
+	const columns = props.mobile ? 2 : 4;
+	for (let index = 0; index < cards.value.length; index += columns) {
+		rows.push(cards.value.slice(index, index + columns));
 	}
 	return rows;
 });
@@ -200,7 +200,7 @@ if (error.value) {
 }
 
 /* 确保 v-lazy 容器铺满 */
-.my-card :deep(.v-lazy) {
+.my-card .book-preview {
 	width: 100% !important;
 	display: block;
 }
@@ -479,7 +479,7 @@ if (error.value) {
 	border-radius: 0;
 	overflow: visible !important;
 }
-.bookshelf .my-card :deep(.v-lazy) {
+.bookshelf .my-card .book-preview {
 	min-height: 0 !important;
 	margin: 0 !important;
 }
@@ -622,6 +622,87 @@ if (error.value) {
 	.bookshelf .cards-grid { padding: 28px 24px 0 calc(var(--decoration-width) + 16px); }
 	.shelf-labels { padding-inline: calc(var(--decoration-width) + 16px) 24px; }
 }
+.mobile-bookshelf-tabs {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 2;
+	display: flex;
+	justify-content: center;
+	align-items: stretch;
+	gap: 24px;
+	height: 36px;
+}
+.mobile-bookshelf-tab {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 74px;
+	padding: 0 16px;
+	color: #a48b70;
+	font-size: 14px;
+	font-family: "Songti SC", "STSong", serif;
+	font-weight: 500;
+	letter-spacing: 2px;
+	text-decoration: none;
+	-webkit-tap-highlight-color: transparent;
+}
+.mobile-bookshelf-tab--active { color: #705039; font-weight: 700; }
+.mobile-bookshelf-tab--active::after {
+	content: '';
+	position: absolute;
+	bottom: 2px;
+	left: calc(50% - 12px);
+	width: 24px;
+	height: 3px;
+	border-radius: 3px;
+	background: #e49c5b;
+}
+.mobile-bookshelf-tab:focus-visible { outline: 2px solid #bd8f5e; outline-offset: -3px; }
+/* 移动主页：两列书架，使用相同作品数据和链接。 */
+.shelf-page--mobile .bookshelf {
+	padding-top: 44px !important;
+	padding-bottom: 48px !important;
+}
+.shelf-page--mobile .bookshelf::before { height: 44px; }
+.shelf-page--mobile .mobile-bookshelf-tabs { height: 44px; }
+.shelf-page--mobile .mobile-bookshelf-tab--active::after { bottom: 8px; }
+.shelf-page--mobile .shelf-decoration { display: none; }
+.shelf-page--mobile .bookshelf .cards-grid {
+	--shelf-book-height: clamp(160px, calc(70vw - 36px), 320px);
+	padding: 26px 20px 0;
+}
+.shelf-page--mobile .shelf-books-grid,
+.shelf-page--mobile .shelf-labels {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 20px;
+}
+.shelf-page--mobile .shelf-labels { padding: 0 20px; }
+.shelf-page--mobile .shelf-board { height: 44px; }
+.shelf-page--mobile .shelf-title-label {
+	width: 100%;
+	max-width: 100%;
+	padding: 1px 4px;
+	font-size: 13px;
+	line-height: 14px;
+	letter-spacing: 0.5px;
+}
+.shelf-page--mobile .shelf-book-title {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+.shelf-page--mobile .shelf-book-author {
+	font-size: 11px;
+	line-height: 12px;
+	margin-top: 1px;
+}
+.shelf-page--mobile .shelf-bracket { display: none; }
+.shelf-page--mobile .shelf-title-label:hover { background: transparent; outline: none; }
 </style>
 
 <style>
