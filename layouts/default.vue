@@ -1,5 +1,5 @@
 <template>
-	<v-app id="app">
+	<v-app id="app" :class="{ 'bookshelf-layout': ['manga', 'novel'].includes(String(route.name)) }">
 		<AppDrawer></AppDrawer>
 		<Transition name="fade">
 			<BaseNav v-if="!$route.meta.baseNav && isNavbarVisible"></BaseNav>
@@ -57,6 +57,21 @@ watch(
 </script>
 
 <style>
+.bookshelf-layout .v-application__wrap,
+.bookshelf-layout .v-main,
+.bookshelf-layout .v-main > .v-sheet {
+	background: #eef0e9;
+}
+.bookshelf-layout .v-main { padding-bottom: 16px; }
+.bookshelf-layout .v-pagination {
+	padding: 12px 0;
+	color: #707766;
+}
+.bookshelf-layout .v-pagination .v-pagination__item--is-active {
+	background: #dce2d2;
+	border-radius: 8px;
+}
+
 .v-main {
 	padding-bottom: 56px;
 }

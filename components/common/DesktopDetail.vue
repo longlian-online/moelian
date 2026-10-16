@@ -7,11 +7,19 @@
 			<!-- 左侧 75% 详情区 -->
 			<main class="detail-left-panel">
 				<!-- 作品主卡片 - 强制 flex-row 确保图片和内容左右排列 -->
-				<section class="yuri-card detail-main-card">
+				<section :key="workId" ref="notebookElement" class="detail-main-card" :class="{ 'notebook-opening': notebookOpened }">
 					<!-- 封面图 (左侧) -->
 					<div class="detail-cover-wrapper">
 						<div class="detail-cover-inner">
+							<span
+								v-for="corner in ['tl', 'tr', 'bl', 'br']"
+								:key="corner"
+								class="photo-corner"
+								:class="`photo-corner--${corner}`"
+								aria-hidden="true"
+							></span>
 							<Book3D
+								homepage
 								:cover-url="workDetail?.coverUrl || ''"
 								:title="workDetail?.title || ''"
 								:author="workDetail?.author || ''"
@@ -30,8 +38,39 @@
 								</template>
 							</Book3D>
 						</div>
+						<div class="notebook-page-footer" aria-hidden="true">
+							<img src="/image.png" class="notebook-logo" alt="" />
+							<span class="notebook-page-number">01</span>
+						</div>
 					</div>
 
+					<div class="notebook-binding" aria-hidden="true">
+						<svg
+							v-for="ring in 7"
+							:key="ring"
+							class="notebook-ring"
+							viewBox="0 0 64 38"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<circle cx="7" cy="29" r="5.5" fill="#b98b88" />
+							<circle cx="57" cy="29" r="5.5" fill="#b98b88" />
+							<path
+								d="M7 28C-2 0 66 0 57 28"
+								fill="none"
+								stroke="#cda9a0"
+								stroke-width="7"
+								stroke-linecap="round"
+								transform="translate(0 1.5)"
+							/>
+							<path
+								d="M7 28C-2 0 66 0 57 28"
+								fill="none"
+								stroke="#fff9ee"
+								stroke-width="6"
+								stroke-linecap="round"
+							/>
+						</svg>
+					</div>
 					<!-- 信息内容区 (右侧) -->
 					<div class="detail-info-wrapper">
 						<div class="detail-info-content">
@@ -254,92 +293,41 @@
 			</main>
 
 			<!-- 右侧 25% 推荐区 -->
-			<aside class="detail-right-panel">
-				<div class="yuri-card detail-recommend-card">
+			<aside class="detail-right-panel" :aria-label="props.recommendedTitle">
+				<div class="detail-recommend-card recommendation-paper">
 					<div class="detail-recommend-header">
-						<h2 class="detail-recommend-title">{{ props.recommendedTitle }}</h2>
-						<v-btn
-							class="detail-recommend-more"
-							:to="`/${props.contentType}`"
-							variant="text"
-						>
-							MORE +
-						</v-btn>
+						<h2 class="detail-recommend-title">
+							<svg class="recommendation-orange" viewBox="600 165 300 400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><image href="/image.png" width="2172" height="724" /></svg>
+							你可能也喜欢
+						</h2>
+						<NuxtLink class="detail-recommend-more" :to="`/${props.contentType}`">更多 ›</NuxtLink>
 					</div>
-
-					<!-- 推荐列表垂直均匀分布 -->
 					<div class="recommendation-list">
-						<div
-							v-for="card in recommendationsData"
-							:key="card.id"
-							class="recommendation-item"
-							@click="router.push(`/${props.contentType}/${card.id}`)"
-						>
+						<NuxtLink v-for="card in recommendationsData" :key="card.id" class="recommendation-item" :to="`/${props.contentType}/${card.id}`">
 							<div class="recommendation-content">
 								<div class="recommendation-cover">
-									<Book3D
+									<Book3D homepage
 										:cover-url="card.coverUrl"
 										:title="card.title"
 										:author="card.author"
-										:height="112"
-										:width="80"
-										:spine-width="15"
+										:height="110"
+										:width="78"
 										:show-title="false"
 										:show-spine-text="false"
-										:to="`/${props.contentType}/${card.id}`"
-										@click.stop="
-											router.push(`/${props.contentType}/${card.id}`)
-										"
-									>
-										<template #overlay>
-											<AnimeTags
-												:tags="card.tags"
-												size="small"
-												position="bottom-left"
-											/>
-										</template>
-									</Book3D>
+									/>
 								</div>
 								<div class="recommendation-info">
-									<h3
-										v-copy="card.title"
-										v-tooltip="card.title"
-										class="recommendation-title"
-										@click.stop="
-											router.push(`/${props.contentType}/${card.id}`)
-										"
-									>
-										{{ card.title }}
-									</h3>
-									<div class="color-pink recommendation-author">
-										<span class="recommendation-by">BY</span>
-										<span class="recommendation-author-name">{{
-											card.author
-										}}</span>
-										<div class="info-underline recommendation-underline"></div>
+									<h3 class="recommendation-title">{{ card.title }}</h3>
+									<span class="recommendation-author-name">{{ card.author || '未知作者' }}</span>
+									<div class="recommendation-meta">
+										<span :class="{ 'recommendation-meta--finished': card.serialType !== 'Serializing' }">{{ card.serialType === 'Serializing' ? '连载中' : '已完结' }}</span>
+										<span>共 {{ card.lastNo ?? 0 }} 章</span>
 									</div>
+									<p class="recommendation-description">{{ card.description || '暂无简介，点击了解作品详情。' }}</p>
 								</div>
 							</div>
-							<div class="recommendation-progress">
-								<div class="recommendation-progress-header">
-									<span class="recommendation-progress-label">章节数</span>
-									<span class="recommendation-progress-value">{{
-										`${card?.lastNo ?? 0} 章`
-									}}</span>
-								</div>
-								<div class="yuri-progress-bar recommendation-progress-bar">
-									<div
-										class="yuri-progress-fill"
-										:style="{
-											width:
-												typeof card?.lastNo === 'number'
-													? `${Math.min(100, Math.max(0, card.lastNo))}%`
-													: card?.lastNo || '100%',
-										}"
-									></div>
-								</div>
-							</div>
-						</div>
+						</NuxtLink>
+						<p v-if="!recommendationsData?.length" class="recommendation-empty">暂时没有更多推荐</p>
 					</div>
 				</div>
 			</aside>
@@ -399,6 +387,29 @@ const props = defineProps({
 const router = useRouter();
 const route = useRoute();
 const workId = computed(() => Number(route.params.id));
+const notebookElement = ref<HTMLElement | null>(null);
+const notebookOpened = ref(false);
+
+// 数据就绪且活页本进入视口时，仅播放一次开书动画。
+onMounted(() => {
+	watch(notebookElement, (element, _, onCleanup) => {
+		notebookOpened.value = false;
+		if (!element) return;
+		if (typeof IntersectionObserver === 'undefined') {
+			notebookOpened.value = true;
+			return;
+		}
+		const observer = new IntersectionObserver((entries) => {
+			if (entries.some(entry => entry.isIntersecting)) {
+				notebookOpened.value = true;
+				observer.disconnect();
+			}
+		}, { threshold: 0.15 });
+		observer.observe(element);
+		onCleanup(() => observer.disconnect());
+	}, { immediate: true, flush: 'post' });
+});
+
 const store = useWebWorkStore();
 const { findLatestProgress } = useReadingProgress();
 const continueProgress = ref<ReadingProgress | null>(null);
@@ -843,6 +854,8 @@ useSeoMeta({
 }
 
 .line-clamp-4 {
+	/* 简介不足四行时仍保留空间，稳定下方章节数的位置。 */
+	min-height: 6.4em;
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
 	-webkit-line-clamp: 4;
@@ -1374,5 +1387,344 @@ useSeoMeta({
 	font-weight: 900;
 	color: #5a463d;
 	margin: 2px 0 0;
+}
+/* 展开的活页本：两页共用封皮，中缝装订环浮在纸面上。 */
+.detail-main-container {
+	max-width: 1440px;
+}
+.detail-main-card {
+	position: relative;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+	gap: 12px;
+	padding: 8px;
+	align-items: stretch;
+	background: #c19c99;
+	border: 5px solid #d5bcb0;
+	border-radius: 10px;
+	box-shadow:
+		0 4px 0 -1px #b58d8b,
+		0 12px 24px rgba(105, 72, 55, 0.1) !important;
+	overflow: visible;
+}
+.detail-main-card .detail-cover-wrapper,
+.detail-main-card .detail-info-wrapper {
+	width: auto;
+	min-width: 0;
+	background: #fff9ef;
+	border: 3px solid #f0e2ce;
+	box-shadow: inset 0 0 0 1px rgba(177, 142, 107, 0.12);
+}
+.detail-main-card .detail-cover-wrapper {
+	padding: 42px 24px;
+	border-radius: 3px 0 0 3px;
+}
+.detail-main-card .detail-cover-inner {
+	height: 400px;
+	min-height: 400px;
+}
+.detail-main-card .detail-info-wrapper {
+	padding: 32px 28px 28px 34px;
+	border-radius: 0 3px 3px 0;
+}
+.notebook-binding {
+	position: absolute;
+	left: 45.45%;
+	top: 42px;
+	bottom: 42px;
+	width: 62px;
+	transform: translateX(-50%);
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	z-index: 2;
+	pointer-events: none;
+}
+.notebook-ring {
+	display: block;
+	width: 62px;
+	height: 38px;
+	flex-shrink: 0;
+	overflow: visible;
+}
+@media (max-width: 1100px) {
+	.detail-main-card {
+		gap: 8px;
+		padding: 6px;
+	}
+	.detail-main-card .detail-cover-wrapper {
+		padding: 32px 16px;
+	}
+	.detail-main-card .detail-info-wrapper {
+		padding: 26px 18px 24px 24px;
+	}
+	.notebook-binding {
+		width: 52px;
+	}
+	.notebook-ring {
+		width: 52px;
+		height: 32px;
+	}
+}
+/* 左页藏书卡：页边无独立内框，封面由四个相片角固定。 */
+.detail-main-card .detail-cover-wrapper {
+	position: relative;
+	border: 0;
+	box-shadow: none;
+	padding: 56px 26px 74px;
+	background: #fff9ef;
+}
+.detail-main-card .detail-cover-wrapper::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	right: -6px;
+	width: 42px;
+	background: linear-gradient(
+		90deg,
+		transparent,
+		rgba(151, 112, 89, 0.06) 60%,
+		rgba(124, 88, 72, 0.17)
+	);
+	pointer-events: none;
+}
+.detail-main-card .detail-cover-inner {
+	width: 94%;
+	max-width: 290px;
+	height: auto;
+	min-height: 0;
+	aspect-ratio: 266 / 369;
+	transform: rotate(-4deg);
+	background: #fffcf6;
+	border: 9px solid #fffcf6;
+	box-shadow: 2px 7px 12px rgba(112, 81, 54, 0.14);
+}
+.detail-cover-inner :deep(.book-3d-container) {
+	height: 100%;
+}
+.detail-cover-inner :deep(.book-3d-container.book-3d-home .book-3d-wrapper) {
+	width: 100% !important;
+	max-width: 100%;
+}
+.photo-corner {
+	position: absolute;
+	width: 25px;
+	height: 25px;
+	background: #e9ddc6;
+	clip-path: polygon(0 0, 100% 0, 0 100%);
+	z-index: 3;
+	pointer-events: none;
+}
+.photo-corner--tl {
+	top: -11px;
+	left: -11px;
+}
+.photo-corner--tr {
+	top: -11px;
+	right: -11px;
+	transform: rotate(90deg);
+}
+.photo-corner--bl {
+	bottom: -11px;
+	left: -11px;
+	transform: rotate(-90deg);
+}
+.photo-corner--br {
+	bottom: -11px;
+	right: -11px;
+	transform: rotate(180deg);
+}
+.notebook-page-footer {
+	position: absolute;
+	left: 24px;
+	right: 24px;
+	bottom: 20px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: #b59c82;
+	font-family: Georgia, serif;
+	font-size: 12px;
+	letter-spacing: 2px;
+}
+.notebook-logo {
+	width: 88px;
+	height: auto;
+	object-fit: contain;
+}
+.notebook-page-number {
+	margin-left: auto;
+}
+/* 参考活页本的开启动作：两页绕中缝展开，右页稍慢收稳。 */
+@keyframes notebook-arrive {
+	0% {
+		transform: translate(5%, 15%);
+		opacity: 0;
+		background-color: transparent;
+		border-color: transparent;
+		box-shadow: none;
+	}
+	60% {
+		transform: translate(-1%, -2%);
+		opacity: 1;
+		background-color: transparent;
+		border-color: transparent;
+		box-shadow: none;
+	}
+	100% {
+		transform: translate(0, 0);
+		opacity: 1;
+		background-color: #c19c99;
+		border-color: #d5bcb0;
+		box-shadow: 0 4px 0 -1px #b58d8b, 0 12px 24px rgba(105, 72, 55, 0.1);
+	}
+}
+@keyframes notebook-open-left {
+	from { transform: perspective(3000px) rotateY(60deg); }
+	to { transform: perspective(3000px) rotateY(0deg); }
+}
+@keyframes notebook-open-right {
+	from { transform: perspective(3000px) rotateY(-60deg); }
+	to { transform: perspective(3000px) rotateY(0deg); }
+}
+@keyframes notebook-open-rings {
+	from { transform: translateX(-50%) scaleX(0.7); }
+	to { transform: translateX(-50%) scaleX(1); }
+}
+@media (prefers-reduced-motion: no-preference) {
+	.detail-main-card.notebook-opening {
+		animation: notebook-arrive 1s ease-in-out both;
+	}
+	.notebook-opening .detail-cover-wrapper {
+		transform-origin: right bottom;
+		animation: notebook-open-left 0.9s ease-in-out both;
+	}
+	.notebook-opening .detail-info-wrapper {
+		transform-origin: left bottom;
+		animation: notebook-open-right 1.2s ease-in-out both;
+	}
+	.notebook-opening .notebook-binding {
+		animation: notebook-open-rings 1s ease-out both;
+	}
+}
+/* 推荐采用轻量纸质书签栏，避免和主详情重复展示信息。 */
+.detail-right-panel { align-items: flex-start; }
+.recommendation-paper {
+	position: relative;
+	height: auto;
+	margin-top: 8px;
+	background: #fffdf8;
+	border: 1px solid #ebe2d6;
+	border-radius: 3px 10px 10px 3px;
+	box-shadow: 2px 5px 14px rgba(108, 82, 57, 0.06);
+}
+.recommendation-paper::before {
+	content: '';
+	position: absolute;
+	top: -9px;
+	left: 22px;
+	width: 21px;
+	height: 31px;
+	background: #c3c6af;
+	clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+}
+.recommendation-paper .detail-recommend-header {
+	padding: 30px 16px 14px;
+	background: transparent;
+	border-bottom: 1px solid #eee6da;
+	gap: 8px;
+}
+.recommendation-paper .detail-recommend-title {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-family: "Songti SC", "STSong", serif;
+	font-size: 16px;
+	font-weight: 600;
+	letter-spacing: 0;
+	color: #765b46;
+}
+.recommendation-orange { width: 18px; height: 24px; flex-shrink: 0; }
+.recommendation-paper .detail-recommend-more {
+	font-size: 11px !important;
+	font-weight: 400 !important;
+	text-decoration: none;
+	white-space: nowrap;
+	color: #a28b73 !important;
+}
+.recommendation-paper .recommendation-list { padding: 0 16px; justify-content: flex-start; }
+.recommendation-paper .recommendation-item {
+	display: block;
+	padding: 17px 0;
+	margin: 0;
+	border-bottom: 1px dashed #e5dacb;
+	text-decoration: none;
+	color: inherit;
+}
+.recommendation-paper .recommendation-item:last-child { border-bottom: 0; }
+.recommendation-paper .recommendation-content { gap: 12px; margin: 0; }
+.recommendation-paper .recommendation-cover {
+	width: 78px;
+	height: 110px;
+	border-radius: 2px 4px 4px 2px;
+	overflow: hidden;
+	box-shadow: 2px 3px 5px rgba(91, 67, 45, 0.1);
+	transition: transform 180ms ease;
+}
+.recommendation-paper .recommendation-info { padding: 2px 0; }
+.recommendation-paper .recommendation-title {
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1.6;
+	margin-bottom: 8px;
+}
+.recommendation-paper .recommendation-author-name {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 400;
+	color: #aa927b;
+}
+.recommendation-empty { padding: 24px 0; color: #aa927b; font-size: 13px; }
+.recommendation-image-placeholder { width: 100%; height: 100%; background: #e9dfd1; }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+	.recommendation-paper .recommendation-item:hover .recommendation-cover { transform: translateY(-3px); }
+}
+.recommendation-paper .recommendation-item:focus-visible { outline: 2px solid #c3c6af; outline-offset: 3px; }
+.recommendation-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 10px;
+	margin-top: 8px;
+	font-size: 11px;
+	line-height: 1.5;
+	color: #a28b73;
+}
+.recommendation-meta > span:first-child { color: #cc8c91; }
+.recommendation-meta > .recommendation-meta--finished:first-child { color: #8d9c7c; }
+.recommendation-description {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	overflow: hidden;
+	margin: 8px 0 0;
+	font-size: 12px;
+	line-height: 1.7;
+	color: #9b8674;
+	overflow-wrap: anywhere;
+}
+.recommendation-paper .recommendation-cover {
+	overflow: visible;
+	box-shadow: none;
+}
+.recommendation-paper .recommendation-cover :deep(.book-3d-container) {
+	width: 100%;
+	height: 110px;
+	margin: 0;
+}
+.recommendation-paper .recommendation-cover :deep(.book-3d-container.book-3d-home .book-3d-wrapper) {
+	width: 100% !important;
+	max-width: 100%;
 }
 </style>

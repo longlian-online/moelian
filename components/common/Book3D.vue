@@ -1,5 +1,5 @@
 <template>
-	<div class="book-3d-container" :style="containerStyle">
+	<div class="book-3d-container" :class="{ 'book-3d-home': homepage }" :style="containerStyle">
 		<div class="book-3d-wrapper" :style="wrapperStyle">
 			<component
 				:is="linkComponent"
@@ -17,7 +17,7 @@
 							backgroundImage: `url(${coverUrl})`,
 						}"
 					>
-						<div v-if="showSpineText" class="book-spine-content">
+						<div v-if="showSpineText && !homepage" class="book-spine-content">
 							<div class="book-spine-title">
 								{{ title }}
 							</div>
@@ -26,8 +26,19 @@
 							</div>
 						</div>
 					</div>
+					<template v-if="homepage">
+						<div class="book-stack-layer book-stack-back" aria-hidden="true"></div>
+						<div class="book-stack-layer book-stack-middle" aria-hidden="true"></div>
+					</template>
 					<!-- 封面（正面） -->
-					<div class="book-cover-main">
+					<div class="book-cover-main" :aria-busy="imagePending">
+						<Transition name="book-cover-reveal">
+						<div v-if="imagePending" class="simple-skeleton book-image-loading" role="status" :aria-label="`正在加载${title}封面`">
+							<img class="skeleton-cover-symbol" src="/image.png" alt="" aria-hidden="true" />
+							<span class="skeleton-cover-line skeleton-cover-line--title" aria-hidden="true"></span>
+							<span class="skeleton-cover-line skeleton-cover-line--subtitle" aria-hidden="true"></span>
+						</div>
+						</Transition>
 						<v-img
 							:src="coverUrl"
 							:alt="title"
@@ -36,10 +47,8 @@
 							cover
 							eager
 							@load="handleImageLoad"
+							@error="imagePending = false"
 						>
-							<template #placeholder>
-								<div class="simple-skeleton"></div>
-							</template>
 							<template #error>
 								<v-img
 									cover
@@ -67,6 +76,7 @@
 
 <script setup lang="ts">
 interface Props {
+	homepage?: boolean;
 	coverUrl: string;
 	title: string;
 	author: string;
@@ -79,6 +89,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+	homepage: false,
 	height: 400,
 	width: 260,
 	spineWidth: 50,
@@ -96,20 +107,24 @@ const linkComponent = computed(() =>
 	props.to ? resolveComponent('NuxtLink') : 'div',
 );
 
+const imagePending = ref(true);
+watch(() => props.coverUrl, () => { imagePending.value = true; });
+
 // 计算出的动态宽度
 const calculatedWidth = ref<number>(props.width);
-
 const containerStyle = computed(() => ({
-	'--spine-width': `${props.spineWidth}px`,
+	'--spine-width': `${props.homepage ? props.height * 0.05 : props.spineWidth}px`,
 	height: `${props.height}px`,
 }));
 
 const wrapperStyle = computed(() => ({
-	width: `${calculatedWidth.value}px`,
+	width: `${props.homepage ? props.height * 0.665 : calculatedWidth.value}px`,
+	...(props.homepage ? { aspectRatio: '266 / 369' } : {}),
 }));
 
 // 当封面图加载完成时，计算其物理比例
 const handleImageLoad = (src: string | Event) => {
+	imagePending.value = false;
 	// v-img 的 load 事件可能传递 src 字符串或 Event 对象
 	let img: HTMLImageElement | null = null;
 
@@ -131,7 +146,7 @@ const handleImageLoad = (src: string | Event) => {
 
 		// 书本封面部分的显示宽度 = 总宽度 - 书脊宽度
 		// 设定一个合理的范围限制，防止极端比例
-		const newWidth = Math.max(
+		const newWidth = props.homepage ? props.height * 0.6655 : Math.max(
 			150,
 			Math.min(320, totalWidth - props.spineWidth),
 		);
@@ -270,13 +285,66 @@ const handleClick = (event?: Event) => {
 	letter-spacing: 1px;
 }
 
-/* 简单骨架屏 */
+.book-cover-reveal-leave-active {
+	transition: opacity 360ms ease;
+}
+.book-cover-reveal-leave-to {
+	opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+	.book-cover-reveal-leave-active { transition: none; }
+}
+.book-image-loading {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+	.book-image-loading { animation: none; }
+}
+/* 暖灰封面占位，加载状态与书页底板区分。 */
 .simple-skeleton {
 	width: 100%;
 	height: 100%;
-	background: linear-gradient(90deg, #f0f0f0 0%, #f8f8f8 50%, #f0f0f0 100%);
-	background-size: 200% 100%;
-	animation: skeleton-loading 1.5s ease-in-out infinite;
+	background: #ddd2c3;
+	overflow: hidden;
+}
+.book-image-loading {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+}
+.book-image-loading::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(100deg, transparent 15%, rgba(255, 250, 240, 0.6) 48%, transparent 80%);
+	transform: translateX(-100%);
+	animation: cover-skeleton-shimmer 1.7s ease-in-out infinite;
+}
+.skeleton-cover-symbol {
+	width: 72%;
+	max-width: 190px;
+	height: auto;
+	object-fit: contain;
+	margin-bottom: 14px;
+}
+.skeleton-cover-line {
+	display: block;
+	height: 9px;
+	border-radius: 5px;
+	background: #c7b8a4;
+}
+.skeleton-cover-line--title { width: 54%; }
+.skeleton-cover-line--subtitle { width: 32%; height: 6px; }
+@keyframes cover-skeleton-shimmer {
+	to { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+	.book-image-loading::after { animation: none; }
 }
 
 @keyframes skeleton-loading {
@@ -382,6 +450,68 @@ const handleClick = (event?: Event) => {
 	}
 	.book-3d-container {
 		--spine-width: 35px;
+	}
+}
+/* 主页采用两层完整底板，悬停时围绕左边缘依次翻开。 */
+.book-3d-container.book-3d-home .book-3d-wrapper {
+	max-width: calc(100% - 32px);
+	height: auto !important;
+	flex: 0 1 auto;
+}
+.book-3d-home .book-body {
+	transform: none;
+	transform-style: flat;
+	will-change: auto;
+	filter: drop-shadow(0 2px 12px rgba(0, 0, 0, 0.1));
+}
+.book-3d-home .book-cover-image {
+	height: 100% !important;
+}
+.book-3d-container.book-3d-home .book-stack-layer,
+.book-3d-container.book-3d-home .book-cover-main {
+	position: absolute;
+	width: 94% !important;
+	height: 96.2% !important;
+	border-radius: 6px;
+	transform-origin: left center;
+}
+.book-3d-home .book-stack-back {
+	bottom: 0;
+	right: 0;
+	background: #e3dfe1;
+}
+.book-3d-home .book-stack-middle {
+	top: 2%;
+	left: 3%;
+	background: #eeedee;
+	transition: transform 0.6s cubic-bezier(0.19, 1.74, 0.47, 0.62) 0.05s;
+}
+.book-3d-home .book-cover-main {
+	top: 0;
+	left: 0;
+	background: white;
+	box-shadow: none;
+	transform: none;
+	transition: transform 0.6s cubic-bezier(0.19, 1.74, 0.47, 0.62);
+}
+.book-3d-home :deep(.book-cover-image .v-img__img) {
+	width: 100% !important;
+	left: 0 !important;
+	object-fit: cover !important;
+	object-position: center !important;
+}
+.book-3d-home .book-spine,
+.book-3d-home .book-cover-main::before,
+.book-3d-home .book-cover-main::after,
+.book-3d-home .book-body::before {
+	display: none;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+	.book-3d-home .book-cover-link:hover .book-cover-main {
+		transform: perspective(3000px) rotateY(-30deg);
+	}
+	.book-3d-home .book-cover-link:hover .book-stack-middle {
+		transform: perspective(3000px) rotateY(-20deg);
 	}
 }
 </style>
