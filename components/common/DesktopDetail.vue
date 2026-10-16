@@ -7,7 +7,7 @@
 			<!-- 左侧 75% 详情区 -->
 			<main class="detail-left-panel">
 				<!-- 作品主卡片 - 强制 flex-row 确保图片和内容左右排列 -->
-				<section class="yuri-card detail-main-card">
+				<section :key="workId" ref="notebookElement" class="detail-main-card" :class="{ 'notebook-opening': notebookOpened }">
 					<!-- 封面图 (左侧) -->
 					<div class="detail-cover-wrapper">
 						<div class="detail-cover-inner">
@@ -438,6 +438,29 @@ const props = defineProps({
 const router = useRouter();
 const route = useRoute();
 const workId = computed(() => Number(route.params.id));
+const notebookElement = ref<HTMLElement | null>(null);
+const notebookOpened = ref(false);
+
+// 数据就绪且活页本进入视口时，仅播放一次开书动画。
+onMounted(() => {
+	watch(notebookElement, (element, _, onCleanup) => {
+		notebookOpened.value = false;
+		if (!element) return;
+		if (typeof IntersectionObserver === 'undefined') {
+			notebookOpened.value = true;
+			return;
+		}
+		const observer = new IntersectionObserver((entries) => {
+			if (entries.some(entry => entry.isIntersecting)) {
+				notebookOpened.value = true;
+				observer.disconnect();
+			}
+		}, { threshold: 0.15 });
+		observer.observe(element);
+		onCleanup(() => observer.disconnect());
+	}, { immediate: true, flush: 'post' });
+});
+
 const store = useWebWorkStore();
 const { findLatestProgress } = useReadingProgress();
 const continueProgress = ref<ReadingProgress | null>(null);
@@ -1427,7 +1450,7 @@ useSeoMeta({
 	gap: 12px;
 	padding: 8px;
 	align-items: stretch;
-	background: #c19c99 !important;
+	background: #c19c99;
 	border: 5px solid #d5bcb0;
 	border-radius: 10px;
 	box-shadow:
@@ -1583,5 +1606,57 @@ useSeoMeta({
 }
 .notebook-page-number {
 	margin-left: auto;
+}
+/* 参考活页本的开启动作：两页绕中缝展开，右页稍慢收稳。 */
+@keyframes notebook-arrive {
+	0% {
+		transform: translate(5%, 15%);
+		opacity: 0;
+		background-color: transparent;
+		border-color: transparent;
+		box-shadow: none;
+	}
+	60% {
+		transform: translate(-1%, -2%);
+		opacity: 1;
+		background-color: transparent;
+		border-color: transparent;
+		box-shadow: none;
+	}
+	100% {
+		transform: translate(0, 0);
+		opacity: 1;
+		background-color: #c19c99;
+		border-color: #d5bcb0;
+		box-shadow: 0 4px 0 -1px #b58d8b, 0 12px 24px rgba(105, 72, 55, 0.1);
+	}
+}
+@keyframes notebook-open-left {
+	from { transform: perspective(3000px) rotateY(60deg); }
+	to { transform: perspective(3000px) rotateY(0deg); }
+}
+@keyframes notebook-open-right {
+	from { transform: perspective(3000px) rotateY(-60deg); }
+	to { transform: perspective(3000px) rotateY(0deg); }
+}
+@keyframes notebook-open-rings {
+	from { transform: translateX(-50%) scaleX(0.7); }
+	to { transform: translateX(-50%) scaleX(1); }
+}
+@media (prefers-reduced-motion: no-preference) {
+	.detail-main-card.notebook-opening {
+		animation: notebook-arrive 1s ease-in-out both;
+	}
+	.notebook-opening .detail-cover-wrapper {
+		transform-origin: right bottom;
+		animation: notebook-open-left 0.9s ease-in-out both;
+	}
+	.notebook-opening .detail-info-wrapper {
+		transform-origin: left bottom;
+		animation: notebook-open-right 1.2s ease-in-out both;
+	}
+	.notebook-opening .notebook-binding {
+		animation: notebook-open-rings 1s ease-out both;
+	}
 }
 </style>
