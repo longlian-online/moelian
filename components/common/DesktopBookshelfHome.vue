@@ -1,13 +1,13 @@
 <template>
-	<v-container fluid class="shelf-page" :class="{ 'shelf-page--mobile': props.mobile }">
+	<v-container
+		fluid
+		class="shelf-page"
+		:class="{ 'shelf-page--mobile': props.mobile }"
+	>
 		<v-row justify="center" class="content-row">
 			<v-col>
 				<!-- 加载状态 -->
-				<template
-					v-if="
-						!workState.data
-					"
-				>
+				<template v-if="!workState.data">
 					<div class="d-flex align-center flex-wrap" style="flex-wrap: wrap">
 						<v-col
 							v-for="n in 8"
@@ -43,82 +43,139 @@
 
 				<template v-else>
 					<v-card class="mx-auto my-card-container bookshelf" flat>
-						<nav v-if="props.mobile" class="mobile-bookshelf-tabs" aria-label="作品类型">
-							<NuxtLink to="/manga" class="mobile-bookshelf-tab" :class="{ 'mobile-bookshelf-tab--active': props.contentType === 'manga' }" :aria-current="props.contentType === 'manga' ? 'page' : undefined">漫画</NuxtLink>
-							<NuxtLink to="/novel" class="mobile-bookshelf-tab" :class="{ 'mobile-bookshelf-tab--active': props.contentType === 'novel' }" :aria-current="props.contentType === 'novel' ? 'page' : undefined">小说</NuxtLink>
+						<nav
+							v-if="props.mobile"
+							class="mobile-bookshelf-tabs"
+							aria-label="作品类型"
+						>
+							<NuxtLink
+								to="/manga"
+								class="mobile-bookshelf-tab"
+								:class="{
+									'mobile-bookshelf-tab--active': props.contentType === 'manga',
+								}"
+								:aria-current="
+									props.contentType === 'manga' ? 'page' : undefined
+								"
+								>漫画</NuxtLink
+							>
+							<NuxtLink
+								to="/novel"
+								class="mobile-bookshelf-tab"
+								:class="{
+									'mobile-bookshelf-tab--active': props.contentType === 'novel',
+								}"
+								:aria-current="
+									props.contentType === 'novel' ? 'page' : undefined
+								"
+								>小说</NuxtLink
+							>
 						</nav>
 						<template v-for="(shelf, shelfIndex) in shelves" :key="shelfIndex">
-						<v-row dense class="cards-grid" no-gutters>
-
-							<div class="shelf-decoration" aria-hidden="true">
-								<div v-for="n in 3" :key="n" class="decoration-spine">
-									<div class="spine-brand">
-										<svg class="spine-brand-orange" viewBox="600 165 300 400" xmlns="http://www.w3.org/2000/svg">
-											<image href="/image.png" width="2172" height="724" />
-										</svg>
+							<v-row dense class="cards-grid" no-gutters>
+								<div class="shelf-decoration" aria-hidden="true">
+									<div v-for="n in 3" :key="n" class="decoration-spine">
+										<div class="spine-brand">
+											<svg
+												class="spine-brand-orange"
+												viewBox="600 165 300 400"
+												xmlns="http://www.w3.org/2000/svg"
+											>
+												<image href="/image.png" width="2172" height="724" />
+											</svg>
+										</div>
 									</div>
 								</div>
-							</div>
-							<div class="shelf-books-grid">
-							<v-col
-								v-for="card in shelf"
-								:key="card.id"
-								class="mb-4 book-col"
-								cols="12"
-								sm="6"
-								md="3"
-								lg="3"
-								xl="3"
-								style="padding: 0 2px"
-							>
-								<v-card ripple class="my-card">
-									<div class="book-preview">
-										<Book3D homepage
-											:cover-url="card.coverUrl"
-											:title="card.title"
-											:author="card.author"
-											:spine-width="50"
-											:width="260"
-											:height="400"
-											:show-title="false"
-											:to="`/${props.contentType}/${card.id}`"
-											@click="handleBookClick(card.id)"
-										>
-										</Book3D>
-									</div>
+								<div class="shelf-books-grid">
+									<v-col
+										v-for="card in shelf"
+										:key="card.id"
+										class="mb-4 book-col"
+										cols="12"
+										sm="6"
+										md="3"
+										lg="3"
+										xl="3"
+										style="padding: 0 2px"
+									>
+										<v-card ripple class="my-card">
+											<div class="book-preview">
+												<Book3D
+													homepage
+													:cover-url="card.coverUrl"
+													:title="card.title"
+													:author="card.author"
+													:spine-width="50"
+													:width="260"
+													:height="400"
+													:show-title="false"
+													:to="`/${props.contentType}/${card.id}`"
+													@click="handleBookClick(card.id)"
+												>
+												</Book3D>
+											</div>
 
-									<v-tooltip v-if="!props.mobile" activator="parent" location="top" :open-delay="300" :max-width="320" content-class="shelf-work-tooltip">
-										<div class="shelf-tooltip-title">{{ card.title }}</div>
-										<div>作者：{{ card.author || '未知' }}</div>
-										<div>{{ card.serialType === 'Serializing' ? '连载中' : '已完结' }} · {{ card.lastNo ?? 0 }} 章</div>
-									</v-tooltip>
-								</v-card>
-							</v-col>
-							</div>
-						</v-row>
-						<div class="shelf-board">
-							<div class="shelf-labels">
-								<NuxtLink v-for="card in shelf" :key="card.id" :to="`/${props.contentType}/${card.id}`" class="shelf-title-label" :title="`${card.title} · ${card.author || '未知作者'}`">
-									<span class="shelf-book-title">{{ card.title }}</span>
-									<span class="shelf-book-author">{{ card.author || '未知作者' }}</span>
-								</NuxtLink>
-							</div>
+											<v-tooltip
+												v-if="!props.mobile"
+												activator="parent"
+												location="top"
+												:open-delay="300"
+												:max-width="320"
+												content-class="shelf-work-tooltip"
+											>
+												<div class="shelf-tooltip-title">{{ card.title }}</div>
+												<div>作者：{{ card.author || '未知' }}</div>
+												<div>
+													{{
+														card.serialType === 'Serializing'
+															? '连载中'
+															: '已完结'
+													}}
+													· {{ card.lastNo ?? 0 }} 章
+												</div>
+											</v-tooltip>
+										</v-card>
+									</v-col>
+								</div>
+							</v-row>
+							<div class="shelf-board">
+								<div class="shelf-labels">
+									<NuxtLink
+										v-for="card in shelf"
+										:key="card.id"
+										:to="`/${props.contentType}/${card.id}`"
+										class="shelf-title-label"
+										:title="`${card.title} · ${card.author || '未知作者'}`"
+									>
+										<span class="shelf-book-title">{{ card.title }}</span>
+										<span class="shelf-book-author">{{
+											card.author || '未知作者'
+										}}</span>
+									</NuxtLink>
+								</div>
 
-							<div v-for="side in ['left', 'right']" :key="side" class="shelf-bracket" aria-hidden="true" :class="`shelf-bracket--${side}`">
-								<svg class="shelf-bracket-orange" viewBox="600 165 300 400" xmlns="http://www.w3.org/2000/svg">
-									<image href="/image.png" width="2172" height="724" />
-								</svg>
+								<div
+									v-for="side in ['left', 'right']"
+									:key="side"
+									class="shelf-bracket"
+									aria-hidden="true"
+									:class="`shelf-bracket--${side}`"
+								>
+									<svg
+										class="shelf-bracket-orange"
+										viewBox="600 165 300 400"
+										xmlns="http://www.w3.org/2000/svg"
+									>
+										<image href="/image.png" width="2172" height="724" />
+									</svg>
+								</div>
 							</div>
-						</div>
 						</template>
 					</v-card>
 				</template>
 			</v-col>
 		</v-row>
-		<v-pagination
-			v-model="page"
-			:length="pageCount"
-		></v-pagination>
+		<v-pagination v-model="page" :length="pageCount"></v-pagination>
 	</v-container>
 </template>
 
@@ -126,11 +183,22 @@
 import type { WorkListRes } from '~/shared/dto/web/work';
 export type WorkItemType = WorkListRes['list'][number];
 
-const props = withDefaults(defineProps<{ contentType: 'manga' | 'novel'; mobile?: boolean }>(), { mobile: false });
+const props = withDefaults(
+	defineProps<{ contentType: 'manga' | 'novel'; mobile?: boolean }>(),
+	{ mobile: false },
+);
 const webWorkStore = useWebWorkStore();
-const workState = computed(() => props.contentType === 'manga' ? webWorkStore.mangaState : webWorkStore.novelState);
+const workState = computed(() =>
+	props.contentType === 'manga'
+		? webWorkStore.mangaState
+		: webWorkStore.novelState,
+);
 const totalItems = computed(() => workState.value.data?.total ?? 0);
-const pageCount = computed(() => props.contentType === 'manga' ? webWorkStore.mangaPageCount : webWorkStore.novelPageCount);
+const pageCount = computed(() =>
+	props.contentType === 'manga'
+		? webWorkStore.mangaPageCount
+		: webWorkStore.novelPageCount,
+);
 const router = useRouter();
 const page = computed({
 	get: () => workState.value.page,
@@ -428,13 +496,25 @@ if (error.value) {
 	padding: 0;
 }
 .bookshelf {
-	--wood: repeating-linear-gradient(1deg, transparent 0 3px, rgba(142, 104, 56, 0.055) 4px 5px, transparent 6px 11px), linear-gradient(95deg, #eedec0, #f6e9cc 35%, #e9d8b7 75%, #f3e5c6);
+	--wood:
+		repeating-linear-gradient(
+			1deg,
+			transparent 0 3px,
+			rgba(142, 104, 56, 0.055) 4px 5px,
+			transparent 6px 11px
+		),
+		linear-gradient(95deg, #eedec0, #f6e9cc 35%, #e9d8b7 75%, #f3e5c6);
 	border-radius: 0;
 	border-top: 0;
 	padding-top: 38px !important;
 	padding-bottom: 100px !important;
 	background:
-		repeating-linear-gradient(0deg, transparent 0 13px, rgba(255,255,255,0.035) 14px 17px, transparent 18px 33px),
+		repeating-linear-gradient(
+			0deg,
+			transparent 0 13px,
+			rgba(255, 255, 255, 0.035) 14px 17px,
+			transparent 18px 33px
+		),
 		linear-gradient(#bfa598, #d3bbae 100px, #d1b9ab);
 	box-shadow: inset 0 16px 25px rgba(79, 50, 32, 0.12) !important;
 }
@@ -511,7 +591,16 @@ if (error.value) {
 	flex: 1;
 	height: 100%;
 	border-radius: 7px 7px 2px 2px;
-	background: linear-gradient(to bottom, #ae8589 0 17%, #bd9c8c 17% 34%, #fff6e6 34% 35.5%, #bd9c8c 35.5% 66%, #fff6e6 66% 67.5%, #bd9c8c 67.5% 83%, #ae8589 83%);
+	background: linear-gradient(
+		to bottom,
+		#ae8589 0 17%,
+		#bd9c8c 17% 34%,
+		#fff6e6 34% 35.5%,
+		#bd9c8c 35.5% 66%,
+		#fff6e6 66% 67.5%,
+		#bd9c8c 67.5% 83%,
+		#ae8589 83%
+	);
 }
 .decoration-spine:last-child {
 	transform: translateY(9px) rotate(-14deg);
@@ -565,7 +654,7 @@ if (error.value) {
 	border: 1px solid transparent;
 	background: transparent;
 	color: #78563d;
-	font-family: "Songti SC", "STSong", "Noto Serif CJK SC", "SimSun", serif;
+	font-family: 'Songti SC', 'STSong', 'Noto Serif CJK SC', 'SimSun', serif;
 	font-size: 16px;
 	font-weight: 500;
 	letter-spacing: 1.5px;
@@ -604,11 +693,20 @@ if (error.value) {
 	height: 52px;
 	background:
 		linear-gradient(#ac8874 0 13px, transparent 13px),
-		linear-gradient(90deg, transparent 13px, #b99681 13px 51px, transparent 51px);
+		linear-gradient(
+			90deg,
+			transparent 13px,
+			#b99681 13px 51px,
+			transparent 51px
+		);
 	border-radius: 0 0 4px 4px;
 }
-.shelf-bracket--left { left: 10%; }
-.shelf-bracket--right { right: 10%; }
+.shelf-bracket--left {
+	left: 10%;
+}
+.shelf-bracket--right {
+	right: 10%;
+}
 .shelf-bracket-orange {
 	position: absolute;
 	width: 15px;
@@ -619,8 +717,12 @@ if (error.value) {
 	overflow: hidden;
 }
 @media (max-width: 960px) {
-	.bookshelf .cards-grid { padding: 28px 24px 0 calc(var(--decoration-width) + 16px); }
-	.shelf-labels { padding-inline: calc(var(--decoration-width) + 16px) 24px; }
+	.bookshelf .cards-grid {
+		padding: 28px 24px 0 calc(var(--decoration-width) + 16px);
+	}
+	.shelf-labels {
+		padding-inline: calc(var(--decoration-width) + 16px) 24px;
+	}
 }
 .mobile-bookshelf-tabs {
 	position: absolute;
@@ -643,13 +745,16 @@ if (error.value) {
 	padding: 0 16px;
 	color: #a48b70;
 	font-size: 14px;
-	font-family: "Songti SC", "STSong", serif;
+	font-family: 'Songti SC', 'STSong', serif;
 	font-weight: 500;
 	letter-spacing: 2px;
 	text-decoration: none;
 	-webkit-tap-highlight-color: transparent;
 }
-.mobile-bookshelf-tab--active { color: #705039; font-weight: 700; }
+.mobile-bookshelf-tab--active {
+	color: #705039;
+	font-weight: 700;
+}
 .mobile-bookshelf-tab--active::after {
 	content: '';
 	position: absolute;
@@ -660,16 +765,27 @@ if (error.value) {
 	border-radius: 3px;
 	background: #e49c5b;
 }
-.mobile-bookshelf-tab:focus-visible { outline: 2px solid #bd8f5e; outline-offset: -3px; }
+.mobile-bookshelf-tab:focus-visible {
+	outline: 2px solid #bd8f5e;
+	outline-offset: -3px;
+}
 /* 移动主页：两列书架，使用相同作品数据和链接。 */
 .shelf-page--mobile .bookshelf {
 	padding-top: 44px !important;
 	padding-bottom: 48px !important;
 }
-.shelf-page--mobile .bookshelf::before { height: 44px; }
-.shelf-page--mobile .mobile-bookshelf-tabs { height: 44px; }
-.shelf-page--mobile .mobile-bookshelf-tab--active::after { bottom: 8px; }
-.shelf-page--mobile .shelf-decoration { display: none; }
+.shelf-page--mobile .bookshelf::before {
+	height: 44px;
+}
+.shelf-page--mobile .mobile-bookshelf-tabs {
+	height: 44px;
+}
+.shelf-page--mobile .mobile-bookshelf-tab--active::after {
+	bottom: 8px;
+}
+.shelf-page--mobile .shelf-decoration {
+	display: none;
+}
 .shelf-page--mobile .bookshelf .cards-grid {
 	--shelf-book-height: clamp(160px, calc(70vw - 36px), 320px);
 	padding: 26px 20px 0;
@@ -679,8 +795,12 @@ if (error.value) {
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 20px;
 }
-.shelf-page--mobile .shelf-labels { padding: 0 20px; }
-.shelf-page--mobile .shelf-board { height: 44px; }
+.shelf-page--mobile .shelf-labels {
+	padding: 0 20px;
+}
+.shelf-page--mobile .shelf-board {
+	height: 44px;
+}
 .shelf-page--mobile .shelf-title-label {
 	width: 100%;
 	max-width: 100%;
@@ -701,8 +821,13 @@ if (error.value) {
 	line-height: 12px;
 	margin-top: 1px;
 }
-.shelf-page--mobile .shelf-bracket { display: none; }
-.shelf-page--mobile .shelf-title-label:hover { background: transparent; outline: none; }
+.shelf-page--mobile .shelf-bracket {
+	display: none;
+}
+.shelf-page--mobile .shelf-title-label:hover {
+	background: transparent;
+	outline: none;
+}
 </style>
 
 <style>
