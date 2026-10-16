@@ -11,7 +11,15 @@
 					<!-- 封面图 (左侧) -->
 					<div class="detail-cover-wrapper">
 						<div class="detail-cover-inner">
+							<span
+								v-for="corner in ['tl', 'tr', 'bl', 'br']"
+								:key="corner"
+								class="photo-corner"
+								:class="`photo-corner--${corner}`"
+								aria-hidden="true"
+							></span>
 							<Book3D
+								homepage
 								:cover-url="workDetail?.coverUrl || ''"
 								:title="workDetail?.title || ''"
 								:author="workDetail?.author || ''"
@@ -30,8 +38,39 @@
 								</template>
 							</Book3D>
 						</div>
+						<div class="notebook-page-footer" aria-hidden="true">
+							<img src="/image.png" class="notebook-logo" alt="" />
+							<span class="notebook-page-number">01</span>
+						</div>
 					</div>
 
+					<div class="notebook-binding" aria-hidden="true">
+						<svg
+							v-for="ring in 7"
+							:key="ring"
+							class="notebook-ring"
+							viewBox="0 0 64 38"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<circle cx="7" cy="29" r="5.5" fill="#b98b88" />
+							<circle cx="57" cy="29" r="5.5" fill="#b98b88" />
+							<path
+								d="M7 28C-2 0 66 0 57 28"
+								fill="none"
+								stroke="#cda9a0"
+								stroke-width="7"
+								stroke-linecap="round"
+								transform="translate(0 1.5)"
+							/>
+							<path
+								d="M7 28C-2 0 66 0 57 28"
+								fill="none"
+								stroke="#fff9ee"
+								stroke-width="6"
+								stroke-linecap="round"
+							/>
+						</svg>
+					</div>
 					<!-- 信息内容区 (右侧) -->
 					<div class="detail-info-wrapper">
 						<div class="detail-info-content">
@@ -843,6 +882,8 @@ useSeoMeta({
 }
 
 .line-clamp-4 {
+	/* 简介不足四行时仍保留空间，稳定下方章节数的位置。 */
+	min-height: 6.4em;
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
 	-webkit-line-clamp: 4;
@@ -1374,5 +1415,173 @@ useSeoMeta({
 	font-weight: 900;
 	color: #5a463d;
 	margin: 2px 0 0;
+}
+/* 展开的活页本：两页共用封皮，中缝装订环浮在纸面上。 */
+.detail-main-container {
+	max-width: 1440px;
+}
+.detail-main-card {
+	position: relative;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+	gap: 12px;
+	padding: 8px;
+	align-items: stretch;
+	background: #c19c99 !important;
+	border: 5px solid #d5bcb0;
+	border-radius: 10px;
+	box-shadow:
+		0 4px 0 -1px #b58d8b,
+		0 12px 24px rgba(105, 72, 55, 0.1) !important;
+	overflow: visible;
+}
+.detail-main-card .detail-cover-wrapper,
+.detail-main-card .detail-info-wrapper {
+	width: auto;
+	min-width: 0;
+	background: #fff9ef;
+	border: 3px solid #f0e2ce;
+	box-shadow: inset 0 0 0 1px rgba(177, 142, 107, 0.12);
+}
+.detail-main-card .detail-cover-wrapper {
+	padding: 42px 24px;
+	border-radius: 3px 0 0 3px;
+}
+.detail-main-card .detail-cover-inner {
+	height: 400px;
+	min-height: 400px;
+}
+.detail-main-card .detail-info-wrapper {
+	padding: 32px 28px 28px 34px;
+	border-radius: 0 3px 3px 0;
+}
+.notebook-binding {
+	position: absolute;
+	left: 45.45%;
+	top: 42px;
+	bottom: 42px;
+	width: 62px;
+	transform: translateX(-50%);
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	z-index: 2;
+	pointer-events: none;
+}
+.notebook-ring {
+	display: block;
+	width: 62px;
+	height: 38px;
+	flex-shrink: 0;
+	overflow: visible;
+}
+@media (max-width: 1100px) {
+	.detail-main-card {
+		gap: 8px;
+		padding: 6px;
+	}
+	.detail-main-card .detail-cover-wrapper {
+		padding: 32px 16px;
+	}
+	.detail-main-card .detail-info-wrapper {
+		padding: 26px 18px 24px 24px;
+	}
+	.notebook-binding {
+		width: 52px;
+	}
+	.notebook-ring {
+		width: 52px;
+		height: 32px;
+	}
+}
+/* 左页藏书卡：页边无独立内框，封面由四个相片角固定。 */
+.detail-main-card .detail-cover-wrapper {
+	position: relative;
+	border: 0;
+	box-shadow: none;
+	padding: 56px 26px 74px;
+	background: #fff9ef;
+}
+.detail-main-card .detail-cover-wrapper::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	right: -6px;
+	width: 42px;
+	background: linear-gradient(
+		90deg,
+		transparent,
+		rgba(151, 112, 89, 0.06) 60%,
+		rgba(124, 88, 72, 0.17)
+	);
+	pointer-events: none;
+}
+.detail-main-card .detail-cover-inner {
+	width: 94%;
+	max-width: 290px;
+	height: auto;
+	min-height: 0;
+	aspect-ratio: 266 / 369;
+	transform: rotate(-4deg);
+	background: #fffcf6;
+	border: 9px solid #fffcf6;
+	box-shadow: 2px 7px 12px rgba(112, 81, 54, 0.14);
+}
+.detail-cover-inner :deep(.book-3d-container) {
+	height: 100%;
+}
+.detail-cover-inner :deep(.book-3d-container.book-3d-home .book-3d-wrapper) {
+	width: 100% !important;
+	max-width: 100%;
+}
+.photo-corner {
+	position: absolute;
+	width: 25px;
+	height: 25px;
+	background: #e9ddc6;
+	clip-path: polygon(0 0, 100% 0, 0 100%);
+	z-index: 3;
+	pointer-events: none;
+}
+.photo-corner--tl {
+	top: -11px;
+	left: -11px;
+}
+.photo-corner--tr {
+	top: -11px;
+	right: -11px;
+	transform: rotate(90deg);
+}
+.photo-corner--bl {
+	bottom: -11px;
+	left: -11px;
+	transform: rotate(-90deg);
+}
+.photo-corner--br {
+	bottom: -11px;
+	right: -11px;
+	transform: rotate(180deg);
+}
+.notebook-page-footer {
+	position: absolute;
+	left: 24px;
+	right: 24px;
+	bottom: 20px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: #b59c82;
+	font-family: Georgia, serif;
+	font-size: 12px;
+	letter-spacing: 2px;
+}
+.notebook-logo {
+	width: 88px;
+	height: auto;
+	object-fit: contain;
+}
+.notebook-page-number {
+	margin-left: auto;
 }
 </style>
