@@ -17,6 +17,7 @@ interface WorkListState {
 	// 加载状态
 	isLoading: boolean;
 	searchKey: string; //  实际用于 API 请求的关键词
+	tags: string[];
 	inputKey: string; //  绑定到输入框 V-Model 的关键词
 }
 
@@ -32,6 +33,7 @@ export const useWebWorkStore = defineStore('web-work', () => {
 		isLoading: false,
 		searchKey: '',
 		inputKey: '',
+		tags: [],
 	});
 
 	const novelState = reactive<WorkListState>({
@@ -41,6 +43,7 @@ export const useWebWorkStore = defineStore('web-work', () => {
 		isLoading: false,
 		searchKey: '',
 		inputKey: '',
+		tags: [],
 	});
 
 	// 2. 核心请求方法 (Action)
@@ -52,6 +55,7 @@ export const useWebWorkStore = defineStore('web-work', () => {
 			type: state.type,
 			key: state.searchKey, // 使用 searchKey
 			sortType: 'UPDATE',
+			tags: [...state.tags],
 		};
 
 		try {

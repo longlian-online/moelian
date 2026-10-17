@@ -1,5 +1,8 @@
 <template>
-	<v-app-bar color="#A6A897" :elevation="['manga', 'novel'].includes(String(route.name)) ? 0 : undefined">
+	<v-app-bar
+		color="#A6A897"
+		:elevation="['manga', 'novel'].includes(String(route.name)) ? 0 : undefined"
+	>
 		<v-container class="d-flex align-center py-0" style="max-width: 1200px">
 			<v-app-bar-nav-icon
 				v-if="isMobile"
@@ -29,8 +32,34 @@
 
 			<v-spacer></v-spacer>
 
+			<v-select
+				v-model="selectedFilterTags"
+				:items="filterTagItems"
+				multiple
+				chips
+				clearable
+				label="标签筛选"
+				placeholder="选择标签"
+				persistent-placeholder
+				density="compact"
+				variant="outlined"
+				hide-details
+				single-line
+				class="nav-tag-filter"
+			>
+				<template #selection="{ item, index }">
+					<span v-if="index === 0" class="nav-selected-tag">{{
+						item.title
+					}}</span>
+					<span v-if="index === 1" class="nav-tag-count"
+						>+{{ selectedFilterTags.length - 1 }}</span
+					>
+				</template>
+			</v-select>
+
 			<template v-if="!isMobile">
 				<v-text-field
+					class="nav-search"
 					v-model="currentInputKey"
 					:loading="currentLoading"
 					prepend-inner-icon="mdi-magnify"
@@ -54,6 +83,7 @@
 			<!-- 移动端导航条 -->
 			<template v-if="isMobile">
 				<v-text-field
+					class="nav-search"
 					v-model="currentInputKey"
 					:loading="currentLoading"
 					density="default"
@@ -87,76 +117,67 @@ const route = useRoute();
 const router = useRouter();
 const store = useWebWorkStore();
 
-// 1. 动态计算 V-Model 绑定的 Key (绑定到 inputKey)
-const currentInputKey = computed({
+const { data: filterTagData } =
+	useApiFetch<import('~/shared/dto/web').TagWebItem[]>('/api/web/tag/all');
+const filterTagItems = computed(
+	() => filterTagData.value?.data?.map((tag) => tag.content) ?? [],
+);
+const isCategoryRoute = computed(() => route.path.startsWith('/classify/'));
+const selectedFilterTags = computed<string[]>({
 	get: () => {
-		if (route.name === 'manga') {
-			return store.mangaInputKey;
-		} else if (route.name === 'novel') {
-			return store.novelInputKey;
+		if (route.query.tags !== undefined) {
+			const raw = route.query.tags;
+			return (Array.isArray(raw) ? raw : [raw]).filter((tag): tag is string =>
+				Boolean(tag),
+			);
 		}
-		return store.mangaInputKey;
+		if (isCategoryRoute.value) {
+			const tag = filterTagData.value?.data?.find(
+				(tag) => tag.id === Number(route.params.tagId),
+			);
+			return tag ? [tag.content] : [];
+		}
+		return [];
 	},
-	set: (val: string) => {
-		if (route.name === 'manga') {
-			store.mangaInputKey = val;
-		} else if (route.name === 'novel') {
-			store.novelInputKey = val;
-		} else {
-			store.mangaInputKey = val;
-		}
+	set: (value) => {
+		const tags = value ?? [];
+		const target = route.path.startsWith('/novel')
+			? '/novel'
+			: route.path.startsWith('/manga')
+				? '/manga'
+				: isCategoryRoute.value
+					? route.path
+					: '/classify/all';
+		router.push({
+			path: target,
+			query: { ...route.query, tags: tags.length ? tags : '' },
+		});
 	},
 });
-
-// 2. 动态计算 Loading 状态 (绑定到 isLoading)
-const currentLoading = computed(() => {
-	if (route.name === 'manga') {
-		return store.mangaIsLoading;
-	} else if (route.name === 'novel') {
-		return store.novelIsLoading;
-	}
-	return store.mangaIsLoading;
-});
-
-// --- 搜索事件 ---
+const currentInputKey = ref(String(route.query.key ?? ''));
+watch(
+	() => route.query.key,
+	(key) => {
+		currentInputKey.value = String(key ?? '');
+	},
+);
+const currentLoading = computed(() =>
+	route.path.startsWith('/novel') ? store.novelIsLoading : store.mangaIsLoading,
+);
 const handleSearchClick = () => {
-	// 获取当前路由的路径
-	const currentPath = route.path;
-
-	// 1 根据当前路由的路径前缀调用正确的搜索动作
-
-	// 检查路径是否以 '/manga' 开头
-	if (currentPath.startsWith('/manga')) {
-		store.triggerMangaSearch();
-
-		// 只有当当前路径不是 '/manga' 根路径时才执行跳转
-		if (currentPath !== '/manga') {
-			router.push('/manga');
-		}
-
-		// 检查路径是否以 '/novel' 开头
-	} else if (currentPath.startsWith('/novel')) {
-		store.triggerNovelSearch();
-
-		// 只有当当前路径不是 '/novel' 根路径时才执行跳转
-		if (currentPath !== '/novel') {
-			router.push('/novel');
-		}
-	} else {
-		// 3. 如果在其他页面点击搜索，执行默认搜索并跳转到默认页
-		store.triggerMangaSearch();
-		router.push('/manga');
-	}
+	const path = route.path.startsWith('/novel')
+		? '/novel'
+		: isCategoryRoute.value
+			? route.path
+			: '/manga';
+	router.push({
+		path,
+		query: { ...route.query, key: currentInputKey.value || undefined },
+	});
 };
-
-//清空
 const handleClearSearch = () => {
-	if (route.name === 'manga') {
-		// 强制确保清空操作立即触发搜索
-		store.triggerMangaSearch();
-	} else if (route.name === 'novel') {
-		store.triggerNovelSearch();
-	}
+	currentInputKey.value = '';
+	handleSearchClick();
 };
 
 const { isMobile } = useDevice();
@@ -194,5 +215,55 @@ watch(
 
 .v-app-bar .v-img {
 	align-self: center;
+}
+</style>
+
+<style scoped>
+.nav-tag-filter {
+	flex: 0 1 220px;
+	min-width: 140px;
+	margin-right: 12px;
+}
+.nav-search {
+	flex: 0 1 340px;
+	min-width: 160px;
+}
+.nav-tag-filter :deep(.v-field__input) {
+	flex-wrap: nowrap;
+	overflow: hidden;
+}
+.nav-selected-tag {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	max-width: 115px;
+}
+.nav-tag-count {
+	flex-shrink: 0;
+	margin-left: 6px;
+	font-size: 12px;
+}
+@media (max-width: 600px) {
+	.nav-tag-filter {
+		flex: 0 0 120px;
+		min-width: 0;
+		margin-right: 8px;
+	}
+	.nav-search {
+		flex: 1;
+		min-width: 0;
+	}
+	.nav-selected-tag {
+		max-width: 50px;
+		font-size: 12px;
+	}
+	.nav-search :deep(.v-field__input) {
+		min-width: 0;
+		padding-inline: 8px;
+	}
+	.nav-search :deep(.v-btn) {
+		width: 28px;
+		height: 32px;
+	}
 }
 </style>

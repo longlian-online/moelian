@@ -122,6 +122,7 @@ const props = withDefaults(
 // 仅在书架主页关闭滚动边界回弹，避免固定导航下露出页面底色。
 useHead({ htmlAttrs: { class: 'bookshelf-page-active' } });
 
+const route = useRoute();
 const webWorkStore = useWebWorkStore();
 const workState = computed(() =>
 	props.contentType === 'manga'
@@ -144,6 +145,7 @@ watch(
 	[
 		() => workState.value.data,
 		() => workState.value.searchKey,
+		() => workState.value.tags,
 		() => props.contentType,
 	],
 	() => {
@@ -186,6 +188,7 @@ async function loadMoreWorks({ done }: { done: (status: LoadStatus) => void }) {
 				page: nextPage,
 				type: workState.value.type,
 				key: workState.value.searchKey,
+				tags: workState.value.tags,
 				sortType: 'UPDATE',
 			},
 			signal: controller.signal,
@@ -211,8 +214,16 @@ async function loadMoreWorks({ done }: { done: (status: LoadStatus) => void }) {
 	}
 }
 const { error } = await useAsyncData(
-	computed(() => `${props.contentType}-list-data`),
+	computed(
+		() => `${props.contentType}-list-data-${JSON.stringify(route.query)}`,
+	),
 	async () => {
+		const rawTags = route.query.tags;
+		workState.value.tags = (
+			Array.isArray(rawTags) ? rawTags : [rawTags]
+		).filter((tag): tag is string => Boolean(tag));
+		workState.value.searchKey = String(route.query.key ?? '');
+		workState.value.inputKey = workState.value.searchKey;
 		workState.value.page = 1;
 		await webWorkStore.fetchWorkList(workState.value);
 		return cards.value;
@@ -225,6 +236,10 @@ if (error.value) {
 </script>
 
 <style scoped>
+.shelf-page { padding: 0; }
+.shelf-page > .content-row { margin: 0; }
+.shelf-page > .content-row > .v-col { padding: 0; }
+
 .bookshelf-infinite {
 	width: 100%;
 	min-width: 0;
@@ -301,8 +316,12 @@ if (error.value) {
 	outline-offset: -3px;
 }
 
-.shelf-page--mobile .mobile-bookshelf-tabs { height: 44px; }
-.shelf-page--mobile .mobile-bookshelf-tab--active::after { bottom: 8px; }
+.shelf-page--mobile .mobile-bookshelf-tabs {
+	height: 44px;
+}
+.shelf-page--mobile .mobile-bookshelf-tab--active::after {
+	bottom: 8px;
+}
 </style>
 
 <style>

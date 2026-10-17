@@ -1,5 +1,5 @@
 <template>
-	<v-app id="app" :class="{ 'bookshelf-layout': ['manga', 'novel'].includes(String(route.name)) }">
+	<v-app id="app" :class="{ 'bookshelf-layout': ['manga', 'novel'].includes(String(route.name)), 'classify-layout': route.path.startsWith('/classify') }">
 		<AppDrawer></AppDrawer>
 		<Transition name="fade">
 			<BaseNav v-if="!$route.meta.baseNav && isNavbarVisible"></BaseNav>
@@ -57,6 +57,14 @@ watch(
 </script>
 
 <style>
+.classify-layout .v-main {
+	padding-bottom: 0;
+	background: #fdfaf8;
+}
+.classify-layout .v-application__wrap {
+	background: #eef0e9;
+}
+
 .bookshelf-layout .v-application__wrap,
 .bookshelf-layout .v-main,
 .bookshelf-layout .v-main > .v-sheet {
