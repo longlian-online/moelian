@@ -12,20 +12,12 @@ export const useSettingsStore = defineStore('settings', () => {
 			encode: (value) => String(value),
 		});
 
-	const isMangaVertical = boolCookie('isMangaVertical', false);
-	const isNovelVertical = boolCookie('isNovelVertical', true);
 	const pageLayout = boolCookie('pageLayout', false);
 	const scrollDirection = boolCookie('scrollDirection', false);
 	const readingMode = boolCookie('readingMode', false);
 
 	const setSetting = (key: string, value: boolean) => {
 		switch (key) {
-			case 'isMangaVertical':
-				isMangaVertical.value = value;
-				break;
-			case 'isNovelVertical':
-				isNovelVertical.value = value;
-				break;
 			case 'pageLayout':
 				pageLayout.value = value;
 				break;
@@ -39,8 +31,6 @@ export const useSettingsStore = defineStore('settings', () => {
 	};
 
 	return {
-		isMangaVertical,
-		isNovelVertical,
 		pageLayout,
 		scrollDirection,
 		readingMode,

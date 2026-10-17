@@ -555,7 +555,7 @@ function handleCoverClick() {
 
 useSeoMeta({
 	title: () =>
-		`${workDetail.title} - ${props.contentType === 'manga' ? '漫画' : '小说'}`,
+		[workDetail.title, workDetail.author].filter(Boolean).join(' - ') || 'moelian',
 	description: () =>
 		workDetail.description ||
 		`${workDetail.title}，作者：${workDetail.author}。在线查看作品简介与最新章节。`,

@@ -8,7 +8,6 @@
 
 		<div class="d-flex flex-row">
 			<v-tabs v-model="tab" color="primary" direction="vertical">
-				<v-tab prepend-icon="mdi-grid" text="布局设置" value="option-1"></v-tab>
 				<v-tab
 					prepend-icon="mdi-image-multiple"
 					text="漫画设置"
@@ -18,32 +17,6 @@
 			</v-tabs>
 			<v-divider vertical></v-divider>
 			<v-tabs-window v-model="tab">
-				<v-tabs-window-item value="option-1">
-					<v-card flat>
-						<v-card-text>
-							<v-card-title class="pa-0">漫画布局喜好</v-card-title>
-							<v-switch
-								v-model="isMangaVertical"
-								:label="` ${isMangaVertical ? '竖列' : '横列'}`"
-								hide-details
-								color="primary"
-								inset
-							></v-switch>
-						</v-card-text>
-
-						<v-card-text>
-							<v-card-title class="pa-0">小说布局喜好</v-card-title>
-							<v-switch
-								v-model="isNovelVertical"
-								:label="` ${isNovelVertical ? '竖列' : '横列'}`"
-								hide-details
-								color="primary"
-								inset
-							></v-switch>
-						</v-card-text>
-					</v-card>
-				</v-tabs-window-item>
-
 				<v-tabs-window-item value="option-2">
 					<v-card flat>
 						<v-card-text>
@@ -78,9 +51,8 @@
 
 <script setup lang="ts">
 const settingsStore = useSettingsStore();
-const { isMangaVertical, isNovelVertical } = storeToRefs(settingsStore);
 const { scrollDirection, readingMode } = storeToRefs(settingsStore);
-const tab = ref('option-1');
+const tab = ref('option-2');
 
 definePageMeta({
 	readerTheme: 'setting',

@@ -46,6 +46,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatChapterTitle } from '~/utils/chapterSeo';
 import { useCurrentTime } from '@/composables/useCurrentTime';
 import mammoth from 'mammoth';
 import type {
@@ -212,7 +213,7 @@ function processMammothOutput(markdown: string) {
 	return result;
 }
 
-const { data: chapterData } = await useLazyAsyncData(
+const { data: chapterData } = await useAsyncData(
 	() => `chapter-content-${chapterId.value}`,
 	async () => {
 		const res = await useApiFetch<WorkContentRes>(
@@ -456,11 +457,23 @@ const items = computed(() => {
 	return breadcrumbItems;
 });
 
-watchEffect(() => {
+const chapterSeoTitle = computed(() => {
 	const chapter = currentChapter.value;
-
-	useHead({
-		title: chapter.id !== 0 ? `${chapter.title} - 小说阅读` : '小说阅读',
-	});
+	const work = chapterData.value?.work;
+	if (!work || chapter.id === 0) return 'moelian';
+	return `${formatChapterTitle(chapter.title, chapter.no, 'novel')} - ${work.title}`;
 });
+const chapterSeoDescription = computed(() => {
+	const work = chapterData.value?.work;
+	return work ? `${chapterSeoTitle.value}。作者：${work.author}。` : 'moelian';
+});
+useSeoMeta({
+	title: () => chapterSeoTitle.value,
+	description: () => chapterSeoDescription.value,
+	ogTitle: () => chapterSeoTitle.value,
+	ogDescription: () => chapterSeoDescription.value,
+	twitterTitle: () => chapterSeoTitle.value,
+	twitterDescription: () => chapterSeoDescription.value,
+});
+
 </script>

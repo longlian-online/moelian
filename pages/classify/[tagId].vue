@@ -427,11 +427,11 @@ const handleWorkClick = (work: WorkListRes['list'][0]) => {
 };
 
 useHead({
-	title: `${currentTagName.value || '分类'} - 夢怜龍華`,
+	title: () => `${currentTagName.value || '分类'} - moelian`,
 	meta: [
 		{
 			name: 'description',
-			content: `浏览${currentTagName.value || '分类'}相关的作品`,
+			content: () => `浏览${currentTagName.value || '分类'}相关的作品`,
 		},
 	],
 });
