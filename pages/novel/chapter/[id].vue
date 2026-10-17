@@ -5,6 +5,8 @@
 			v-model:selected-chapter-id="selectedChapterId"
 			:loaded-content="loadedContent"
 			:loading="isLoading"
+			:load-failed="loadFailed"
+			@retry="retryContent"
 			:chapters="chapters"
 			:is-first-chapter="isFirstChapter"
 			:is-last-chapter="isLastChapter"
@@ -21,6 +23,8 @@
 			v-model:selected-chapter-id="selectedChapterId"
 			:loaded-content="loadedContent"
 			:loading="isLoading"
+			:load-failed="loadFailed"
+			@retry="retryContent"
 			:chapters="chapters"
 			:is-first-chapter="isFirstChapter"
 			:is-last-chapter="isLastChapter"
@@ -77,6 +81,7 @@ const loadedContent = ref<
 	}[]
 >([]);
 const isLoading = ref(true);
+const loadFailed = ref(false);
 const selectedChapterId = ref<number | null>(null);
 const isNavbarVisible = inject('isNavbarVisible') as Ref<boolean>;
 const { isMobile } = useDevice();
@@ -101,6 +106,7 @@ let pendingNovelPosition = initialNovelPosition ?? {
 
 async function parseDocx(url: string) {
 	isLoading.value = true;
+	loadFailed.value = false;
 	loadedContent.value = [];
 
 	try {
@@ -123,7 +129,9 @@ async function parseDocx(url: string) {
 		);
 
 		loadedContent.value = processMammothOutput(result.value);
+		if (!loadedContent.value.length) throw new Error('正文内容为空');
 	} catch (err) {
+		loadFailed.value = true;
 		console.error('❌ DOCX 解析失败:', err);
 	} finally {
 		isLoading.value = false;
@@ -133,6 +141,7 @@ async function parseDocx(url: string) {
 // 解析新的 urlMap 格式
 async function parseUrlMap(urlMap: Record<string, string>) {
 	isLoading.value = true;
+	loadFailed.value = false;
 	loadedContent.value = [];
 
 	try {
@@ -179,7 +188,9 @@ async function parseUrlMap(urlMap: Record<string, string>) {
 				type: 'text' as const,
 			};
 		});
+		if (!loadedContent.value.length) throw new Error('正文内容为空');
 	} catch (err) {
+		loadFailed.value = true;
 		console.error('❌ urlMap 解析失败:', err);
 	} finally {
 		isLoading.value = false;
@@ -215,7 +226,7 @@ function processMammothOutput(markdown: string) {
 	return result;
 }
 
-const { data: chapterData } = await useAsyncData(
+const { data: chapterData, refresh: refreshChapter } = await useAsyncData(
 	() => `chapter-content-${chapterId.value}`,
 	async () => {
 		const res = await useApiFetch<WorkContentRes>(
@@ -246,6 +257,7 @@ watch(
 				} else if (docxUrl.value) {
 					await parseDocx(docxUrl.value);
 				} else {
+					loadFailed.value = true;
 					isLoading.value = false;
 				}
 			}
@@ -254,11 +266,30 @@ watch(
 			urlMap.value = null;
 			rawChapters.value = [];
 			loadedContent.value = [];
+			loadFailed.value = true;
 			isLoading.value = false;
 		}
 	},
 	{ immediate: true },
 );
+
+async function retryContent() {
+	if (isLoading.value) return;
+	if (urlMap.value) await parseUrlMap(urlMap.value);
+	else if (docxUrl.value) await parseDocx(docxUrl.value);
+	else {
+		isLoading.value = true;
+		loadFailed.value = false;
+		try {
+			await refreshChapter();
+		} finally {
+			if (!docxUrl.value && !urlMap.value) {
+				isLoading.value = false;
+				loadFailed.value = true;
+			}
+		}
+	}
+}
 
 watch(selectedChapterId, (id) => {
 	if (id && id !== chapterId.value) {

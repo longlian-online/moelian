@@ -25,7 +25,12 @@
 							:class="{ 'content-box--loading': loading }"
 							:aria-busy="loading"
 						>
-							<NovelContentSkeleton v-if="loading" />
+							<NetworkErrorState
+								v-if="loadFailed && !loading"
+								@retry="$emit('retry')"
+								@home="navigateTo('/')"
+							/>
+							<NovelContentSkeleton v-else-if="loading" />
 							<div
 								v-for="(
 									{ content, isCenter, type, label }, index
@@ -180,6 +185,7 @@ import type { WorkDetailChapterItem } from '~/shared/dto/web/work';
  */
 defineProps<{
 	loading?: boolean;
+	loadFailed?: boolean;
 	loadedContent: {
 		content: string;
 		isCenter: boolean;
@@ -205,6 +211,7 @@ defineProps<{
  * @emit openThemeSetting - 点击「阅读设置」按钮时触发，通知父组件打开主题设置对话框
  */
 defineEmits<{
+	retry: [];
 	'update:selectedChapterId': [value: number | null];
 	openThemeSetting: [];
 	shareSelection: [quote: string];

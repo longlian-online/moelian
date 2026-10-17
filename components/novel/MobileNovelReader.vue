@@ -24,7 +24,12 @@
 					:class="{ 'content-box--loading': loading }"
 					:aria-busy="loading"
 				>
-					<NovelContentSkeleton v-if="loading" />
+					<NetworkErrorState
+						v-if="loadFailed && !loading"
+						@retry="$emit('retry')"
+						@home="navigateTo('/')"
+					/>
+					<NovelContentSkeleton v-else-if="loading" />
 					<div
 						v-for="({ content, isCenter, type, label }, index) in loadedContent"
 						:key="index"
@@ -168,6 +173,7 @@ import type { WorkDetailChapterItem } from '~/shared/dto/web/work';
  */
 defineProps<{
 	loading?: boolean;
+	loadFailed?: boolean;
 	loadedContent: {
 		content: string;
 		isCenter: boolean;
@@ -192,6 +198,7 @@ defineProps<{
  * @emit update:selectedChapterId - 章节选择变更时触发，用于 v-model:selectedChapterId 双向绑定
  */
 defineEmits<{
+	retry: [];
 	'update:selectedChapterId': [value: number | null];
 	shareSelection: [quote: string];
 }>();

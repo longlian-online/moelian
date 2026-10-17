@@ -1,5 +1,8 @@
 <template>
-	<div class="detail-main-container" :class="{ 'detail-main-container--mobile': props.mobile }">
+	<div
+		class="detail-main-container"
+		:class="{ 'detail-main-container--mobile': props.mobile }"
+	>
 		<template v-if="pending">
 			<v-skeleton-loader type="image" />
 		</template>
@@ -7,7 +10,12 @@
 			<!-- 左侧 75% 详情区 -->
 			<main class="detail-left-panel">
 				<!-- 作品主卡片 - 强制 flex-row 确保图片和内容左右排列 -->
-				<section :key="workId" ref="notebookElement" class="detail-main-card" :class="{ 'notebook-opening': notebookOpened }">
+				<section
+					:key="workId"
+					ref="notebookElement"
+					class="detail-main-card"
+					:class="{ 'notebook-opening': notebookOpened }"
+				>
 					<!-- 封面图 (左侧) -->
 					<div class="detail-cover-wrapper">
 						<div class="detail-cover-inner">
@@ -297,16 +305,33 @@
 				<div class="detail-recommend-card recommendation-paper">
 					<div class="detail-recommend-header">
 						<h2 class="detail-recommend-title">
-							<svg class="recommendation-orange" viewBox="600 165 300 400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><image href="/moelian-logo.png" width="2172" height="724" /></svg>
+							<svg
+								class="recommendation-orange"
+								viewBox="600 165 300 400"
+								aria-hidden="true"
+								xmlns="http://www.w3.org/2000/svg"
+							>
+								<image href="/moelian-logo.png" width="2172" height="724" />
+							</svg>
 							你可能也喜欢
 						</h2>
-						<NuxtLink class="detail-recommend-more" :to="`/${props.contentType}`">更多 ›</NuxtLink>
+						<NuxtLink
+							class="detail-recommend-more"
+							:to="`/${props.contentType}`"
+							>更多 ›</NuxtLink
+						>
 					</div>
 					<div class="recommendation-list">
-						<NuxtLink v-for="card in recommendationsData" :key="card.id" class="recommendation-item" :to="`/${props.contentType}/${card.id}`">
+						<NuxtLink
+							v-for="card in recommendationsData"
+							:key="card.id"
+							class="recommendation-item"
+							:to="`/${props.contentType}/${card.id}`"
+						>
 							<div class="recommendation-content">
 								<div class="recommendation-cover">
-									<Book3D homepage
+									<Book3D
+										homepage
 										:cover-url="card.coverUrl"
 										:title="card.title"
 										:author="card.author"
@@ -318,16 +343,30 @@
 								</div>
 								<div class="recommendation-info">
 									<h3 class="recommendation-title">{{ card.title }}</h3>
-									<span class="recommendation-author-name">{{ card.author || '未知作者' }}</span>
+									<span class="recommendation-author-name">{{
+										card.author || '未知作者'
+									}}</span>
 									<div class="recommendation-meta">
-										<span :class="{ 'recommendation-meta--finished': card.serialType !== 'Serializing' }">{{ card.serialType === 'Serializing' ? '连载中' : '已完结' }}</span>
+										<span
+											:class="{
+												'recommendation-meta--finished':
+													card.serialType !== 'Serializing',
+											}"
+											>{{
+												card.serialType === 'Serializing' ? '连载中' : '已完结'
+											}}</span
+										>
 										<span>共 {{ card.lastNo ?? 0 }} 章</span>
 									</div>
-									<p class="recommendation-description">{{ card.description || '暂无简介，点击了解作品详情。' }}</p>
+									<p class="recommendation-description">
+										{{ card.description || '暂无简介，点击了解作品详情。' }}
+									</p>
 								</div>
 							</div>
 						</NuxtLink>
-						<p v-if="!recommendationsData?.length" class="recommendation-empty">暂时没有更多推荐</p>
+						<p v-if="!recommendationsData?.length" class="recommendation-empty">
+							暂时没有更多推荐
+						</p>
 					</div>
 				</div>
 			</aside>
@@ -393,22 +432,29 @@ const notebookOpened = ref(false);
 
 // 数据就绪且活页本进入视口时，仅播放一次开书动画。
 onMounted(() => {
-	watch(notebookElement, (element, _, onCleanup) => {
-		notebookOpened.value = false;
-		if (!element) return;
-		if (typeof IntersectionObserver === 'undefined') {
-			notebookOpened.value = true;
-			return;
-		}
-		const observer = new IntersectionObserver((entries) => {
-			if (entries.some(entry => entry.isIntersecting)) {
+	watch(
+		notebookElement,
+		(element, _, onCleanup) => {
+			notebookOpened.value = false;
+			if (!element) return;
+			if (typeof IntersectionObserver === 'undefined') {
 				notebookOpened.value = true;
-				observer.disconnect();
+				return;
 			}
-		}, { threshold: 0.15 });
-		observer.observe(element);
-		onCleanup(() => observer.disconnect());
-	}, { immediate: true, flush: 'post' });
+			const observer = new IntersectionObserver(
+				(entries) => {
+					if (entries.some((entry) => entry.isIntersecting)) {
+						notebookOpened.value = true;
+						observer.disconnect();
+					}
+				},
+				{ threshold: 0.15 },
+			);
+			observer.observe(element);
+			onCleanup(() => observer.disconnect());
+		},
+		{ immediate: true, flush: 'post' },
+	);
 });
 
 const store = useWebWorkStore();
@@ -555,7 +601,8 @@ function handleCoverClick() {
 
 useSeoMeta({
 	title: () =>
-		[workDetail.title, workDetail.author].filter(Boolean).join(' - ') || 'moelian',
+		[workDetail.title, workDetail.author].filter(Boolean).join(' - ') ||
+		'moelian',
 	description: () =>
 		workDetail.description ||
 		`${workDetail.title}，作者：${workDetail.author}。在线查看作品简介与最新章节。`,
@@ -1578,20 +1625,34 @@ useSeoMeta({
 		opacity: 1;
 		background-color: #c19c99;
 		border-color: #d5bcb0;
-		box-shadow: 0 4px 0 -1px #b58d8b, 0 12px 24px rgba(105, 72, 55, 0.1);
+		box-shadow:
+			0 4px 0 -1px #b58d8b,
+			0 12px 24px rgba(105, 72, 55, 0.1);
 	}
 }
 @keyframes notebook-open-left {
-	from { transform: perspective(3000px) rotateY(60deg); }
-	to { transform: perspective(3000px) rotateY(0deg); }
+	from {
+		transform: perspective(3000px) rotateY(60deg);
+	}
+	to {
+		transform: perspective(3000px) rotateY(0deg);
+	}
 }
 @keyframes notebook-open-right {
-	from { transform: perspective(3000px) rotateY(-60deg); }
-	to { transform: perspective(3000px) rotateY(0deg); }
+	from {
+		transform: perspective(3000px) rotateY(-60deg);
+	}
+	to {
+		transform: perspective(3000px) rotateY(0deg);
+	}
 }
 @keyframes notebook-open-rings {
-	from { transform: translateX(-50%) scaleX(0.7); }
-	to { transform: translateX(-50%) scaleX(1); }
+	from {
+		transform: translateX(-50%) scaleX(0.7);
+	}
+	to {
+		transform: translateX(-50%) scaleX(1);
+	}
 }
 @media (prefers-reduced-motion: no-preference) {
 	.detail-main-card.notebook-opening {
@@ -1610,7 +1671,9 @@ useSeoMeta({
 	}
 }
 /* 推荐采用轻量纸质书签栏，避免和主详情重复展示信息。 */
-.detail-right-panel { align-items: flex-start; }
+.detail-right-panel {
+	align-items: flex-start;
+}
 .recommendation-paper {
 	position: relative;
 	height: auto;
@@ -1640,13 +1703,17 @@ useSeoMeta({
 	display: flex;
 	align-items: center;
 	gap: 6px;
-	font-family: "Songti SC", "STSong", serif;
+	font-family: 'Songti SC', 'STSong', serif;
 	font-size: 16px;
 	font-weight: 600;
 	letter-spacing: 0;
 	color: #765b46;
 }
-.recommendation-orange { width: 18px; height: 24px; flex-shrink: 0; }
+.recommendation-orange {
+	width: 18px;
+	height: 24px;
+	flex-shrink: 0;
+}
 .recommendation-paper .detail-recommend-more {
 	font-size: 11px !important;
 	font-weight: 400 !important;
@@ -1654,7 +1721,10 @@ useSeoMeta({
 	white-space: nowrap;
 	color: #a28b73 !important;
 }
-.recommendation-paper .recommendation-list { padding: 0 16px; justify-content: flex-start; }
+.recommendation-paper .recommendation-list {
+	padding: 0 16px;
+	justify-content: flex-start;
+}
 .recommendation-paper .recommendation-item {
 	display: block;
 	padding: 17px 0;
@@ -1663,8 +1733,13 @@ useSeoMeta({
 	text-decoration: none;
 	color: inherit;
 }
-.recommendation-paper .recommendation-item:last-child { border-bottom: 0; }
-.recommendation-paper .recommendation-content { gap: 12px; margin: 0; }
+.recommendation-paper .recommendation-item:last-child {
+	border-bottom: 0;
+}
+.recommendation-paper .recommendation-content {
+	gap: 12px;
+	margin: 0;
+}
 .recommendation-paper .recommendation-cover {
 	width: 78px;
 	height: 110px;
@@ -1673,7 +1748,9 @@ useSeoMeta({
 	box-shadow: 2px 3px 5px rgba(91, 67, 45, 0.1);
 	transition: transform 180ms ease;
 }
-.recommendation-paper .recommendation-info { padding: 2px 0; }
+.recommendation-paper .recommendation-info {
+	padding: 2px 0;
+}
 .recommendation-paper .recommendation-title {
 	font-size: 14px;
 	font-weight: 500;
@@ -1686,12 +1763,25 @@ useSeoMeta({
 	font-weight: 400;
 	color: #aa927b;
 }
-.recommendation-empty { padding: 24px 0; color: #aa927b; font-size: 13px; }
-.recommendation-image-placeholder { width: 100%; height: 100%; background: #e9dfd1; }
-@media (hover: hover) and (prefers-reduced-motion: no-preference) {
-	.recommendation-paper .recommendation-item:hover .recommendation-cover { transform: translateY(-3px); }
+.recommendation-empty {
+	padding: 24px 0;
+	color: #aa927b;
+	font-size: 13px;
 }
-.recommendation-paper .recommendation-item:focus-visible { outline: 2px solid #c3c6af; outline-offset: 3px; }
+.recommendation-image-placeholder {
+	width: 100%;
+	height: 100%;
+	background: #e9dfd1;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+	.recommendation-paper .recommendation-item:hover .recommendation-cover {
+		transform: translateY(-3px);
+	}
+}
+.recommendation-paper .recommendation-item:focus-visible {
+	outline: 2px solid #c3c6af;
+	outline-offset: 3px;
+}
 .recommendation-meta {
 	display: flex;
 	flex-wrap: wrap;
@@ -1701,8 +1791,12 @@ useSeoMeta({
 	line-height: 1.5;
 	color: #a28b73;
 }
-.recommendation-meta > span:first-child { color: #cc8c91; }
-.recommendation-meta > .recommendation-meta--finished:first-child { color: #8d9c7c; }
+.recommendation-meta > span:first-child {
+	color: #cc8c91;
+}
+.recommendation-meta > .recommendation-meta--finished:first-child {
+	color: #8d9c7c;
+}
 .recommendation-description {
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
@@ -1724,7 +1818,9 @@ useSeoMeta({
 	height: 110px;
 	margin: 0;
 }
-.recommendation-paper .recommendation-cover :deep(.book-3d-container.book-3d-home .book-3d-wrapper) {
+.recommendation-paper
+	.recommendation-cover
+	:deep(.book-3d-container.book-3d-home .book-3d-wrapper) {
 	width: 100% !important;
 	max-width: 100%;
 }
@@ -1788,14 +1884,23 @@ useSeoMeta({
 	border-width: 2px;
 	border-radius: 0 0 2px 2px;
 }
-.detail-main-container--mobile .detail-title-row { gap: 8px; margin-bottom: 20px; }
+.detail-main-container--mobile .detail-title-row {
+	gap: 8px;
+	margin-bottom: 20px;
+}
 .detail-main-container--mobile .yuri-title {
 	font-size: 24px;
 	white-space: normal;
 	overflow-wrap: anywhere;
 }
-.detail-main-container--mobile .share-btn { padding: 0 8px !important; font-size: 12px !important; }
-.detail-main-container--mobile .detail-info-row { flex-wrap: wrap; gap: 12px; }
+.detail-main-container--mobile .share-btn {
+	padding: 0 8px !important;
+	font-size: 12px !important;
+}
+.detail-main-container--mobile .detail-info-row {
+	flex-wrap: wrap;
+	gap: 12px;
+}
 .detail-main-container--mobile .detail-info-item-full {
 	display: block;
 	width: 100%;
@@ -1803,13 +1908,31 @@ useSeoMeta({
 	max-width: 100%;
 	margin-bottom: 20px;
 }
-.detail-main-container--mobile .detail-info-content .info-content { overflow-wrap: anywhere; }
-.detail-main-container--mobile .detail-action-button { justify-content: center; }
-.detail-main-container--mobile .start-read-btn { width: 100%; padding-inline: 12px !important; }
-.detail-main-container--mobile .notebook-page-footer { left: 18px; right: 18px; bottom: 16px; }
-.detail-main-container--mobile .detail-chapter-section { padding: 18px 14px; }
-.detail-main-container--mobile .detail-right-panel { width: 100%; padding-left: 0; }
-.detail-main-container--mobile .recommendation-paper { margin-top: 0; }
+.detail-main-container--mobile .detail-info-content .info-content {
+	overflow-wrap: anywhere;
+}
+.detail-main-container--mobile .detail-action-button {
+	justify-content: center;
+}
+.detail-main-container--mobile .start-read-btn {
+	width: 100%;
+	padding-inline: 12px !important;
+}
+.detail-main-container--mobile .notebook-page-footer {
+	left: 18px;
+	right: 18px;
+	bottom: 16px;
+}
+.detail-main-container--mobile .detail-chapter-section {
+	padding: 18px 14px;
+}
+.detail-main-container--mobile .detail-right-panel {
+	width: 100%;
+	padding-left: 0;
+}
+.detail-main-container--mobile .recommendation-paper {
+	margin-top: 0;
+}
 .detail-main-container--mobile .recommendation-list {
 	flex-direction: column;
 	gap: 0;
@@ -1822,18 +1945,32 @@ useSeoMeta({
 	min-width: 0;
 	border-bottom: 1px dashed #e5dacb;
 }
-.detail-main-container--mobile .recommendation-item:last-child { border-bottom: 0; }
+.detail-main-container--mobile .recommendation-item:last-child {
+	border-bottom: 0;
+}
 @keyframes notebook-open-top {
-	from { transform: perspective(1000px) rotateX(-50deg); }
-	to { transform: perspective(1000px) rotateX(0deg); }
+	from {
+		transform: perspective(1000px) rotateX(-50deg);
+	}
+	to {
+		transform: perspective(1000px) rotateX(0deg);
+	}
 }
 @keyframes notebook-open-bottom {
-	from { transform: perspective(1000px) rotateX(50deg); }
-	to { transform: perspective(1000px) rotateX(0deg); }
+	from {
+		transform: perspective(1000px) rotateX(50deg);
+	}
+	to {
+		transform: perspective(1000px) rotateX(0deg);
+	}
 }
 @keyframes notebook-open-rings-mobile {
-	from { transform: scaleY(0.55); }
-	to { transform: scaleY(1); }
+	from {
+		transform: scaleY(0.55);
+	}
+	to {
+		transform: scaleY(1);
+	}
 }
 @media (prefers-reduced-motion: no-preference) {
 	.detail-main-container--mobile .notebook-opening .detail-cover-wrapper {

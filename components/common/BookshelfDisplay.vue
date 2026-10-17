@@ -722,6 +722,7 @@ const bookUrl = (work: ShelfWork) =>
 }
 .shelf-page--mobile .shelf-book-title {
 	display: -webkit-box;
+	line-clamp: 2;
 	-webkit-line-clamp: 2;
 	-webkit-box-orient: vertical;
 	white-space: normal;
