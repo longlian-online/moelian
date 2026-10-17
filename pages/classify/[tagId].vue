@@ -5,7 +5,7 @@
 			<p>正在寻找相关作品…</p>
 		</div>
 		<div v-else-if="!works.length" class="category-empty" role="status">
-			<img src="/image.png" alt="moelian" class="category-empty-logo" />
+			<img src="/moelian-logo.png" alt="moelian" class="category-empty-logo" />
 			<h2>暂时没有找到相关作品</h2>
 			<p>试试减少标签，或换个关键词吧。</p>
 			<v-btn variant="text" color="primary" @click="clearFilters">查看全部作品</v-btn>

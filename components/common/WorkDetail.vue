@@ -39,7 +39,7 @@
 							</Book3D>
 						</div>
 						<div class="notebook-page-footer" aria-hidden="true">
-							<img src="/image.png" class="notebook-logo" alt="" />
+							<img src="/moelian-logo.png" class="notebook-logo" alt="" />
 							<span class="notebook-page-number">01</span>
 						</div>
 					</div>
@@ -297,7 +297,7 @@
 				<div class="detail-recommend-card recommendation-paper">
 					<div class="detail-recommend-header">
 						<h2 class="detail-recommend-title">
-							<svg class="recommendation-orange" viewBox="600 165 300 400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><image href="/image.png" width="2172" height="724" /></svg>
+							<svg class="recommendation-orange" viewBox="600 165 300 400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><image href="/moelian-logo.png" width="2172" height="724" /></svg>
 							你可能也喜欢
 						</h2>
 						<NuxtLink class="detail-recommend-more" :to="`/${props.contentType}`">更多 ›</NuxtLink>

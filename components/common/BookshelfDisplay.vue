@@ -13,7 +13,7 @@
 									viewBox="600 165 300 400"
 									xmlns="http://www.w3.org/2000/svg"
 								>
-									<image href="/image.png" width="2172" height="724" />
+									<image href="/moelian-logo.png" width="2172" height="724" />
 								</svg>
 							</div>
 						</div>
@@ -95,7 +95,7 @@
 							viewBox="600 165 300 400"
 							xmlns="http://www.w3.org/2000/svg"
 						>
-							<image href="/image.png" width="2172" height="724" />
+							<image href="/moelian-logo.png" width="2172" height="724" />
 						</svg>
 					</div>
 				</div>

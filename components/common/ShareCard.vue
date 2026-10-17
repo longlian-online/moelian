@@ -254,7 +254,7 @@ async function generateCard() {
 		ctx.fillRect(0, 0, POSTER_WIDTH, POSTER_HEIGHT);
 		ctx.translate(-70, -80);
 		try {
-			const headerLogo = await loadImage('/image.png', 'anonymous');
+			const headerLogo = await loadImage('/moelian-logo.png', 'anonymous');
 			ctx.save();
 			ctx.globalCompositeOperation = 'multiply';
 			drawImageContain(ctx, headerLogo, 180, 96, 220, 70);

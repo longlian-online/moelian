@@ -51,7 +51,7 @@
 							>
 								<img
 									class="skeleton-cover-symbol"
-									src="/image.png"
+									src="/moelian-logo.png"
 									alt=""
 									aria-hidden="true"
 								/>
