@@ -97,85 +97,7 @@
 					<p class="empty-desc">请尝试调整筛选条件或减少标签选择</p>
 				</div>
 
-				<div v-else class="work-grid">
-					<div
-						v-for="work in workList"
-						:key="work.id"
-						class="work-card"
-						@click="handleWorkClick(work)"
-					>
-						<div class="card-cover">
-							<Book3D
-								:cover-url="work.coverUrl"
-								:title="work.title"
-								:author="work.author"
-								:height="280"
-								:width="180"
-								:spine-width="30"
-								:show-title="false"
-								:show-spine-text="false"
-								:to="`/${work.type === ContentType.Manga ? 'manga' : 'novel'}/${work.id}`"
-								@click.stop="handleWorkClick(work)"
-							>
-								<template #overlay>
-									<AnimeTags
-										v-if="work.tags && work.tags.length > 0"
-										:tags="work.tags"
-										size="small"
-										position="bottom-left"
-									/>
-								</template>
-							</Book3D>
-						</div>
-						<div class="card-body">
-							<h3 v-tooltip="work.title" v-copy="work.title" class="card-title">
-								{{ work.title }}
-							</h3>
-
-							<div class="meta-group">
-								<div class="meta-line color-pink">
-									<span class="m-tag">BY</span>
-									<span class="m-val">{{ work.author }}</span>
-									<div class="m-line"></div>
-								</div>
-								<div class="meta-line color-purple">
-									<span class="m-tag">LAST</span>
-									<span class="m-val">
-										{{
-											work.lastNo
-												? `第 ${work.lastNo} ${work.type === ContentType.Manga ? '话' : '章'}`
-												: '暂无章节'
-										}}
-									</span>
-									<div class="m-line"></div>
-								</div>
-							</div>
-
-							<div
-								v-tooltip="work.description"
-								v-copy="work.description"
-								class="card-excerpt"
-							>
-								{{ work.description || '暂无简介' }}
-							</div>
-
-							<div class="card-footer">
-								<div class="index-container">
-									<div class="index-head">
-										<span class="index-lbl">章节数</span>
-										<span class="index-val">{{ work.lastNo ?? 0 }} 章</span>
-									</div>
-									<div class="index-bar">
-										<div
-											class="index-fill"
-											:style="{ width: `${Math.min(100, work.lastNo ?? 0)}%` }"
-										></div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
+				<BookshelfDisplay v-else :works="workList" :mobile="isMobile" />
 
 				<template #fallback>
 					<div class="loading-container">
@@ -195,7 +117,7 @@
 import type { WorkListRes } from '~/shared/dto/web/work';
 import type { TagWebItem } from '~/shared/dto/web';
 import { ContentType } from '_db';
-import Book3D from '~/components/common/Book3D.vue';
+const { isMobile } = useDevice();
 import AnimeTags from '~/components/common/AnimeTags.vue';
 
 const route = useRoute();
@@ -418,12 +340,6 @@ const refreshWorkList = () => {
 	if (!contentType.value || contentType.value === ContentType.Novel) {
 		refreshNovel();
 	}
-};
-
-// 处理作品点击
-const handleWorkClick = (work: WorkListRes['list'][0]) => {
-	const routeType = work.type === ContentType.Manga ? 'manga' : 'novel';
-	router.push(`/${routeType}/${work.id}`);
 };
 
 useHead({
@@ -795,6 +711,43 @@ useHead({
 	.filter-label {
 		font-size: 10px;
 		margin-bottom: 4px;
+	}
+}
+</style>
+
+<style scoped>
+.classify-result-page {
+	background: #eef0e9;
+}
+.main-container {
+	max-width: none;
+	padding: 24px 0 0;
+}
+.filter-bar {
+	max-width: 1180px;
+	margin: 0 auto 24px;
+	background: #fffaf0;
+	border-radius: 5px;
+	border-color: #e3dccd;
+	box-shadow: 0 4px 14px -10px #8d8065;
+}
+.filter-label {
+	color: #93836b;
+	font-family: 'Songti SC', 'SimSun', serif;
+	font-weight: 500;
+}
+.filter-group :deep(.v-field) {
+	background: #f8f3e9;
+	border-width: 1px;
+	border-color: #e3dccd;
+	border-radius: 4px;
+}
+@media (max-width: 640px) {
+	.main-container {
+		padding-top: 16px;
+	}
+	.filter-bar {
+		margin: 0 12px 20px;
 	}
 }
 </style>

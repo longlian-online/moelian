@@ -4,6 +4,7 @@
 			v-if="isMobile"
 			v-model:selected-chapter-id="selectedChapterId"
 			:loaded-content="loadedContent"
+			:loading="isLoading"
 			:chapters="chapters"
 			:is-first-chapter="isFirstChapter"
 			:is-last-chapter="isLastChapter"
@@ -19,6 +20,7 @@
 			v-else
 			v-model:selected-chapter-id="selectedChapterId"
 			:loaded-content="loadedContent"
+			:loading="isLoading"
 			:chapters="chapters"
 			:is-first-chapter="isFirstChapter"
 			:is-last-chapter="isLastChapter"
@@ -74,7 +76,7 @@ const loadedContent = ref<
 		label?: string;
 	}[]
 >([]);
-const isLoading = ref(false);
+const isLoading = ref(true);
 const selectedChapterId = ref<number | null>(null);
 const isNavbarVisible = inject('isNavbarVisible') as Ref<boolean>;
 const { isMobile } = useDevice();
@@ -243,6 +245,8 @@ watch(
 					await parseUrlMap(urlMap.value);
 				} else if (docxUrl.value) {
 					await parseDocx(docxUrl.value);
+				} else {
+					isLoading.value = false;
 				}
 			}
 		} else {
@@ -250,6 +254,7 @@ watch(
 			urlMap.value = null;
 			rawChapters.value = [];
 			loadedContent.value = [];
+			isLoading.value = false;
 		}
 	},
 	{ immediate: true },
@@ -275,6 +280,11 @@ const currentChapter = computed(() => {
 	);
 });
 
+const getNovelTopInset = () => {
+	const bar = document.querySelector<HTMLElement>('[data-novel-top-bar]');
+	return bar ? Math.max(0, bar.getBoundingClientRect().bottom) : 0;
+};
+
 const measureNovelPosition = () => {
 	const maxScroll = Math.max(
 		0,
@@ -285,12 +295,16 @@ const measureNovelPosition = () => {
 		document.querySelectorAll<HTMLElement>('[data-reading-block]'),
 	);
 	const anchor =
-		blocks.find((element) => element.getBoundingClientRect().bottom > 0) ??
-		blocks.at(-1);
+		blocks.find(
+			(element) => element.getBoundingClientRect().bottom > getNovelTopInset(),
+		) ?? blocks.at(-1);
 	const anchorIndex = Number(anchor?.dataset.readingBlock ?? 0);
 	const rect = anchor?.getBoundingClientRect();
 	const offsetRatio = rect
-		? Math.min(1, Math.max(0, -rect.top / Math.max(1, rect.height)))
+		? Math.min(
+				1,
+				Math.max(0, (getNovelTopInset() - rect.top) / Math.max(1, rect.height)),
+			)
 		: 0;
 
 	pendingNovelPosition = {
@@ -332,8 +346,16 @@ const restoreNovelProgress = () => {
 		const top =
 			window.scrollY +
 			anchor.getBoundingClientRect().top +
-			anchor.offsetHeight * initialNovelPosition.offsetRatio;
-		window.scrollTo({ top, behavior: 'auto' });
+			anchor.offsetHeight * initialNovelPosition.offsetRatio -
+			getNovelTopInset();
+		window.scrollTo({
+			top:
+				initialNovelPosition.anchorIndex === 0 &&
+				initialNovelPosition.offsetRatio === 0
+					? 0
+					: Math.max(0, top),
+			behavior: 'auto',
+		});
 	} else {
 		const maxScroll = Math.max(
 			0,
@@ -475,5 +497,4 @@ useSeoMeta({
 	twitterTitle: () => chapterSeoTitle.value,
 	twitterDescription: () => chapterSeoDescription.value,
 });
-
 </script>

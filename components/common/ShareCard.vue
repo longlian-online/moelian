@@ -64,49 +64,24 @@ const isGenerating = ref(false);
 const POSTER_WIDTH = 760;
 const POSTER_HEIGHT = 1110;
 const DESIGN_WIDTH = 900;
-const SPINE_TEXTURE_WIDTH = 50;
-const SPINE_WIDTH = 36;
 const COVER_X = 218;
 const COVER_Y = 182;
 const COVER_WIDTH = 500;
 const COVER_HEIGHT = 750;
 
-function getBookCoverSource(image: HTMLImageElement) {
-	const targetRatio = (COVER_WIDTH + SPINE_TEXTURE_WIDTH) / COVER_HEIGHT;
-	const imageRatio = image.naturalWidth / image.naturalHeight;
-	let sourceX = 0;
-	let sourceY = 0;
-	let sourceWidth = image.naturalWidth;
-	let sourceHeight = image.naturalHeight;
-	if (imageRatio > targetRatio) {
-		sourceWidth = image.naturalHeight * targetRatio;
-		sourceX = (image.naturalWidth - sourceWidth) / 2;
-	} else {
-		sourceHeight = image.naturalWidth / targetRatio;
-		sourceY = (image.naturalHeight - sourceHeight) / 2;
-	}
-	const spineSourceWidth =
-		sourceWidth * (SPINE_TEXTURE_WIDTH / (COVER_WIDTH + SPINE_TEXTURE_WIDTH));
-	return {
-		sourceX,
-		sourceY,
-		sourceWidth,
-		sourceHeight,
-		spineSourceWidth,
-	};
-}
-
 function drawBookCoverFront(
 	ctx: CanvasRenderingContext2D,
 	image: HTMLImageElement,
 ) {
-	const source = getBookCoverSource(image);
+	const ratio = COVER_WIDTH / COVER_HEIGHT;
+	const sourceWidth = Math.min(image.naturalWidth, image.naturalHeight * ratio);
+	const sourceHeight = sourceWidth / ratio;
 	ctx.drawImage(
 		image,
-		source.sourceX + source.spineSourceWidth,
-		source.sourceY,
-		source.sourceWidth - source.spineSourceWidth,
-		source.sourceHeight,
+		(image.naturalWidth - sourceWidth) / 2,
+		(image.naturalHeight - sourceHeight) / 2,
+		sourceWidth,
+		sourceHeight,
 		COVER_X,
 		COVER_Y,
 		COVER_WIDTH,
@@ -241,87 +216,28 @@ function drawFallbackCover(ctx: CanvasRenderingContext2D) {
 	ctx.fillText('发现值得阅读的故事', DESIGN_WIDTH / 2, 555);
 }
 
-function drawBookStructure(
-	ctx: CanvasRenderingContext2D,
-	cover?: HTMLImageElement,
-) {
+// 与新版 Book3D 一致：封面正放，右后方叠两层薄纸页。
+function drawBookStructure(ctx: CanvasRenderingContext2D) {
 	ctx.save();
-	ctx.shadowColor = 'rgba(71, 53, 49, 0.34)';
-	ctx.shadowBlur = 30;
-	ctx.shadowOffsetX = 12;
-	ctx.shadowOffsetY = 20;
-	ctx.fillStyle = 'rgba(71, 53, 49, 0.1)';
-	roundedRect(
-		ctx,
-		COVER_X - SPINE_WIDTH,
-		COVER_Y + 8,
-		COVER_WIDTH + SPINE_WIDTH + 16,
-		COVER_HEIGHT + 14,
-		18,
-	);
-	ctx.fill();
-	ctx.restore();
-
-	ctx.fillStyle = '#eee7e3';
-	ctx.beginPath();
-	ctx.moveTo(COVER_X + COVER_WIDTH, COVER_Y + 12);
-	ctx.lineTo(COVER_X + COVER_WIDTH + 15, COVER_Y + 24);
-	ctx.lineTo(COVER_X + COVER_WIDTH + 15, COVER_Y + COVER_HEIGHT - 6);
-	ctx.lineTo(COVER_X + COVER_WIDTH, COVER_Y + COVER_HEIGHT);
-	ctx.closePath();
-	ctx.fill();
-	for (let offset = 0; offset < 10; offset += 3) {
-		ctx.strokeStyle = `rgba(155, 127, 127, ${0.2 - offset * 0.01})`;
-		ctx.beginPath();
-		ctx.moveTo(COVER_X + COVER_WIDTH + offset, COVER_Y + 34);
-		ctx.lineTo(COVER_X + COVER_WIDTH + offset, COVER_Y + COVER_HEIGHT - 18);
-		ctx.stroke();
-	}
-
-	ctx.save();
-	ctx.beginPath();
-	ctx.moveTo(COVER_X - SPINE_WIDTH, COVER_Y + 30);
-	ctx.lineTo(COVER_X, COVER_Y);
-	ctx.lineTo(COVER_X, COVER_Y + COVER_HEIGHT);
-	ctx.lineTo(COVER_X - SPINE_WIDTH, COVER_Y + COVER_HEIGHT - 30);
-	ctx.closePath();
-	ctx.clip();
-	if (cover) {
-		const source = getBookCoverSource(cover);
-		ctx.drawImage(
-			cover,
-			source.sourceX,
-			source.sourceY,
-			source.spineSourceWidth,
-			source.sourceHeight,
-			COVER_X - SPINE_WIDTH,
-			COVER_Y,
-			SPINE_WIDTH,
+	ctx.shadowColor = 'rgba(71, 53, 49, 0.16)';
+	ctx.shadowBlur = 22;
+	ctx.shadowOffsetY = 12;
+	for (const [offset, color] of [
+		[24, '#e3dfe1'],
+		[12, '#eeedee'],
+	] as const) {
+		ctx.fillStyle = color;
+		roundedRect(
+			ctx,
+			COVER_X + offset,
+			COVER_Y + offset,
+			COVER_WIDTH,
 			COVER_HEIGHT,
+			14,
 		);
-	} else {
-		ctx.fillStyle = '#c98596';
-		ctx.fillRect(COVER_X - SPINE_WIDTH, COVER_Y, SPINE_WIDTH, COVER_HEIGHT);
+		ctx.fill();
 	}
-	const spineShade = ctx.createLinearGradient(
-		COVER_X - SPINE_WIDTH,
-		0,
-		COVER_X,
-		0,
-	);
-	spineShade.addColorStop(0, 'rgba(61, 39, 44, 0.56)');
-	spineShade.addColorStop(0.7, 'rgba(61, 39, 44, 0.18)');
-	spineShade.addColorStop(1, 'rgba(255, 255, 255, 0.16)');
-	ctx.fillStyle = spineShade;
-	ctx.fillRect(COVER_X - SPINE_WIDTH, COVER_Y, SPINE_WIDTH, COVER_HEIGHT);
 	ctx.restore();
-
-	ctx.strokeStyle = 'rgba(255, 255, 255, 0.68)';
-	ctx.lineWidth = 3;
-	ctx.beginPath();
-	ctx.moveTo(COVER_X + 3, COVER_Y + 18);
-	ctx.lineTo(COVER_X + 3, COVER_Y + COVER_HEIGHT - 18);
-	ctx.stroke();
 }
 
 async function generateCard() {
@@ -379,7 +295,7 @@ async function generateCard() {
 				coverImage = undefined;
 			}
 		}
-		drawBookStructure(ctx, coverImage);
+		drawBookStructure(ctx);
 		ctx.save();
 		roundedRect(ctx, COVER_X, COVER_Y, COVER_WIDTH, COVER_HEIGHT, 14);
 		ctx.clip();
