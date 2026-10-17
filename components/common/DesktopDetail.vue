@@ -1,5 +1,5 @@
 <template>
-	<div class="detail-main-container">
+	<div class="detail-main-container" :class="{ 'detail-main-container--mobile': props.mobile }">
 		<template v-if="pending">
 			<v-skeleton-loader type="image" />
 		</template>
@@ -367,6 +367,7 @@ import type {
 import dayjs from 'dayjs';
 
 const props = defineProps({
+	mobile: { type: Boolean, default: false },
 	recommendedTitle: {
 		type: String,
 		required: true,
@@ -1726,5 +1727,125 @@ useSeoMeta({
 .recommendation-paper .recommendation-cover :deep(.book-3d-container.book-3d-home .book-3d-wrapper) {
 	width: 100% !important;
 	max-width: 100%;
+}
+/* 手机沿用同一本活页本，将左右页改为上下页，装订环横排。 */
+.detail-main-container--mobile {
+	flex-direction: column;
+	padding: 24px 12px;
+	min-height: 0;
+	gap: 24px;
+}
+.detail-main-container--mobile .detail-left-panel {
+	width: 100%;
+	padding-right: 0;
+	gap: 24px;
+}
+.detail-main-container--mobile .detail-main-card {
+	grid-template-columns: minmax(0, 1fr);
+	gap: 0;
+	padding: 5px;
+	border-width: 4px;
+	border-radius: 9px;
+}
+.detail-main-container--mobile .detail-main-card .detail-cover-wrapper {
+	padding: 32px 30px 62px;
+	min-height: 360px;
+	border-radius: 2px 2px 0 0;
+}
+.detail-main-container--mobile .detail-main-card .detail-cover-inner {
+	width: 80%;
+	max-width: 240px;
+}
+.detail-main-container--mobile .detail-cover-wrapper::after {
+	top: auto;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	width: 100%;
+	height: 28px;
+	background: linear-gradient(transparent, rgba(124, 88, 72, 0.13));
+}
+.detail-main-container--mobile .notebook-binding {
+	position: relative;
+	left: auto;
+	top: auto;
+	bottom: auto;
+	width: 100%;
+	height: 24px;
+	transform: none;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-evenly;
+}
+.detail-main-container--mobile .notebook-ring {
+	width: 39px;
+	height: 24px;
+	transform: rotate(90deg);
+	flex-shrink: 1;
+}
+.detail-main-container--mobile .detail-main-card .detail-info-wrapper {
+	padding: 36px 18px 24px;
+	border-width: 2px;
+	border-radius: 0 0 2px 2px;
+}
+.detail-main-container--mobile .detail-title-row { gap: 8px; margin-bottom: 20px; }
+.detail-main-container--mobile .yuri-title {
+	font-size: 24px;
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+.detail-main-container--mobile .share-btn { padding: 0 8px !important; font-size: 12px !important; }
+.detail-main-container--mobile .detail-info-row { flex-wrap: wrap; gap: 12px; }
+.detail-main-container--mobile .detail-info-item-full {
+	display: block;
+	width: 100%;
+	min-width: 0;
+	max-width: 100%;
+	margin-bottom: 20px;
+}
+.detail-main-container--mobile .detail-info-content .info-content { overflow-wrap: anywhere; }
+.detail-main-container--mobile .detail-action-button { justify-content: center; }
+.detail-main-container--mobile .start-read-btn { width: 100%; padding-inline: 12px !important; }
+.detail-main-container--mobile .notebook-page-footer { left: 18px; right: 18px; bottom: 16px; }
+.detail-main-container--mobile .detail-chapter-section { padding: 18px 14px; }
+.detail-main-container--mobile .detail-right-panel { width: 100%; padding-left: 0; }
+.detail-main-container--mobile .recommendation-paper { margin-top: 0; }
+.detail-main-container--mobile .recommendation-list {
+	flex-direction: column;
+	gap: 0;
+	overflow-x: visible;
+	padding: 0 16px;
+}
+.detail-main-container--mobile .recommendation-item {
+	flex: 0 0 auto;
+	width: 100%;
+	min-width: 0;
+	border-bottom: 1px dashed #e5dacb;
+}
+.detail-main-container--mobile .recommendation-item:last-child { border-bottom: 0; }
+@keyframes notebook-open-top {
+	from { transform: perspective(1000px) rotateX(-50deg); }
+	to { transform: perspective(1000px) rotateX(0deg); }
+}
+@keyframes notebook-open-bottom {
+	from { transform: perspective(1000px) rotateX(50deg); }
+	to { transform: perspective(1000px) rotateX(0deg); }
+}
+@keyframes notebook-open-rings-mobile {
+	from { transform: scaleY(0.55); }
+	to { transform: scaleY(1); }
+}
+@media (prefers-reduced-motion: no-preference) {
+	.detail-main-container--mobile .notebook-opening .detail-cover-wrapper {
+		transform-origin: center bottom;
+		animation-name: notebook-open-top;
+	}
+	.detail-main-container--mobile .notebook-opening .detail-info-wrapper {
+		transform-origin: center top;
+		animation-name: notebook-open-bottom;
+	}
+	.detail-main-container--mobile .notebook-opening .notebook-binding {
+		animation-name: notebook-open-rings-mobile;
+	}
 }
 </style>
