@@ -1,289 +1,129 @@
 <template>
-	<v-container
-		fluid
-		class="shelf-page"
-		:class="{ 'shelf-page--mobile': props.mobile }"
-	>
-		<v-row justify="center" class="content-row">
-			<v-col>
-				<!-- 加载状态 -->
-				<template v-if="!workState.data">
-					<div class="d-flex align-center flex-wrap" style="flex-wrap: wrap">
+	<div class="shelf-display" :class="{ 'shelf-page--mobile': props.mobile }">
+		<v-card class="mx-auto my-card-container bookshelf" flat>
+			<slot />
+
+			<template v-for="(shelf, shelfIndex) in shelves" :key="shelfIndex">
+				<v-row dense class="cards-grid" no-gutters>
+					<div class="shelf-decoration" aria-hidden="true">
+						<div v-for="n in 3" :key="n" class="decoration-spine">
+							<div class="spine-brand">
+								<svg
+									class="spine-brand-orange"
+									viewBox="600 165 300 400"
+									xmlns="http://www.w3.org/2000/svg"
+								>
+									<image href="/moelian-logo.png" width="2172" height="724" />
+								</svg>
+							</div>
+						</div>
+					</div>
+					<div class="shelf-books-grid">
 						<v-col
-							v-for="n in 8"
-							:key="n"
-							class="mb-4 px-2"
-							:cols="props.mobile ? 6 : 12"
+							v-for="card in shelf"
+							:key="card.id"
+							class="mb-4 book-col"
+							cols="12"
 							sm="6"
 							md="3"
+							lg="3"
+							xl="3"
+							style="padding: 0 2px"
 						>
-							<v-skeleton-loader
-								type="image"
-								:height="400"
-								class="skeleton-book"
-							/>
+							<v-card ripple class="my-card">
+								<div class="book-preview">
+									<Book3D
+										homepage
+										:cover-url="card.coverUrl"
+										:title="card.title"
+										:author="card.author"
+										:spine-width="50"
+										:width="260"
+										:height="400"
+										:show-title="false"
+										:to="bookUrl(card)"
+									>
+									</Book3D>
+								</div>
+
+								<v-tooltip
+									v-if="!props.mobile"
+									activator="parent"
+									location="top"
+									:open-delay="300"
+									:max-width="320"
+									content-class="shelf-work-tooltip"
+								>
+									<div class="shelf-tooltip-title">{{ card.title }}</div>
+									<div>作者：{{ card.author || '未知' }}</div>
+									<div>
+										{{
+											card.serialType === 'Serializing' ? '连载中' : '已完结'
+										}}
+										· {{ card.lastNo ?? 0 }} 章
+									</div>
+								</v-tooltip>
+							</v-card>
 						</v-col>
 					</div>
-				</template>
-
-				<template v-else-if="totalItems === 0">
-					<v-alert
-						type="info"
-						icon="mdi-magnify-remove-outline"
-						variant="tonal"
-						class="mt-10 pa-6"
-					>
-						<h3 class="text-h6 mb-2">抱歉，没有找到相关作品</h3>
-						<p>
-							请尝试更换关键词 **「{{ workState.searchKey }}」**
-							或清除搜索内容后再次查找。
-						</p>
-					</v-alert>
-				</template>
-
-				<template v-else>
-					<VInfiniteScroll :key="`${props.contentType}-${listRevision}`" class="bookshelf-infinite" :margin="240" @load="loadMoreWorks">
-					<v-card class="mx-auto my-card-container bookshelf" flat>
-						<nav
-							v-if="props.mobile"
-							class="mobile-bookshelf-tabs"
-							aria-label="作品类型"
+				</v-row>
+				<div class="shelf-board">
+					<div class="shelf-labels">
+						<NuxtLink
+							v-for="card in shelf"
+							:key="card.id"
+							:to="bookUrl(card)"
+							class="shelf-title-label"
+							:title="`${card.title} · ${card.author || '未知作者'}`"
 						>
-							<NuxtLink
-								to="/manga"
-								class="mobile-bookshelf-tab"
-								:class="{
-									'mobile-bookshelf-tab--active': props.contentType === 'manga',
-								}"
-								:aria-current="
-									props.contentType === 'manga' ? 'page' : undefined
-								"
-								>漫画</NuxtLink
-							>
-							<NuxtLink
-								to="/novel"
-								class="mobile-bookshelf-tab"
-								:class="{
-									'mobile-bookshelf-tab--active': props.contentType === 'novel',
-								}"
-								:aria-current="
-									props.contentType === 'novel' ? 'page' : undefined
-								"
-								>小说</NuxtLink
-							>
-						</nav>
-						<template v-for="(shelf, shelfIndex) in shelves" :key="shelfIndex">
-							<v-row dense class="cards-grid" no-gutters>
-								<div class="shelf-decoration" aria-hidden="true">
-									<div v-for="n in 3" :key="n" class="decoration-spine">
-										<div class="spine-brand">
-											<svg
-												class="spine-brand-orange"
-												viewBox="600 165 300 400"
-												xmlns="http://www.w3.org/2000/svg"
-											>
-												<image href="/image.png" width="2172" height="724" />
-											</svg>
-										</div>
-									</div>
-								</div>
-								<div class="shelf-books-grid">
-									<v-col
-										v-for="card in shelf"
-										:key="card.id"
-										class="mb-4 book-col"
-										cols="12"
-										sm="6"
-										md="3"
-										lg="3"
-										xl="3"
-										style="padding: 0 2px"
-									>
-										<v-card ripple class="my-card">
-											<div class="book-preview">
-												<Book3D
-													homepage
-													:cover-url="card.coverUrl"
-													:title="card.title"
-													:author="card.author"
-													:spine-width="50"
-													:width="260"
-													:height="400"
-													:show-title="false"
-													:to="`/${props.contentType}/${card.id}`"
-													@click="handleBookClick(card.id)"
-												>
-												</Book3D>
-											</div>
+							<span class="shelf-book-title">{{ card.title }}</span>
+							<span class="shelf-book-author">{{
+								card.author || '未知作者'
+							}}</span>
+						</NuxtLink>
+					</div>
 
-											<v-tooltip
-												v-if="!props.mobile"
-												activator="parent"
-												location="top"
-												:open-delay="300"
-												:max-width="320"
-												content-class="shelf-work-tooltip"
-											>
-												<div class="shelf-tooltip-title">{{ card.title }}</div>
-												<div>作者：{{ card.author || '未知' }}</div>
-												<div>
-													{{
-														card.serialType === 'Serializing'
-															? '连载中'
-															: '已完结'
-													}}
-													· {{ card.lastNo ?? 0 }} 章
-												</div>
-											</v-tooltip>
-										</v-card>
-									</v-col>
-								</div>
-							</v-row>
-							<div class="shelf-board">
-								<div class="shelf-labels">
-									<NuxtLink
-										v-for="card in shelf"
-										:key="card.id"
-										:to="`/${props.contentType}/${card.id}`"
-										class="shelf-title-label"
-										:title="`${card.title} · ${card.author || '未知作者'}`"
-									>
-										<span class="shelf-book-title">{{ card.title }}</span>
-										<span class="shelf-book-author">{{
-											card.author || '未知作者'
-										}}</span>
-									</NuxtLink>
-								</div>
-
-								<div
-									v-for="side in ['left', 'right']"
-									:key="side"
-									class="shelf-bracket"
-									aria-hidden="true"
-									:class="`shelf-bracket--${side}`"
-								>
-									<svg
-										class="shelf-bracket-orange"
-										viewBox="600 165 300 400"
-										xmlns="http://www.w3.org/2000/svg"
-									>
-										<image href="/image.png" width="2172" height="724" />
-									</svg>
-								</div>
-							</div>
-						</template>
-					</v-card>
-					<template #loading>
-						<div class="bookshelf-load-status"><v-progress-circular indeterminate :size="20" :width="2" /> 正在加载更多作品…</div>
-					</template>
-					<template #empty><div class="bookshelf-load-status">已经看到最后一本了</div></template>
-					<template #error="{ props: retryProps }">
-						<v-btn v-bind="retryProps" variant="text" class="bookshelf-load-status">加载失败，点击重试</v-btn>
-					</template>
-					</VInfiniteScroll>
-				</template>
-			</v-col>
-		</v-row>
-	</v-container>
+					<div
+						v-for="side in ['left', 'right']"
+						:key="side"
+						class="shelf-bracket"
+						aria-hidden="true"
+						:class="`shelf-bracket--${side}`"
+					>
+						<svg
+							class="shelf-bracket-orange"
+							viewBox="600 165 300 400"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<image href="/moelian-logo.png" width="2172" height="724" />
+						</svg>
+					</div>
+				</div>
+			</template>
+		</v-card>
+	</div>
 </template>
-
 <script setup lang="ts">
-import { VInfiniteScroll } from 'vuetify/components';
 import type { WorkListRes } from '~/shared/dto/web/work';
-export type WorkItemType = WorkListRes['list'][number];
-
+type ShelfWork = WorkListRes['list'][number] & { type?: string };
 const props = withDefaults(
-	defineProps<{ contentType: 'manga' | 'novel'; mobile?: boolean }>(),
-	{ mobile: false },
+	defineProps<{
+		works: ShelfWork[];
+		mobile?: boolean;
+		contentType?: 'manga' | 'novel';
+	}>(),
+	{ mobile: false, contentType: 'manga' },
 );
-// 仅在书架主页关闭滚动边界回弹，避免固定导航下露出页面底色。
-useHead({ htmlAttrs: { class: 'bookshelf-page-active' } });
-
-const webWorkStore = useWebWorkStore();
-const workState = computed(() =>
-	props.contentType === 'manga'
-		? webWorkStore.mangaState
-		: webWorkStore.novelState,
-);
-const totalItems = computed(() => workState.value.data?.total ?? 0);
-const router = useRouter();
-const appendedWorks = ref<WorkItemType[]>([]);
-const loadedPage = ref(1);
-const listRevision = ref(0);
-const exhausted = ref(false);
-let appendRequest: AbortController | null = null;
-const cards = computed<WorkItemType[]>(() => [
-	...(workState.value.data?.list ?? []),
-	...appendedWorks.value,
-]);
-
-// 搜索、切换类型或首屏重新请求后，丢弃旧结果和未完成的追加请求。
-watch([() => workState.value.data, () => workState.value.searchKey, () => props.contentType], () => {
-	appendRequest?.abort();
-	appendRequest = null;
-	appendedWorks.value = [];
-	loadedPage.value = 1;
-	exhausted.value = false;
-	listRevision.value++;
-}, { flush: 'sync' });
-onBeforeUnmount(() => appendRequest?.abort());
-
-type LoadStatus = 'ok' | 'empty' | 'error';
-async function loadMoreWorks({ done }: { done: (status: LoadStatus) => void }) {
-	if (workState.value.isLoading || exhausted.value || cards.value.length >= totalItems.value) {
-		done('empty');
-		return;
-	}
-	if (appendRequest) { done('ok'); return; }
-	const revision = listRevision.value;
-	const controller = new AbortController();
-	appendRequest = controller;
-	const nextPage = loadedPage.value + 1;
-	try {
-		const response = await $fetch<{ code: number; message: string; data?: WorkListRes }>('/api/web/work', {
-			query: { page: nextPage, type: workState.value.type, key: workState.value.searchKey, sortType: 'UPDATE' },
-			signal: controller.signal,
-		});
-		if (revision !== listRevision.value || controller.signal.aborted) { done('empty'); return; }
-		if (response.code !== 0 || !response.data) throw new Error(response.message || '加载失败');
-		const existingIds = new Set(cards.value.map(work => work.id));
-		appendedWorks.value.push(...response.data.list.filter(work => !existingIds.has(work.id)));
-		loadedPage.value = nextPage;
-		exhausted.value = response.data.list.length === 0 || nextPage * 24 >= response.data.total;
-		done(exhausted.value ? 'empty' : 'ok');
-	} catch {
-		done(controller.signal.aborted ? 'empty' : 'error');
-	} finally {
-		if (appendRequest === controller) appendRequest = null;
-	}
-}
 const shelves = computed(() => {
-	const rows: WorkItemType[][] = [];
 	const columns = props.mobile ? 2 : 4;
-	for (let index = 0; index < cards.value.length; index += columns) {
-		rows.push(cards.value.slice(index, index + columns));
-	}
+	const rows: ShelfWork[][] = [];
+	for (let i = 0; i < props.works.length; i += columns)
+		rows.push(props.works.slice(i, i + columns));
 	return rows;
 });
-
-const handleBookClick = (bookId: number) => {
-	router.push(`/${props.contentType}/${bookId}`);
-};
-
-const { error } = await useAsyncData(
-	computed(() => `${props.contentType}-list-data`),
-	async () => {
-		workState.value.page = 1;
-		await webWorkStore.fetchWorkList(workState.value);
-		return cards.value;
-	},
-);
-
-if (error.value) {
-	console.error('作品列表数据加载失败:', error.value);
-}
+const bookUrl = (work: ShelfWork) =>
+	`/${work.type ? (work.type === 'Novel' ? 'novel' : 'manga') : props.contentType}/${work.id}`;
 </script>
-
 <style scoped>
 .bookshelf-infinite {
 	width: 100%;
@@ -882,6 +722,7 @@ if (error.value) {
 }
 .shelf-page--mobile .shelf-book-title {
 	display: -webkit-box;
+	line-clamp: 2;
 	-webkit-line-clamp: 2;
 	-webkit-box-orient: vertical;
 	white-space: normal;
@@ -901,38 +742,10 @@ if (error.value) {
 }
 </style>
 
-<style>
-html.bookshelf-page-active,
-html.bookshelf-page-active body {
-	overscroll-behavior-y: none;
+<style scoped>
+.shelf-display {
+	width: 100%;
+	min-width: 0;
+	flex-shrink: 0;
 }
-.v-overlay__content.shelf-work-tooltip {
-	background: #fffaf2;
-	color: #705247;
-	border: 1px solid #e7d4bc;
-	border-radius: 8px;
-	padding: 12px 16px;
-	box-shadow: 0 5px 18px rgba(78, 53, 35, 0.15);
-	font-size: 13px;
-	line-height: 1.8;
-}
-.shelf-work-tooltip .shelf-tooltip-title {
-	font-weight: 700;
-	font-size: 15px;
-	line-height: 1.5;
-	margin-bottom: 4px;
-	overflow-wrap: anywhere;
-}
-/* 全局样式 - 强制骨架屏高度 */
-.skeleton-book .v-skeleton-loader__bone.v-skeleton-loader__image {
-	height: 400px !important;
-	min-height: 400px !important;
-	max-height: 400px !important;
-}
-
-.skeleton-book .v-skeleton-loader__bone {
-	height: 400px !important;
-}
-
-/* Book3D 组件居中显示 - 移除强制铺满的全局样式 */
 </style>

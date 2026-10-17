@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<v-system-bar class="my-theme-color">
+		<v-system-bar class="my-theme-color" data-novel-top-bar>
 			<div class="title-box d-flex align-center pa-2">
 				<div v-if="currentChapter.id !== 0" class="title-box d-flex pa-2">
 					<div class="ml-4 text-ellipsis-single-line">
@@ -19,7 +19,17 @@
 		</v-system-bar>
 		<v-sheet class="pa-2">
 			<NovelSelectionShare @share="$emit('shareSelection', $event)">
-				<div class="content-box">
+				<div
+					class="content-box"
+					:class="{ 'content-box--loading': loading }"
+					:aria-busy="loading"
+				>
+					<NetworkErrorState
+						v-if="loadFailed && !loading"
+						@retry="$emit('retry')"
+						@home="navigateTo('/')"
+					/>
+					<NovelContentSkeleton v-else-if="loading" />
 					<div
 						v-for="({ content, isCenter, type, label }, index) in loadedContent"
 						:key="index"
@@ -162,6 +172,8 @@ import type { WorkDetailChapterItem } from '~/shared/dto/web/work';
  * @prop navigateToChapter - 跳转到指定章节的方法
  */
 defineProps<{
+	loading?: boolean;
+	loadFailed?: boolean;
 	loadedContent: {
 		content: string;
 		isCenter: boolean;
@@ -186,6 +198,7 @@ defineProps<{
  * @emit update:selectedChapterId - 章节选择变更时触发，用于 v-model:selectedChapterId 双向绑定
  */
 defineEmits<{
+	retry: [];
 	'update:selectedChapterId': [value: number | null];
 	shareSelection: [quote: string];
 }>();
@@ -246,5 +259,32 @@ defineEmits<{
 	background-size: 100% 2px;
 	background-position: left bottom;
 	transition: background-size 1s ease-out;
+}
+</style>
+
+<style scoped>
+.content-box {
+	position: relative;
+	min-height: 70vh;
+}
+.novel-reading-block {
+	opacity: 1;
+	animation: novel-content-reveal 0.35s ease both;
+}
+@keyframes novel-content-reveal {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+.content-box--loading .novel-reading-block {
+	opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+	.novel-reading-block {
+		animation: none;
+	}
 }
 </style>

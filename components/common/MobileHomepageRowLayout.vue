@@ -21,7 +21,8 @@
 				<div class="yuri-grid-card" @click="handleCardClick(card.id)">
 					<!-- 封面容器：使用 Book3D -->
 					<div class="cover-wrapper">
-						<Book3D homepage
+						<Book3D
+							homepage
 							:cover-url="card.coverUrl"
 							:title="card.title"
 							:author="card.author"

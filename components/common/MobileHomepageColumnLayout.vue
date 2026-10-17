@@ -20,7 +20,8 @@
 				<div class="yuri-card-horizontal" @click="handleCardClick(card.id)">
 					<!-- 封面区：28% 宽度，使用 Book3D -->
 					<div class="cover-side">
-						<Book3D homepage
+						<Book3D
+							homepage
 							:cover-url="card.coverUrl"
 							:title="card.title"
 							:author="card.author"

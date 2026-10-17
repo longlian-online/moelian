@@ -20,7 +20,17 @@
 
 				<v-sheet elevation="1" class="pa-6">
 					<NovelSelectionShare @share="$emit('shareSelection', $event)">
-						<div class="content-box">
+						<div
+							class="content-box"
+							:class="{ 'content-box--loading': loading }"
+							:aria-busy="loading"
+						>
+							<NetworkErrorState
+								v-if="loadFailed && !loading"
+								@retry="$emit('retry')"
+								@home="navigateTo('/')"
+							/>
+							<NovelContentSkeleton v-else-if="loading" />
 							<div
 								v-for="(
 									{ content, isCenter, type, label }, index
@@ -174,6 +184,8 @@ import type { WorkDetailChapterItem } from '~/shared/dto/web/work';
  * @prop navigateToChapter - 跳转到指定章节的方法
  */
 defineProps<{
+	loading?: boolean;
+	loadFailed?: boolean;
 	loadedContent: {
 		content: string;
 		isCenter: boolean;
@@ -199,6 +211,7 @@ defineProps<{
  * @emit openThemeSetting - 点击「阅读设置」按钮时触发，通知父组件打开主题设置对话框
  */
 defineEmits<{
+	retry: [];
 	'update:selectedChapterId': [value: number | null];
 	openThemeSetting: [];
 	shareSelection: [quote: string];
@@ -268,5 +281,32 @@ defineEmits<{
 	background-size: 100% 2px;
 	background-position: left bottom;
 	transition: background-size 1s ease-out;
+}
+</style>
+
+<style scoped>
+.content-box {
+	position: relative;
+	min-height: 70vh;
+}
+.novel-reading-block {
+	opacity: 1;
+	animation: novel-content-reveal 0.35s ease both;
+}
+@keyframes novel-content-reveal {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+.content-box--loading .novel-reading-block {
+	opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+	.novel-reading-block {
+		animation: none;
+	}
 }
 </style>

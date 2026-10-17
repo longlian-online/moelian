@@ -240,7 +240,7 @@ async function generateCard() {
 		ctx.font = NOVEL_POSTER_METRICS.detailFont;
 		ctx.fillText(chapter, 120, layout.metadataTop + 36);
 		try {
-			const logo = await loadImage('/image.png');
+			const logo = await loadImage('/moelian-logo.png');
 			const ratio = Math.min(190 / logo.naturalWidth, 58 / logo.naturalHeight);
 			const width = logo.naturalWidth * ratio;
 			const height = logo.naturalHeight * ratio;

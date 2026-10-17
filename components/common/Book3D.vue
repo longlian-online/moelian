@@ -1,5 +1,9 @@
 <template>
-	<div class="book-3d-container" :class="{ 'book-3d-home': homepage }" :style="containerStyle">
+	<div
+		class="book-3d-container"
+		:class="{ 'book-3d-home': homepage }"
+		:style="containerStyle"
+	>
 		<div class="book-3d-wrapper" :style="wrapperStyle">
 			<component
 				:is="linkComponent"
@@ -27,17 +31,39 @@
 						</div>
 					</div>
 					<template v-if="homepage">
-						<div class="book-stack-layer book-stack-back" aria-hidden="true"></div>
-						<div class="book-stack-layer book-stack-middle" aria-hidden="true"></div>
+						<div
+							class="book-stack-layer book-stack-back"
+							aria-hidden="true"
+						></div>
+						<div
+							class="book-stack-layer book-stack-middle"
+							aria-hidden="true"
+						></div>
 					</template>
 					<!-- 封面（正面） -->
 					<div class="book-cover-main" :aria-busy="imagePending">
 						<Transition name="book-cover-reveal">
-						<div v-if="imagePending" class="simple-skeleton book-image-loading" role="status" :aria-label="`正在加载${title}封面`">
-							<img class="skeleton-cover-symbol" src="/image.png" alt="" aria-hidden="true" />
-							<span class="skeleton-cover-line skeleton-cover-line--title" aria-hidden="true"></span>
-							<span class="skeleton-cover-line skeleton-cover-line--subtitle" aria-hidden="true"></span>
-						</div>
+							<div
+								v-if="imagePending"
+								class="simple-skeleton book-image-loading"
+								role="status"
+								:aria-label="`正在加载${title}封面`"
+							>
+								<img
+									class="skeleton-cover-symbol"
+									src="/moelian-logo.png"
+									alt=""
+									aria-hidden="true"
+								/>
+								<span
+									class="skeleton-cover-line skeleton-cover-line--title"
+									aria-hidden="true"
+								></span>
+								<span
+									class="skeleton-cover-line skeleton-cover-line--subtitle"
+									aria-hidden="true"
+								></span>
+							</div>
 						</Transition>
 						<v-img
 							:src="coverUrl"
@@ -89,7 +115,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-	homepage: false,
+	homepage: true,
 	height: 400,
 	width: 260,
 	spineWidth: 50,
@@ -108,7 +134,12 @@ const linkComponent = computed(() =>
 );
 
 const imagePending = ref(true);
-watch(() => props.coverUrl, () => { imagePending.value = true; });
+watch(
+	() => props.coverUrl,
+	() => {
+		imagePending.value = true;
+	},
+);
 
 // 计算出的动态宽度
 const calculatedWidth = ref<number>(props.width);
@@ -146,10 +177,9 @@ const handleImageLoad = (src: string | Event) => {
 
 		// 书本封面部分的显示宽度 = 总宽度 - 书脊宽度
 		// 设定一个合理的范围限制，防止极端比例
-		const newWidth = props.homepage ? props.height * 0.6655 : Math.max(
-			150,
-			Math.min(320, totalWidth - props.spineWidth),
-		);
+		const newWidth = props.homepage
+			? props.height * 0.6655
+			: Math.max(150, Math.min(320, totalWidth - props.spineWidth));
 
 		calculatedWidth.value = newWidth;
 		emit('imageLoad', newWidth);
@@ -292,7 +322,9 @@ const handleClick = (event?: Event) => {
 	opacity: 0;
 }
 @media (prefers-reduced-motion: reduce) {
-	.book-cover-reveal-leave-active { transition: none; }
+	.book-cover-reveal-leave-active {
+		transition: none;
+	}
 }
 .book-image-loading {
 	position: absolute;
@@ -301,7 +333,9 @@ const handleClick = (event?: Event) => {
 	pointer-events: none;
 }
 @media (prefers-reduced-motion: reduce) {
-	.book-image-loading { animation: none; }
+	.book-image-loading {
+		animation: none;
+	}
 }
 /* 暖灰封面占位，加载状态与书页底板区分。 */
 .simple-skeleton {
@@ -321,7 +355,12 @@ const handleClick = (event?: Event) => {
 	content: '';
 	position: absolute;
 	inset: 0;
-	background: linear-gradient(100deg, transparent 15%, rgba(255, 250, 240, 0.6) 48%, transparent 80%);
+	background: linear-gradient(
+		100deg,
+		transparent 15%,
+		rgba(255, 250, 240, 0.6) 48%,
+		transparent 80%
+	);
 	transform: translateX(-100%);
 	animation: cover-skeleton-shimmer 1.7s ease-in-out infinite;
 }
@@ -338,13 +377,22 @@ const handleClick = (event?: Event) => {
 	border-radius: 5px;
 	background: #c7b8a4;
 }
-.skeleton-cover-line--title { width: 54%; }
-.skeleton-cover-line--subtitle { width: 32%; height: 6px; }
+.skeleton-cover-line--title {
+	width: 54%;
+}
+.skeleton-cover-line--subtitle {
+	width: 32%;
+	height: 6px;
+}
 @keyframes cover-skeleton-shimmer {
-	to { transform: translateX(100%); }
+	to {
+		transform: translateX(100%);
+	}
 }
 @media (prefers-reduced-motion: reduce) {
-	.book-image-loading::after { animation: none; }
+	.book-image-loading::after {
+		animation: none;
+	}
 }
 
 @keyframes skeleton-loading {

@@ -4,6 +4,9 @@
 			v-if="isMobile"
 			v-model:selected-chapter-id="selectedChapterId"
 			:loaded-content="loadedContent"
+			:loading="isLoading"
+			:load-failed="loadFailed"
+			@retry="retryContent"
 			:chapters="chapters"
 			:is-first-chapter="isFirstChapter"
 			:is-last-chapter="isLastChapter"
@@ -19,6 +22,9 @@
 			v-else
 			v-model:selected-chapter-id="selectedChapterId"
 			:loaded-content="loadedContent"
+			:loading="isLoading"
+			:load-failed="loadFailed"
+			@retry="retryContent"
 			:chapters="chapters"
 			:is-first-chapter="isFirstChapter"
 			:is-last-chapter="isLastChapter"
@@ -46,6 +52,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatChapterTitle } from '~/utils/chapterSeo';
 import { useCurrentTime } from '@/composables/useCurrentTime';
 import mammoth from 'mammoth';
 import type {
@@ -73,7 +80,8 @@ const loadedContent = ref<
 		label?: string;
 	}[]
 >([]);
-const isLoading = ref(false);
+const isLoading = ref(true);
+const loadFailed = ref(false);
 const selectedChapterId = ref<number | null>(null);
 const isNavbarVisible = inject('isNavbarVisible') as Ref<boolean>;
 const { isMobile } = useDevice();
@@ -98,6 +106,7 @@ let pendingNovelPosition = initialNovelPosition ?? {
 
 async function parseDocx(url: string) {
 	isLoading.value = true;
+	loadFailed.value = false;
 	loadedContent.value = [];
 
 	try {
@@ -120,7 +129,9 @@ async function parseDocx(url: string) {
 		);
 
 		loadedContent.value = processMammothOutput(result.value);
+		if (!loadedContent.value.length) throw new Error('正文内容为空');
 	} catch (err) {
+		loadFailed.value = true;
 		console.error('❌ DOCX 解析失败:', err);
 	} finally {
 		isLoading.value = false;
@@ -130,6 +141,7 @@ async function parseDocx(url: string) {
 // 解析新的 urlMap 格式
 async function parseUrlMap(urlMap: Record<string, string>) {
 	isLoading.value = true;
+	loadFailed.value = false;
 	loadedContent.value = [];
 
 	try {
@@ -176,7 +188,9 @@ async function parseUrlMap(urlMap: Record<string, string>) {
 				type: 'text' as const,
 			};
 		});
+		if (!loadedContent.value.length) throw new Error('正文内容为空');
 	} catch (err) {
+		loadFailed.value = true;
 		console.error('❌ urlMap 解析失败:', err);
 	} finally {
 		isLoading.value = false;
@@ -212,7 +226,7 @@ function processMammothOutput(markdown: string) {
 	return result;
 }
 
-const { data: chapterData } = await useLazyAsyncData(
+const { data: chapterData, refresh: refreshChapter } = await useAsyncData(
 	() => `chapter-content-${chapterId.value}`,
 	async () => {
 		const res = await useApiFetch<WorkContentRes>(
@@ -242,6 +256,9 @@ watch(
 					await parseUrlMap(urlMap.value);
 				} else if (docxUrl.value) {
 					await parseDocx(docxUrl.value);
+				} else {
+					loadFailed.value = true;
+					isLoading.value = false;
 				}
 			}
 		} else {
@@ -249,10 +266,30 @@ watch(
 			urlMap.value = null;
 			rawChapters.value = [];
 			loadedContent.value = [];
+			loadFailed.value = true;
+			isLoading.value = false;
 		}
 	},
 	{ immediate: true },
 );
+
+async function retryContent() {
+	if (isLoading.value) return;
+	if (urlMap.value) await parseUrlMap(urlMap.value);
+	else if (docxUrl.value) await parseDocx(docxUrl.value);
+	else {
+		isLoading.value = true;
+		loadFailed.value = false;
+		try {
+			await refreshChapter();
+		} finally {
+			if (!docxUrl.value && !urlMap.value) {
+				isLoading.value = false;
+				loadFailed.value = true;
+			}
+		}
+	}
+}
 
 watch(selectedChapterId, (id) => {
 	if (id && id !== chapterId.value) {
@@ -274,6 +311,11 @@ const currentChapter = computed(() => {
 	);
 });
 
+const getNovelTopInset = () => {
+	const bar = document.querySelector<HTMLElement>('[data-novel-top-bar]');
+	return bar ? Math.max(0, bar.getBoundingClientRect().bottom) : 0;
+};
+
 const measureNovelPosition = () => {
 	const maxScroll = Math.max(
 		0,
@@ -284,12 +326,16 @@ const measureNovelPosition = () => {
 		document.querySelectorAll<HTMLElement>('[data-reading-block]'),
 	);
 	const anchor =
-		blocks.find((element) => element.getBoundingClientRect().bottom > 0) ??
-		blocks.at(-1);
+		blocks.find(
+			(element) => element.getBoundingClientRect().bottom > getNovelTopInset(),
+		) ?? blocks.at(-1);
 	const anchorIndex = Number(anchor?.dataset.readingBlock ?? 0);
 	const rect = anchor?.getBoundingClientRect();
 	const offsetRatio = rect
-		? Math.min(1, Math.max(0, -rect.top / Math.max(1, rect.height)))
+		? Math.min(
+				1,
+				Math.max(0, (getNovelTopInset() - rect.top) / Math.max(1, rect.height)),
+			)
 		: 0;
 
 	pendingNovelPosition = {
@@ -331,8 +377,16 @@ const restoreNovelProgress = () => {
 		const top =
 			window.scrollY +
 			anchor.getBoundingClientRect().top +
-			anchor.offsetHeight * initialNovelPosition.offsetRatio;
-		window.scrollTo({ top, behavior: 'auto' });
+			anchor.offsetHeight * initialNovelPosition.offsetRatio -
+			getNovelTopInset();
+		window.scrollTo({
+			top:
+				initialNovelPosition.anchorIndex === 0 &&
+				initialNovelPosition.offsetRatio === 0
+					? 0
+					: Math.max(0, top),
+			behavior: 'auto',
+		});
 	} else {
 		const maxScroll = Math.max(
 			0,
@@ -456,11 +510,22 @@ const items = computed(() => {
 	return breadcrumbItems;
 });
 
-watchEffect(() => {
+const chapterSeoTitle = computed(() => {
 	const chapter = currentChapter.value;
-
-	useHead({
-		title: chapter.id !== 0 ? `${chapter.title} - 小说阅读` : '小说阅读',
-	});
+	const work = chapterData.value?.work;
+	if (!work || chapter.id === 0) return 'moelian';
+	return `${formatChapterTitle(chapter.title, chapter.no, 'novel')} - ${work.title}`;
+});
+const chapterSeoDescription = computed(() => {
+	const work = chapterData.value?.work;
+	return work ? `${chapterSeoTitle.value}。作者：${work.author}。` : 'moelian';
+});
+useSeoMeta({
+	title: () => chapterSeoTitle.value,
+	description: () => chapterSeoDescription.value,
+	ogTitle: () => chapterSeoTitle.value,
+	ogDescription: () => chapterSeoDescription.value,
+	twitterTitle: () => chapterSeoTitle.value,
+	twitterDescription: () => chapterSeoDescription.value,
 });
 </script>
