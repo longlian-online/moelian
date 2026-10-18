@@ -2,6 +2,7 @@
 export function useMangaReaderControls(
 	sheet: Ref<boolean>,
 	vertical: Ref<boolean>,
+	navbarVisible?: Ref<boolean>,
 ) {
 	let lastY = 0;
 	let distance = 0;
@@ -74,7 +75,11 @@ export function useMangaReaderControls(
 				? distance + Math.abs(delta)
 				: Math.abs(delta);
 		direction = nextDirection;
-		if (distance >= 10) sheet.value = direction < 0;
+		if (distance >= 10) {
+			// 滚动只控制顶部导航，完整阅读菜单保留手动呼出。
+			sheet.value = false;
+			if (navbarVisible) navbarVisible.value = direction < 0;
+		}
 	};
 	const onScroll = () => {
 		if (!frame) frame = requestAnimationFrame(updateScroll);

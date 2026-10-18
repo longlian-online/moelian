@@ -13,50 +13,37 @@
 			class="container"
 			@contextmenu.prevent="sheet = !sheet"
 		>
-			<v-lazy
-				:options="{ threshold: 0.5 }"
-				min-height="200"
+			<v-img
+				:src="imgUrl || '/error-default.jpg'"
+				width="100%"
+				:height="loadedPages[imgUrl] ? undefined : '100dvh'"
 				transition="fade-transition"
+				@load="loadedPages[imgUrl] = true"
+				@error="loadedPages[imgUrl] = true"
 			>
-				<v-img :src="imgUrl || '/error-default.jpg'" width="100%">
-					<template #placeholder>
-						<div class="d-flex fill-height align-center justify-center">
-							<v-skeleton-loader
-								class="fill-height fill-width position-absolute"
-							/>
-
-							<v-progress-circular
-								indeterminate
-								color="primary"
-								size="40"
-								width="4"
-								style="z-index: 1"
-							/>
-						</div>
-					</template>
-					<template #error>
-						<v-img
-							src="/error-default.jpg"
-							width="100%"
-							aspect-ratio="16/9"
-							cover
+				<template #placeholder><MangaPageSkeleton /></template>
+				<template #error>
+					<v-img
+						src="/error-default.jpg"
+						width="100%"
+						aspect-ratio="16/9"
+						cover
+					>
+						<div
+							class="d-flex fill-height align-center justify-center bg-black-alpha-50"
 						>
-							<div
-								class="d-flex fill-height align-center justify-center bg-black-alpha-50"
-							>
-								<div class="text-center text-white">
-									<v-icon
-										icon="mdi-image-off-outline"
-										size="48"
-										class="mb-2"
-									></v-icon>
-									<div class="text-subtitle-1">图片加载失败</div>
-								</div>
+							<div class="text-center text-white">
+								<v-icon
+									icon="mdi-image-off-outline"
+									size="48"
+									class="mb-2"
+								></v-icon>
+								<div class="text-subtitle-1">图片加载失败</div>
 							</div>
-						</v-img>
-					</template>
-				</v-img>
-			</v-lazy>
+						</div>
+					</v-img>
+				</template>
+			</v-img>
 		</v-sheet>
 
 		<MangaReaderBottomSheet
@@ -162,6 +149,7 @@ const { isMobile } = useDevice();
 const chapterLength = computed(() => propsList.data?.length || 0);
 
 const sheet = ref(false);
+const loadedPages = ref<Record<string, boolean>>({});
 const currentIndex = ref(0);
 const sheetRefs = ref<Element[]>([]);
 const goTo = useGoTo();
