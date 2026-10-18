@@ -44,28 +44,28 @@ export const useAdminWorkStore = defineStore('admin', () => {
 
 	//删除
 	const deleteWork = async (id: number) => {
-		const { error } = await useApiFetch(`/api/admin/work/${id}`, {
+		const { data, error } = await useApiFetch(`/api/admin/work/${id}`, {
 			method: 'DELETE',
 		});
-		if (error.value) {
-			return;
-		}
-		// 只有 error.value 为 null 时，才会执行下面的成功逻辑
+		if (error.value || data.value?.code !== 0) return false;
+		// 仅在业务成功后提示并刷新列表。
 		$tip('删除成功');
 		await refreshList();
+		return true;
 	};
 
 	//修改状态设置
 	const updateWorkStatus = async (id: number, status: 'Enable' | 'Disable') => {
-		const { error } = await useApiFetch(`/api/admin/work/${id}/status`, {
+		const { data, error } = await useApiFetch(`/api/admin/work/${id}/status`, {
 			method: 'PATCH',
 			body: { status },
 		});
-		if (error.value) return;
+		if (error.value || data.value?.code !== 0) return false;
 		// 异步刷新列表，不阻塞 UI
 		await refreshList();
 
 		$tip(status === 'Enable' ? '发布成功' : '下架成功');
+		return true;
 	};
 
 	//重置所有状态
@@ -79,26 +79,26 @@ export const useAdminWorkStore = defineStore('admin', () => {
 
 	// 修改作品
 	const updateWork = async (id: number, payload: WorkPutReq) => {
-		const { error } = await useApiFetch(`/api/admin/work/${id}`, {
+		const { data, error } = await useApiFetch(`/api/admin/work/${id}`, {
 			method: 'PUT',
 			body: payload,
 		});
-		if (error.value) return;
+		if (error.value || data.value?.code !== 0) return false;
 
 		await refreshList();
-		$tip('更新成功');
+		return true;
 	};
 
 	// 修改作品封面
 	const updateWorkCover = async (id: number, coverId: number) => {
-		const { error } = await useApiFetch(`/api/admin/work/${id}/cover`, {
+		const { data, error } = await useApiFetch(`/api/admin/work/${id}/cover`, {
 			method: 'PATCH',
 			body: { coverId },
 		});
-		if (error.value) return;
+		if (error.value || data.value?.code !== 0) return false;
 
 		await refreshList();
-		$tip('封面更新成功');
+		return true;
 	};
 	//  Getter
 	const workList = computed(() => work.value?.data?.list || []);

@@ -1,9 +1,10 @@
 <template>
 	<v-app-bar
 		color="#A6A897"
+		:height="isMobile ? 80 : 64"
 		:elevation="['manga', 'novel'].includes(String(route.name)) ? 0 : undefined"
 	>
-		<v-container class="d-flex align-center py-0" style="max-width: 1200px">
+		<v-container class="nav-container d-flex align-center py-0" style="max-width: 1200px">
 			<v-app-bar-nav-icon
 				v-if="isMobile"
 				variant="text"
@@ -11,6 +12,13 @@
 			></v-app-bar-nav-icon>
 			<!-- 桌面端导航条 -->
 			<template v-if="!isMobile">
+				<v-img
+					:src="logoUrl"
+					class="mx-2 flex-grow-0 flex-shrink-0"
+					width="100"
+					height="64"
+					alt="夢怜龍華"
+				/>
 				<v-tabs
 					v-model="activeTab"
 					background-color="transparent"
@@ -18,9 +26,6 @@
 					slider-color="#333"
 					class="flex-grow-0"
 				>
-					<v-tab value="home" to="/">
-						<v-img :src="logoUrl" class="mx-2" width="100" height="64"></v-img>
-					</v-tab>
 					<v-tab value="index" to="/manga">漫画</v-tab>
 					<v-tab value="update" to="/novel">小说</v-tab>
 					<v-tab value="classify" to="/classify">分类</v-tab>
@@ -30,32 +35,7 @@
 				</v-tabs>
 			</template>
 
-			<v-spacer></v-spacer>
-
-			<v-select
-				v-model="selectedFilterTags"
-				:items="filterTagItems"
-				multiple
-				chips
-				clearable
-				label="标签筛选"
-				placeholder="选择标签"
-				persistent-placeholder
-				density="compact"
-				variant="outlined"
-				hide-details
-				single-line
-				class="nav-tag-filter"
-			>
-				<template #selection="{ item, index }">
-					<span v-if="index === 0" class="nav-selected-tag">{{
-						item.title
-					}}</span>
-					<span v-if="index === 1" class="nav-tag-count"
-						>+{{ selectedFilterTags.length - 1 }}</span
-					>
-				</template>
-			</v-select>
+			<v-spacer v-if="!isMobile"></v-spacer>
 
 			<template v-if="!isMobile">
 				<v-text-field
@@ -117,43 +97,7 @@ const route = useRoute();
 const router = useRouter();
 const store = useWebWorkStore();
 
-const { data: filterTagData } =
-	useApiFetch<import('~/shared/dto/web').TagWebItem[]>('/api/web/tag/all');
-const filterTagItems = computed(
-	() => filterTagData.value?.data?.map((tag) => tag.content) ?? [],
-);
 const isCategoryRoute = computed(() => route.path.startsWith('/classify/'));
-const selectedFilterTags = computed<string[]>({
-	get: () => {
-		if (route.query.tags !== undefined) {
-			const raw = route.query.tags;
-			return (Array.isArray(raw) ? raw : [raw]).filter((tag): tag is string =>
-				Boolean(tag),
-			);
-		}
-		if (isCategoryRoute.value) {
-			const tag = filterTagData.value?.data?.find(
-				(tag) => tag.id === Number(route.params.tagId),
-			);
-			return tag ? [tag.content] : [];
-		}
-		return [];
-	},
-	set: (value) => {
-		const tags = value ?? [];
-		const target = route.path.startsWith('/novel')
-			? '/novel'
-			: route.path.startsWith('/manga')
-				? '/manga'
-				: isCategoryRoute.value
-					? route.path
-					: '/classify/all';
-		router.push({
-			path: target,
-			query: { ...route.query, tags: tags.length ? tags : '' },
-		});
-	},
-});
 const currentInputKey = ref(String(route.query.key ?? ''));
 watch(
 	() => route.query.key,
@@ -225,7 +169,7 @@ watch(
 	margin-right: 12px;
 }
 .nav-search {
-	flex: 0 1 340px;
+	flex: 0 1 440px;
 	min-width: 160px;
 }
 .nav-tag-filter :deep(.v-field__input) {
@@ -265,5 +209,23 @@ watch(
 		width: 28px;
 		height: 32px;
 	}
+}
+</style>
+
+<style scoped>
+.nav-container { width: 100%; min-width: 0; }
+@media (max-width: 600px) {
+	.nav-container { max-width: 100%; padding-inline: 12px; gap: 8px; }
+	.nav-container :deep(.v-app-bar-nav-icon) { flex: 0 0 auto; }
+	.nav-container .nav-search { flex: 0 1 240px; width: 65%; min-width: 0; max-width: 65%; margin-left: auto; }
+	.nav-search :deep(.v-input__control),
+	.nav-search :deep(.v-field),
+	.nav-search :deep(.v-field__field) { min-width: 0; }
+}
+</style>
+
+<style scoped>
+@media (max-width: 600px) {
+	.nav-container { padding-top: 12px !important; padding-bottom: 12px !important; }
 }
 </style>

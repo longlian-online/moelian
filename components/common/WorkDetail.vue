@@ -288,11 +288,9 @@
 								v-copy="item.title"
 								v-tooltip="item.title"
 								class="chapter-btn"
-								:class="{
-									'chapter-btn-active': item.id === sortedChapterList[0]?.id,
-								}"
 								:to="`/${props.contentType}/chapter/${item.id}`"
 							>
+								<span class="chapter-bookmark-dot" aria-hidden="true"></span>
 								<span class="chapter-btn-text">{{ item.title }}</span>
 							</v-btn>
 						</div>
@@ -305,14 +303,10 @@
 				<div class="detail-recommend-card recommendation-paper">
 					<div class="detail-recommend-header">
 						<h2 class="detail-recommend-title">
-							<svg
+							<img
 								class="recommendation-orange"
-								viewBox="600 165 300 400"
 								aria-hidden="true"
-								xmlns="http://www.w3.org/2000/svg"
-							>
-								<image href="/moelian-logo.png" width="2172" height="724" />
-							</svg>
+							 src="/moelian-orange.png" alt="" />
 							你可能也喜欢
 						</h2>
 						<NuxtLink
@@ -1984,5 +1978,123 @@ useSeoMeta({
 	.detail-main-container--mobile .notebook-opening .notebook-binding {
 		animation-name: notebook-open-rings-mobile;
 	}
+}
+</style>
+
+<style scoped>
+.detail-main-container--mobile {
+	min-width: 0;
+	max-width: 100%;
+	overflow-x: clip;
+}
+.detail-main-container--mobile .detail-left-panel,
+.detail-main-container--mobile .detail-right-panel,
+.detail-main-container--mobile .detail-main-card,
+.detail-main-container--mobile .detail-chapter-section,
+.detail-main-container--mobile .detail-chapter-content,
+.detail-main-container--mobile .recommendation-paper {
+	min-width: 0;
+	max-width: 100%;
+}
+.detail-main-container--mobile .detail-chapter-grid {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.detail-main-container--mobile .detail-chapter-chips {
+	min-width: 0;
+	max-width: 100%;
+}
+</style>
+
+<style scoped>
+.recommendation-paper .recommendation-content {
+	display: grid;
+	grid-template-columns: 104px minmax(0, 1fr);
+	width: 100%;
+	min-width: 0;
+	height: 144px;
+	align-items: center;
+}
+.recommendation-paper .recommendation-info {
+	min-width: 0;
+	height: 144px;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	grid-template-rows: 45px 18px 17px 41px;
+	justify-content: stretch;
+	text-align: left;
+	width: 100%;
+	gap: 6px;
+	align-content: start;
+	padding: 2px 0;
+}
+.recommendation-paper .recommendation-title {
+	margin: 0;
+	min-height: 3.2em;
+	max-height: 3.2em;
+	overflow-wrap: anywhere;
+}
+.recommendation-paper .recommendation-author-name {
+	line-height: 18px;
+	min-width: 0;
+}
+.recommendation-paper .recommendation-meta {
+	margin: 0;
+	line-height: 17px;
+	flex-wrap: nowrap;
+	white-space: nowrap;
+	overflow: hidden;
+}
+.recommendation-paper .recommendation-description {
+	margin: 0;
+	height: 41px;
+}
+</style>
+
+<style scoped>
+.recommendation-paper .recommendation-cover {
+	width: 104px;
+	height: 144px;
+}
+.recommendation-paper .recommendation-cover :deep(.book-3d-container) {
+	height: 144px;
+}
+@media (max-width: 380px) {
+	.recommendation-paper .recommendation-content { gap: 10px; grid-template-columns: 92px minmax(0, 1fr); }
+	.recommendation-paper .recommendation-cover { width: 92px; }
+}
+</style>
+
+<style scoped>
+.detail-chapter-grid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 12px;
+}
+.detail-chapter-grid .chapter-btn {
+	width: 100%;
+	min-width: 0 !important;
+	height: 56px;
+	padding: 0 24px 0 13px !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	justify-content: flex-start !important;
+	text-align: left !important;
+	font-weight: 500 !important;
+	color: #90756f !important;
+	background: linear-gradient(145deg, #fffaf4, #f2e5dc) !important;
+	box-shadow: none;
+	clip-path: polygon(0 0, 100% 0, calc(100% - 13px) 50%, 100% 100%, 0 100%);
+}
+@media (hover: hover) {
+	.detail-chapter-grid .chapter-btn:hover {
+		color: white !important;
+		background: linear-gradient(140deg, #ff9baa, #fb758f) !important;
+	}
+}
+.detail-chapter-grid .chapter-btn :deep(.v-btn__content) { display: flex; align-items: center; gap: 10px; width: 100%; }
+.chapter-bookmark-dot { width: 10px; height: 10px; border: 2px solid currentColor; border-radius: 50%; opacity: .55; flex-shrink: 0; }
+.detail-chapter-grid .chapter-btn:focus-visible { outline: 2px solid #bd8a79; outline-offset: -3px; }
+@media (max-width: 960px) {
+	.detail-chapter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 </style>

@@ -7,7 +7,7 @@
 		</template>
 		<v-main>
 			<slot></slot>
-			<DesktopFooter></DesktopFooter>
+			<DesktopFooter class="admin-footer" />
 		</v-main>
 		<!-- 全局组件 -->
 		<Tip></Tip>
@@ -29,4 +29,12 @@ const authStore = useAuthStore();
 const { isLoggedIn } = storeToRefs(authStore);
 </script>
 
-<style scoped></style>
+<style scoped>
+.admin-footer {
+	background: #fff;
+	border-top-color: #eee;
+	color: #757575;
+}
+.admin-footer :deep(.v-divider) { color: #e0e0e0; }
+.admin-footer :deep(a:hover) { color: #424242 !important; }
+</style>

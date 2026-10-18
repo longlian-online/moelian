@@ -27,25 +27,12 @@
 							v-if="imgUrl"
 							max-height="100vh"
 							max-width="50%"
+							transition="fade-transition"
 							contain
 							class="h-100 w-100 pa-0"
 							:src="imgUrl || '/error-default.jpg'"
 						>
-							<template #placeholder>
-								<div class="d-flex fill-height align-center justify-center">
-									<v-skeleton-loader
-										class="fill-height fill-width position-absolute"
-									/>
-
-									<v-progress-circular
-										indeterminate
-										color="primary"
-										size="40"
-										width="4"
-										style="z-index: 1"
-									/>
-								</div>
-							</template>
+							<template #placeholder><MangaPageSkeleton /></template>
 							<template #error>
 								<v-img src="/error-default.jpg" width="100%" cover>
 									<div

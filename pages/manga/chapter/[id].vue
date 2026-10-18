@@ -1,6 +1,6 @@
 <template>
 	<ClientOnly>
-		<div :key="String($route.params.id)">
+		<div :key="String($route.params.id)" class="manga-reader-surface">
 			<!-- 双页模式 -->
 			<TwoPageReader
 				v-if="pageLayout"
@@ -243,7 +243,6 @@ useSeoMeta({
 	twitterTitle: () => chapterSeoTitle.value,
 	twitterDescription: () => chapterSeoDescription.value,
 });
-
 </script>
 
 <style scoped></style>

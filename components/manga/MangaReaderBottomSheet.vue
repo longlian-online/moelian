@@ -227,12 +227,17 @@ const contentWidthStyle = computed(() =>
 	isMobile ? props.contentWidthMobile : props.contentWidth,
 );
 
+const isVerticalReader = computed(
+	() => !pageLayout.value && !scrollDirection.value,
+);
+useMangaReaderControls(sheetModel, isVerticalReader, isNavbarVisible);
+
 watch(
 	() => props.modelValue,
 	(newVal) => {
 		if (isNavbarVisible) isNavbarVisible.value = newVal;
 	},
-	{ immediate: true },
+	{ immediate: true, flush: 'sync' },
 );
 </script>
 

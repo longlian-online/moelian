@@ -2,6 +2,10 @@
 	<div :key="String($route.params.id)">
 		<MobileNovelReader
 			v-if="isMobile"
+			:work-title="chapterData?.work?.title"
+			:work-id="chapterData?.work?.id"
+			@open-theme-setting="isChangeTheme = true"
+			@share-work="openWorkShare"
 			v-model:selected-chapter-id="selectedChapterId"
 			:loaded-content="loadedContent"
 			:loading="isLoading"
@@ -41,6 +45,28 @@
 			<ThemeSetting />
 		</v-dialog>
 
+		<v-dialog v-model="isWorkShareDialog" max-width="520" scrollable>
+			<v-card class="pa-4">
+				<div class="d-flex align-center justify-space-between mb-3">
+					<h3>分享作品</h3>
+					<v-btn
+						icon="mdi-close"
+						variant="text"
+						aria-label="关闭分享"
+						@click="isWorkShareDialog = false"
+					/>
+				</div>
+				<ShareCard
+					v-if="workShareDetail"
+					ref="workShareCardRef"
+					:cover-url="workShareDetail.coverUrl"
+					:title="workShareDetail.title"
+					:author="workShareDetail.author"
+					:share-url="workShareUrl"
+				/>
+			</v-card>
+		</v-dialog>
+
 		<v-dialog v-model="isShareDialog" max-width="560" scrollable>
 			<NovelQuoteShareCard
 				v-if="shareData"
@@ -57,6 +83,7 @@ import { useCurrentTime } from '@/composables/useCurrentTime';
 import mammoth from 'mammoth';
 import type {
 	WorkContentRes,
+	WorkDetailRes,
 	WorkDetailChapterItem,
 } from '~/shared/dto/web/work';
 import { createNovelShareData, type NovelShareData } from '~/utils/novelShare';
@@ -87,6 +114,32 @@ const isNavbarVisible = inject('isNavbarVisible') as Ref<boolean>;
 const { isMobile } = useDevice();
 const isChangeTheme = ref(false);
 const isShareDialog = ref(false);
+const isWorkShareDialog = ref(false);
+const workShareDetail = ref<WorkDetailRes | null>(null);
+const workShareUrl = ref('');
+const workShareCardRef = ref<InstanceType<
+	typeof import('~/components/common/ShareCard.vue').default
+> | null>(null);
+let loadingWorkShare = false;
+async function openWorkShare() {
+	const work = chapterData.value?.work;
+	if (!work || loadingWorkShare) return;
+	loadingWorkShare = true;
+	try {
+		const { data, error } = await useApiFetch<WorkDetailRes>(
+			`/api/web/work/${work.id}`,
+		);
+		if (error.value || data.value?.code !== 0 || !data.value.data) return;
+		workShareDetail.value = data.value.data;
+		workShareUrl.value = `${window.location.origin}/novel/${work.id}`;
+		isWorkShareDialog.value = true;
+		await nextTick();
+		await workShareCardRef.value?.generateCard();
+	} finally {
+		loadingWorkShare = false;
+	}
+}
+
 const shareData = ref<NovelShareData | null>(null);
 const quoteShareCardRef = ref<InstanceType<
 	typeof import('~/components/novel/NovelQuoteShareCard.vue').default

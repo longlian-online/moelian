@@ -204,7 +204,7 @@ async function validateAndGoNext(next: () => void) {
 	});
 
 	// 如果有业务错误，useApiFetch 已经弹提示了，这里直接 return
-	if (error.value) {
+	if (error.value || data.value?.code !== 0) {
 		console.error('创建作品失败:', error.value);
 		return;
 	}
@@ -261,7 +261,7 @@ async function submitForm() {
 		);
 		// 2. 上传成功
 		// TODO: 调用后端接口，保存封面 URL 到作品数据
-		await adminWorkStore.updateWorkCover(workId, coverId);
+		if (!(await adminWorkStore.updateWorkCover(workId, coverId))) return;
 		//timeout -1代表永远保留 需要手动关闭
 		$tip('封面上传成功！', {
 			color: 'success',
@@ -316,7 +316,7 @@ async function handleGenerateCover() {
 			defaultCover,
 		);
 		const fileId = await uploadToCos(file, '/api/admin/resource', 'Cover');
-		await adminWorkStore.updateWorkCover(workId, fileId);
+		if (!(await adminWorkStore.updateWorkCover(workId, fileId))) return;
 		$tip('默认封面启用成功！', {
 			color: 'success',
 			icon: 'mdi-check',

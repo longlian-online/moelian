@@ -306,7 +306,7 @@ const confirmSave = async () => {
 					serialStatus: current.serial_status,
 				};
 
-				await adminWorkStore.updateWork(original.id, payload);
+				if (!(await adminWorkStore.updateWork(original.id, payload))) return;
 			}
 
 			// 更新标签（如果有变化）
@@ -332,7 +332,7 @@ const confirmSave = async () => {
 					.map((name) => tagNameToIdMap.value.get(name))
 					.filter((id): id is number => id !== undefined);
 
-				const { error } = await useApiFetch(
+				const { data, error } = await useApiFetch(
 					`/api/admin/work/${original.id}/tags`,
 					{
 						method: 'PATCH',
@@ -342,11 +342,12 @@ const confirmSave = async () => {
 					},
 				);
 
-				if (error.value) {
+				if (error.value || data.value?.code !== 0) {
 					return;
 				}
 			}
 
+			$tip('作品更新成功', { color: 'success' });
 			dialog.value = false;
 		},
 	});
@@ -367,7 +368,7 @@ const confirmUpdateCover = async () => {
 		);
 		// 2. 上传成功
 		// TODO: 调用后端接口，保存封面 URL 到作品数据
-		await adminWorkStore.updateWorkCover(workId.value, coverId);
+		if (!(await adminWorkStore.updateWorkCover(workId.value, coverId))) return;
 		$tip('封面上传成功！', { color: 'success', icon: 'mdi-check' });
 		//关闭编辑封面对话框
 		uploadCoverDialog.value = false;
@@ -405,7 +406,7 @@ async function handleGenerateCover() {
 			defaultCover,
 		);
 		const fileId = await uploadToCos(file, '/api/admin/resource', 'Cover');
-		await adminWorkStore.updateWorkCover(workId.value, fileId);
+		if (!(await adminWorkStore.updateWorkCover(workId.value, fileId))) return;
 		$tip('替换封面成功！', {
 			color: 'success',
 			icon: 'mdi-check',
