@@ -8,13 +8,9 @@
 					<div class="shelf-decoration" aria-hidden="true">
 						<div v-for="n in 3" :key="n" class="decoration-spine">
 							<div class="spine-brand">
-								<svg
+								<img
 									class="spine-brand-orange"
-									viewBox="600 165 300 400"
-									xmlns="http://www.w3.org/2000/svg"
-								>
-									<image href="/moelian-logo.png" width="2172" height="724" />
-								</svg>
+								 src="/moelian-orange.png" alt="" />
 							</div>
 						</div>
 					</div>
@@ -92,13 +88,9 @@
 						aria-hidden="true"
 						:class="`shelf-bracket--${side}`"
 					>
-						<svg
+						<img
 							class="shelf-bracket-orange"
-							viewBox="600 165 300 400"
-							xmlns="http://www.w3.org/2000/svg"
-						>
-							<image href="/moelian-logo.png" width="2172" height="724" />
-						</svg>
+						 src="/moelian-orange.png" alt="" />
 					</div>
 				</div>
 			</template>

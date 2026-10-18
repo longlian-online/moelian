@@ -305,14 +305,10 @@
 				<div class="detail-recommend-card recommendation-paper">
 					<div class="detail-recommend-header">
 						<h2 class="detail-recommend-title">
-							<svg
+							<img
 								class="recommendation-orange"
-								viewBox="600 165 300 400"
 								aria-hidden="true"
-								xmlns="http://www.w3.org/2000/svg"
-							>
-								<image href="/moelian-logo.png" width="2172" height="724" />
-							</svg>
+							 src="/moelian-orange.png" alt="" />
 							你可能也喜欢
 						</h2>
 						<NuxtLink
