@@ -49,8 +49,10 @@
 								<v-tooltip
 									v-if="!props.mobile"
 									activator="parent"
-									location="top"
-									:open-delay="300"
+									location="bottom"
+									:open-delay="0"
+									:close-delay="0"
+									transition="fade-transition"
 									:max-width="320"
 									content-class="shelf-work-tooltip"
 								>

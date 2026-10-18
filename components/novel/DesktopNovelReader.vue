@@ -1,8 +1,13 @@
 <template>
-	<v-container width="50%">
-		<v-sheet>
+	<v-container width="50%" class="desktop-novel-reader">
+		<v-sheet elevation="0" class="pa-0">
 			<div class="bar">
-				<div class="novel-bar d-flex justify-space-between align-center pa-2">
+				<div class="novel-bar-spacer" aria-hidden="true" />
+				<div
+					class="novel-bar d-flex justify-space-between align-center pa-2"
+					:class="{ 'novel-bar--hidden': !headerVisible }"
+					:inert="!headerVisible"
+				>
 					<ClientOnly>
 						<v-breadcrumbs :items="breadcrumbItems" class="custom-breadcrumbs">
 							<template #divider>
@@ -165,6 +170,84 @@
 			</div>
 		</v-sheet>
 	</v-container>
+	<nav class="novel-quick-actions" aria-label="小说阅读快捷操作">
+		<v-btn
+			class="novel-action-button"
+			stacked
+			variant="text"
+			title="上一章"
+			aria-label="上一章"
+			:disabled="isFirstChapter"
+			@click="prevChapter && navigateToChapter(prevChapter)"
+			><v-icon icon="mdi-chevron-left" /><span>上一章</span></v-btn
+		>
+		<v-menu
+			v-model="catalogVisible"
+			location="left center"
+			:close-on-content-click="false"
+			:offset="12"
+		>
+			<template #activator="{ props: menuProps }">
+				<v-btn
+					v-bind="menuProps"
+					class="novel-action-button"
+					stacked
+					variant="text"
+					title="目录"
+					aria-label="打开章节目录"
+					><v-icon icon="mdi-format-list-bulleted" /><span>目录</span></v-btn
+				>
+			</template>
+			<v-card class="novel-catalog" width="360" max-width="80vw">
+				<div class="novel-catalog-heading">
+					<span>章节目录 · {{ chapters.length }} 章</span
+					><v-btn
+						icon="mdi-close"
+						size="small"
+						variant="text"
+						aria-label="关闭目录"
+						@click="catalogVisible = false"
+					/>
+				</div>
+				<v-divider />
+				<v-list aria-label="章节目录">
+					<v-virtual-scroll :items="chapters" :height="420" :item-height="52">
+						<template #default="{ item }">
+							<v-list-item
+								:title="item.title"
+								:active="item.id === currentChapter.id"
+								color="primary"
+								:aria-current="
+									item.id === currentChapter.id ? 'page' : undefined
+								"
+								@click="selectCatalogChapter(item)"
+							/>
+						</template>
+					</v-virtual-scroll>
+					<v-list-item v-if="!chapters.length" title="暂无章节" />
+				</v-list>
+			</v-card>
+		</v-menu>
+		<v-btn
+			class="novel-action-button"
+			stacked
+			variant="text"
+			title="下一章"
+			aria-label="下一章"
+			:disabled="isLastChapter"
+			@click="nextChapter && navigateToChapter(nextChapter)"
+			><v-icon icon="mdi-chevron-right" /><span>下一章</span></v-btn
+		>
+		<v-btn
+			class="novel-action-button"
+			stacked
+			variant="text"
+			to="/novel"
+			title="返回主页"
+			aria-label="返回小说主页"
+			><v-icon icon="mdi-home-outline" /><span>回主页</span></v-btn
+		>
+	</nav>
 </template>
 
 <script setup lang="ts">
@@ -183,7 +266,7 @@ import type { WorkDetailChapterItem } from '~/shared/dto/web/work';
  * @prop breadcrumbItems - 面包屑导航项数组
  * @prop navigateToChapter - 跳转到指定章节的方法
  */
-defineProps<{
+const props = defineProps<{
 	loading?: boolean;
 	loadFailed?: boolean;
 	loadedContent: {
@@ -216,6 +299,47 @@ defineEmits<{
 	openThemeSetting: [];
 	shareSelection: [quote: string];
 }>();
+
+const headerVisible = ref(true);
+const catalogVisible = ref(false);
+let lastScrollY = 0;
+let directionDistance = 0;
+let lastDirection = 0;
+let scrollFrame = 0;
+const updateHeader = () => {
+	scrollFrame = 0;
+	const y = Math.max(0, window.scrollY);
+	const delta = y - lastScrollY;
+	lastScrollY = y;
+	if (y < 64) {
+		headerVisible.value = true;
+		directionDistance = 0;
+		return;
+	}
+	if (!delta) return;
+	const direction = delta > 0 ? 1 : -1;
+	directionDistance =
+		direction === lastDirection
+			? directionDistance + Math.abs(delta)
+			: Math.abs(delta);
+	lastDirection = direction;
+	if (directionDistance >= 8) headerVisible.value = direction < 0;
+};
+const handleScroll = () => {
+	if (!scrollFrame) scrollFrame = requestAnimationFrame(updateHeader);
+};
+onMounted(() => {
+	lastScrollY = window.scrollY;
+	window.addEventListener('scroll', handleScroll, { passive: true });
+});
+onBeforeUnmount(() => {
+	window.removeEventListener('scroll', handleScroll);
+	if (scrollFrame) cancelAnimationFrame(scrollFrame);
+});
+function selectCatalogChapter(chapter: WorkDetailChapterItem) {
+	catalogVisible.value = false;
+	props.navigateToChapter(chapter);
+}
 
 /** 此组件不对外暴露 slot */
 </script>
@@ -308,5 +432,92 @@ defineEmits<{
 	.novel-reading-block {
 		animation: none;
 	}
+}
+</style>
+
+<style scoped>
+.novel-bar-spacer {
+	height: 64px;
+}
+.novel-bar {
+	position: fixed;
+	top: 0;
+	left: 50%;
+	width: calc(50% - 32px);
+	min-width: 0;
+	height: 64px;
+	z-index: 20;
+	transform: translateX(-50%);
+	background: rgb(var(--v-theme-surface));
+	box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+	transition:
+		transform 0.22s ease,
+		opacity 0.22s ease;
+}
+.novel-bar--hidden {
+	transform: translate(-50%, -105%);
+	opacity: 0;
+	pointer-events: none;
+}
+.novel-bar .custom-breadcrumbs {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	flex-wrap: nowrap;
+}
+.novel-bar :deep(.v-btn) {
+	flex-shrink: 0;
+}
+.novel-quick-actions {
+	position: fixed;
+	top: 50%;
+	right: max(24px, calc(25vw - 76px));
+	transform: translateY(-50%);
+	z-index: 20;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 8px 4px;
+	border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+	border-radius: 14px;
+	background: rgb(var(--v-theme-surface));
+	color: rgb(var(--v-theme-on-surface));
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
+}
+.novel-catalog {
+	background: rgb(var(--v-theme-surface));
+}
+.novel-catalog-heading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	font-size: 14px;
+}
+.novel-catalog :deep(.v-virtual-scroll) {
+	max-height: 60vh;
+}
+@media (prefers-reduced-motion: reduce) {
+	.novel-bar {
+		transition: none;
+	}
+}
+</style>
+
+<style scoped>
+.novel-quick-actions .novel-action-button {
+	min-width: 64px;
+	height: 68px;
+	padding: 8px;
+	border-radius: 10px;
+}
+.novel-action-button :deep(.v-btn__content) {
+	flex-direction: column;
+	gap: 5px;
+}
+.novel-action-button span {
+	font-size: 11px;
+	line-height: 16px;
+	letter-spacing: 0;
 }
 </style>
