@@ -2010,3 +2010,62 @@ useSeoMeta({
 	max-width: 100%;
 }
 </style>
+
+<style scoped>
+.recommendation-paper .recommendation-content {
+	display: grid;
+	grid-template-columns: 104px minmax(0, 1fr);
+	width: 100%;
+	min-width: 0;
+	height: 144px;
+	align-items: center;
+}
+.recommendation-paper .recommendation-info {
+	min-width: 0;
+	height: 144px;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	grid-template-rows: 45px 18px 17px 41px;
+	justify-content: stretch;
+	text-align: left;
+	width: 100%;
+	gap: 6px;
+	align-content: start;
+	padding: 2px 0;
+}
+.recommendation-paper .recommendation-title {
+	margin: 0;
+	min-height: 3.2em;
+	max-height: 3.2em;
+	overflow-wrap: anywhere;
+}
+.recommendation-paper .recommendation-author-name {
+	line-height: 18px;
+	min-width: 0;
+}
+.recommendation-paper .recommendation-meta {
+	margin: 0;
+	line-height: 17px;
+	flex-wrap: nowrap;
+	white-space: nowrap;
+	overflow: hidden;
+}
+.recommendation-paper .recommendation-description {
+	margin: 0;
+	height: 41px;
+}
+</style>
+
+<style scoped>
+.recommendation-paper .recommendation-cover {
+	width: 104px;
+	height: 144px;
+}
+.recommendation-paper .recommendation-cover :deep(.book-3d-container) {
+	height: 144px;
+}
+@media (max-width: 380px) {
+	.recommendation-paper .recommendation-content { gap: 10px; grid-template-columns: 92px minmax(0, 1fr); }
+	.recommendation-paper .recommendation-cover { width: 92px; }
+}
+</style>

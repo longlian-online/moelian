@@ -1,5 +1,5 @@
 <template>
-	<div class="category-results">
+	<div class="category-results" :class="{ 'category-results--empty': mangaPending || novelPending || !works.length }">
 		<div class="category-filters">
 			<v-select
 				v-model="selectedType"
@@ -329,5 +329,34 @@ useSeoMeta({
 	.selected-tag {
 		max-width: 80px;
 	}
+}
+</style>
+
+<style scoped>
+.category-results { position: relative; }
+.category-filters {
+	position: absolute;
+	top: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 2;
+	width: 100%;
+	height: 64px;
+	padding: 10px 24px;
+	margin: 0;
+}
+.category-results :deep(.bookshelf) { padding-top: 64px !important; }
+.category-results :deep(.bookshelf::before) { height: 64px; }
+.category-results--empty { padding-top: 64px; }
+.category-results--empty::before {
+	content: '';
+	position: absolute;
+	inset: 0 0 auto;
+	height: 64px;
+	background: repeating-linear-gradient(1deg, transparent 0 3px, rgba(142,104,56,.055) 4px 5px, transparent 6px 11px), linear-gradient(95deg,#eedec0,#f6e9cc 35%,#e9d8b7 75%,#f3e5c6);
+}
+.category-filters :deep(.v-field) { color: #705039; }
+@media (max-width: 600px) {
+	.category-filters { padding: 10px 12px; }
 }
 </style>
