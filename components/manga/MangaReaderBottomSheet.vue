@@ -227,6 +227,11 @@ const contentWidthStyle = computed(() =>
 	isMobile ? props.contentWidthMobile : props.contentWidth,
 );
 
+const isVerticalReader = computed(
+	() => !pageLayout.value && !scrollDirection.value,
+);
+useMangaReaderControls(sheetModel, isVerticalReader);
+
 watch(
 	() => props.modelValue,
 	(newVal) => {

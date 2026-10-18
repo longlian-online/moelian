@@ -1,5 +1,12 @@
 <template>
-	<v-app id="app" :class="{ 'bookshelf-layout': ['manga', 'novel'].includes(String(route.name)), 'classify-layout': route.path.startsWith('/classify') }">
+	<v-app
+		id="app"
+		:class="{
+			'bookshelf-layout': ['manga', 'novel'].includes(String(route.name)),
+			'classify-layout': route.path.startsWith('/classify'),
+			'manga-reader-layout': route.meta.readerTheme === 'manga',
+		}"
+	>
 		<AppDrawer></AppDrawer>
 		<Transition name="fade">
 			<BaseNav v-if="!$route.meta.baseNav && isNavbarVisible"></BaseNav>
@@ -57,6 +64,13 @@ watch(
 </script>
 
 <style>
+.manga-reader-layout .v-main {
+	padding: 0 !important;
+}
+.manga-reader-layout .v-application__wrap {
+	background: #121212;
+}
+
 .classify-layout .v-main {
 	padding-bottom: 0;
 	background: #fdfaf8;
@@ -70,7 +84,9 @@ watch(
 .bookshelf-layout .v-main > .v-sheet {
 	background: #eef0e9;
 }
-.bookshelf-layout .v-main { padding-bottom: 16px; }
+.bookshelf-layout .v-main {
+	padding-bottom: 16px;
+}
 .bookshelf-layout .v-pagination {
 	padding: 12px 0;
 	color: #707766;
