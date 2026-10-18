@@ -288,11 +288,9 @@
 								v-copy="item.title"
 								v-tooltip="item.title"
 								class="chapter-btn"
-								:class="{
-									'chapter-btn-active': item.id === sortedChapterList[0]?.id,
-								}"
 								:to="`/${props.contentType}/chapter/${item.id}`"
 							>
+								<span class="chapter-bookmark-dot" aria-hidden="true"></span>
 								<span class="chapter-btn-text">{{ item.title }}</span>
 							</v-btn>
 						</div>
@@ -2063,5 +2061,40 @@ useSeoMeta({
 @media (max-width: 380px) {
 	.recommendation-paper .recommendation-content { gap: 10px; grid-template-columns: 92px minmax(0, 1fr); }
 	.recommendation-paper .recommendation-cover { width: 92px; }
+}
+</style>
+
+<style scoped>
+.detail-chapter-grid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 12px;
+}
+.detail-chapter-grid .chapter-btn {
+	width: 100%;
+	min-width: 0 !important;
+	height: 56px;
+	padding: 0 24px 0 13px !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	justify-content: flex-start !important;
+	text-align: left !important;
+	font-weight: 500 !important;
+	color: #90756f !important;
+	background: linear-gradient(145deg, #fffaf4, #f2e5dc) !important;
+	box-shadow: none;
+	clip-path: polygon(0 0, 100% 0, calc(100% - 13px) 50%, 100% 100%, 0 100%);
+}
+@media (hover: hover) {
+	.detail-chapter-grid .chapter-btn:hover {
+		color: white !important;
+		background: linear-gradient(140deg, #ff9baa, #fb758f) !important;
+	}
+}
+.detail-chapter-grid .chapter-btn :deep(.v-btn__content) { display: flex; align-items: center; gap: 10px; width: 100%; }
+.chapter-bookmark-dot { width: 10px; height: 10px; border: 2px solid currentColor; border-radius: 50%; opacity: .55; flex-shrink: 0; }
+.detail-chapter-grid .chapter-btn:focus-visible { outline: 2px solid #bd8a79; outline-offset: -3px; }
+@media (max-width: 960px) {
+	.detail-chapter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 </style>
