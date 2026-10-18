@@ -24,25 +24,30 @@ export const useAdminChapterStore = defineStore('adminChapter', () => {
 
 	//删除章节
 	const deleteChapter = async (id: number) => {
-		const { error } = await useApiFetch(`/api/admin/chapter/${id}`, {
+		const { data, error } = await useApiFetch(`/api/admin/chapter/${id}`, {
 			method: 'DELETE',
 		});
-		if (error.value) return;
+		if (error.value || data.value?.code !== 0) return false;
 
 		await refreshList(); // 删除后刷新列表
+		return true;
 	};
 	//更新章节状态
 	const updateChapterStatus = async (
 		id: number,
 		status: 'Enable' | 'Disable',
 	) => {
-		const { error } = await useApiFetch(`/api/admin/chapter/${id}/status`, {
-			method: 'PATCH',
-			body: { status },
-		});
-		if (error.value) return;
+		const { data, error } = await useApiFetch(
+			`/api/admin/chapter/${id}/status`,
+			{
+				method: 'PATCH',
+				body: { status },
+			},
+		);
+		if (error.value || data.value?.code !== 0) return false;
 
 		await refreshList(); // 修改后刷新列表
+		return true;
 	};
 
 	const chapterList = computed(() => chapter.value?.data?.list || []);

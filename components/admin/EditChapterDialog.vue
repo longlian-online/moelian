@@ -129,13 +129,17 @@ async function uploadChapterContent(
 	contentId: number,
 	totalPage: number,
 ) {
-	return await useApiFetch(`/api/admin/chapter/${chapterId}/content`, {
-		method: 'POST',
-		body: {
-			contentId,
-			totalPage,
+	const { data, error } = await useApiFetch(
+		`/api/admin/chapter/${chapterId}/content`,
+		{
+			method: 'POST',
+			body: {
+				contentId,
+				totalPage,
+			},
 		},
-	});
+	);
+	return !error.value && data.value?.code === 0;
 }
 
 // 解析 DOCX 文件
@@ -229,7 +233,7 @@ async function submitFile() {
 						const isDocx =
 							chapterFile.value.name.endsWith('.docx') ||
 							chapterFile.value.type ===
-							'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+								'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
 						if (isDocx) {
 							// --- DOCX 处理流程 ---
@@ -258,7 +262,8 @@ async function submitFile() {
 
 								if (item.file) {
 									// 将图片添加到 ZIP（使用 placeholder_{index} 命名）
-									const fileExtension = item.file.name.split('.').pop() || 'png';
+									const fileExtension =
+										item.file.name.split('.').pop() || 'png';
 									const fileName = `placeholder_${imageIndex}.${fileExtension}`;
 									const placeholderName = `placeholder_${imageIndex}`;
 									zip.file(fileName, item.file);
@@ -292,7 +297,6 @@ async function submitFile() {
 								{ type: 'application/zip' },
 							);
 
-
 							// 6. 上传构建好的小说内容压缩包 (index.json + 图片)
 							overlayMessage.value = '正在上传解析后的内容包...';
 							const contentId = await uploadToCos(
@@ -302,7 +306,8 @@ async function submitFile() {
 							);
 
 							// 7. 关联章节内容 (使用解析后内容包的 contentId)
-							await uploadChapterContent(chapterId.value!, contentId, 0);
+							if (!(await uploadChapterContent(chapterId.value!, contentId, 0)))
+								return;
 
 							await chapterStore.refreshList();
 							$tip('上传并解析成功！');
@@ -320,13 +325,15 @@ async function submitFile() {
 								controller.signal,
 							);
 
-							await uploadChapterContent(chapterId.value!, contentId, 0);
+							if (!(await uploadChapterContent(chapterId.value!, contentId, 0)))
+								return;
 							await chapterStore.refreshList();
 							//timeout -1代表永远保留 需要手动关闭
 							$tip(`上传成功！`, {
 								timeout: -1,
 							});
 						}
+						dialog.value = false;
 					} catch (err) {
 						//  捕获并静默处理用户取消的错误
 						if (err.message === '用户取消了上传') {
@@ -348,15 +355,7 @@ async function submitFile() {
 						overlayMessage.value = ''; // 重置消息
 						uploadController.value = null; // 清除 controller
 					}
-						await chapterStore.refreshList();
-						overlay.value = false; // 成功后立即关闭遮罩
-						dialog.value = false; // 成功后立即关闭对话框
-						uploadController.value = null; // 清除引用
-						//timeout -1代表永远保留 需要手动关闭
-						$tip(`上传成功！`, {
-							timeout: -1,
-						});
-					},
+				},
 			});
 		} catch (err) {
 			if (err.message === '用户取消了上传') {

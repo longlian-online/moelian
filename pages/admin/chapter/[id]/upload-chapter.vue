@@ -215,7 +215,7 @@ async function submitInfoAndGoNext(next: () => void) {
 		});
 
 		// 如果有业务错误，useApiFetch 已经弹提示了，这里直接 return
-		if (error.value) {
+		if (error.value || data.value?.code !== 0) {
 			console.error('创建作品失败:', error.value);
 			return;
 		}
@@ -233,13 +233,17 @@ async function uploadChapterContent(
 	contentId: number,
 	totalPage: number,
 ) {
-	return await useApiFetch(`/api/admin/chapter/${chapterId}/content`, {
-		method: 'POST',
-		body: {
-			contentId,
-			totalPage,
+	const { data, error } = await useApiFetch(
+		`/api/admin/chapter/${chapterId}/content`,
+		{
+			method: 'POST',
+			body: {
+				contentId,
+				totalPage,
+			},
 		},
-	});
+	);
+	return !error.value && data.value?.code === 0;
 }
 
 // DOCX 内容项接口
@@ -395,7 +399,6 @@ async function submitFile() {
 					{ type: 'application/zip' },
 				);
 
-
 				// 6. 上传构建好的小说内容压缩包 (index.json + 图片)
 				overlayMessage.value = '正在上传解析后的内容包...';
 				const contentId = await uploadToCos(
@@ -405,7 +408,8 @@ async function submitFile() {
 				);
 
 				// 7. 关联章节内容 (使用解析后内容包的 contentId)
-				await uploadChapterContent(chapterId.value!, contentId, 0);
+				if (!(await uploadChapterContent(chapterId.value!, contentId, 0)))
+					return;
 
 				await chapterStore.refreshList();
 				$tip('上传并解析成功！');
@@ -424,7 +428,8 @@ async function submitFile() {
 					controller.signal,
 				);
 
-				await uploadChapterContent(chapterId.value!, contentId, 0);
+				if (!(await uploadChapterContent(chapterId.value!, contentId, 0)))
+					return;
 				await chapterStore.refreshList();
 				//timeout -1代表永远保留 需要手动关闭
 				$tip(`上传成功！`, {

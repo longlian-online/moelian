@@ -1986,3 +1986,27 @@ useSeoMeta({
 	}
 }
 </style>
+
+<style scoped>
+.detail-main-container--mobile {
+	min-width: 0;
+	max-width: 100%;
+	overflow-x: clip;
+}
+.detail-main-container--mobile .detail-left-panel,
+.detail-main-container--mobile .detail-right-panel,
+.detail-main-container--mobile .detail-main-card,
+.detail-main-container--mobile .detail-chapter-section,
+.detail-main-container--mobile .detail-chapter-content,
+.detail-main-container--mobile .recommendation-paper {
+	min-width: 0;
+	max-width: 100%;
+}
+.detail-main-container--mobile .detail-chapter-grid {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.detail-main-container--mobile .detail-chapter-chips {
+	min-width: 0;
+	max-width: 100%;
+}
+</style>

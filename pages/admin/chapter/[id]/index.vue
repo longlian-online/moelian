@@ -214,7 +214,8 @@ const handleDeleteAction = async (id: number) => {
 		confirmText: '确认删除',
 		onConfirm: async () => {
 			try {
-				await adminChapterStore.deleteChapter(id);
+				const succeeded = await adminChapterStore.deleteChapter(id);
+				if (!succeeded) return;
 				// 检查删除后的页码是否超出范围
 				const newPageCount = adminChapterStore.pageCount;
 				if (searchForm.value.page > newPageCount && searchForm.value.page > 1) {
@@ -242,7 +243,11 @@ async function handleStatusAction(id: number, status: 'Enable' | 'Disable') {
 		confirmText: isEnable ? '确认发布' : '确认下架',
 		onConfirm: async () => {
 			try {
-				await adminChapterStore.updateChapterStatus(id, status);
+				const succeeded = await adminChapterStore.updateChapterStatus(
+					id,
+					status,
+				);
+				if (!succeeded) return;
 				$tip(`${isEnable ? '发布' : '下架'}成功!`, { color: 'success' });
 			} catch (error) {
 				console.error('状态更新失败:', error);

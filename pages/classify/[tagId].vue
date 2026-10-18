@@ -1,6 +1,42 @@
 <template>
 	<div class="category-results">
-		<div v-if="mangaPending || novelPending" class="category-empty" role="status">
+		<div class="category-filters">
+			<v-select
+				v-model="selectedType"
+				:items="typeOptions"
+				label="内容类型"
+				variant="outlined"
+				density="compact"
+				hide-details
+				class="category-type-select"
+			/>
+			<v-select
+				v-model="tagSelection"
+				:items="tagOptions"
+				label="标签筛选"
+				placeholder="选择标签"
+				persistent-placeholder
+				multiple
+				chips
+				clearable
+				variant="outlined"
+				density="compact"
+				hide-details
+				class="category-tags-select"
+			>
+				<template #selection="{ item, index }">
+					<span v-if="index === 0" class="selected-tag">{{ item.title }}</span>
+					<span v-if="index === 1" class="selected-tag-count"
+						>+{{ tagSelection.length - 1 }}</span
+					>
+				</template>
+			</v-select>
+		</div>
+		<div
+			v-if="mangaPending || novelPending"
+			class="category-empty"
+			role="status"
+		>
 			<v-progress-circular indeterminate :size="28" :width="2" />
 			<p>正在寻找相关作品…</p>
 		</div>
@@ -8,7 +44,9 @@
 			<img src="/moelian-logo.png" alt="moelian" class="category-empty-logo" />
 			<h2>暂时没有找到相关作品</h2>
 			<p>试试减少标签，或换个关键词吧。</p>
-			<v-btn variant="text" color="primary" @click="clearFilters">查看全部作品</v-btn>
+			<v-btn variant="text" color="primary" @click="clearFilters"
+				>查看全部作品</v-btn
+			>
 		</div>
 		<VInfiniteScroll
 			v-else
@@ -45,10 +83,11 @@ import type { WorkListRes } from '~/shared/dto/web/work';
 import type { TagWebItem } from '~/shared/dto/web';
 const route = useRoute();
 const router = useRouter();
-const clearFilters = () => router.push({
-	path: route.path,
-	query: { ...route.query, tags: '', key: undefined },
-});
+const clearFilters = () =>
+	router.push({
+		path: route.path,
+		query: { ...route.query, tags: '', key: undefined, type: undefined },
+	});
 const { isMobile } = useDevice();
 const { data: tagData } = await useApiFetch<TagWebItem[]>('/api/web/tag/all');
 const selectedTags = computed(() => {
@@ -63,8 +102,37 @@ const selectedTags = computed(() => {
 	);
 	return tag ? [tag.content] : [];
 });
+const typeOptions = [
+	{ title: '漫画&小说', value: 'all' },
+	{ title: '漫画', value: 'Manga' },
+	{ title: '小说', value: 'Novel' },
+];
+const selectedType = computed({
+	get: () =>
+		['Manga', 'Novel'].includes(String(route.query.type))
+			? String(route.query.type)
+			: 'all',
+	set: (value) => {
+		router.push({
+			path: route.path,
+			query: { ...route.query, type: value === 'all' ? undefined : value },
+		});
+	},
+});
+const tagOptions = computed(
+	() => tagData.value?.data?.map((tag) => tag.content) ?? [],
+);
+const tagSelection = computed({
+	get: () => selectedTags.value,
+	set: (value: string[] | null) => {
+		router.push({
+			path: route.path,
+			query: { ...route.query, tags: value?.length ? value : '' },
+		});
+	},
+});
 const filterKey = computed(() =>
-	JSON.stringify([selectedTags.value, route.query.key]),
+	JSON.stringify([selectedTags.value, route.query.key, selectedType.value]),
 );
 const query = computed(() => ({
 	page: 1,
@@ -98,8 +166,12 @@ watch(
 onBeforeUnmount(() => request?.abort());
 const works = computed(() =>
 	[
-		...(mangaData.value?.data?.list ?? []),
-		...(novelData.value?.data?.list ?? []),
+		...(selectedType.value === 'Novel'
+			? []
+			: (mangaData.value?.data?.list ?? [])),
+		...(selectedType.value === 'Manga'
+			? []
+			: (novelData.value?.data?.list ?? [])),
 		...extraWorks.value,
 	].sort(
 		(a, b) =>
@@ -117,7 +189,8 @@ async function loadMore({
 		return;
 	}
 	const total =
-		(mangaData.value?.data?.total ?? 0) + (novelData.value?.data?.total ?? 0);
+		(selectedType.value === 'Novel' ? 0 : (mangaData.value?.data?.total ?? 0)) +
+		(selectedType.value === 'Manga' ? 0 : (novelData.value?.data?.total ?? 0));
 	if (works.value.length >= total) {
 		done('empty');
 		return;
@@ -127,7 +200,10 @@ async function loadMore({
 	const currentRevision = revision;
 	try {
 		const responses = await Promise.all(
-			['Manga', 'Novel'].map((type) =>
+			(selectedType.value === 'all'
+				? ['Manga', 'Novel']
+				: [selectedType.value]
+			).map((type) =>
 				$fetch<{ code: number; message: string; data: WorkListRes }>(
 					'/api/web/work',
 					{
@@ -184,8 +260,74 @@ useSeoMeta({
 </style>
 
 <style scoped>
-.category-empty { min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 40px 20px; text-align: center; color: #858575; }
-.category-empty-logo { width: 150px; max-width: 50%; margin-bottom: 8px; opacity: .8; }
-.category-empty h2 { font-family: 'Songti SC', 'SimSun', serif; font-size: 22px; font-weight: 500; color: #70594b; }
-.category-empty p { font-size: 13px; }
+.category-empty {
+	min-height: 60vh;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 16px;
+	padding: 40px 20px;
+	text-align: center;
+	color: #858575;
+}
+.category-empty-logo {
+	width: 150px;
+	max-width: 50%;
+	margin-bottom: 8px;
+	opacity: 0.8;
+}
+.category-empty h2 {
+	font-family: 'Songti SC', 'SimSun', serif;
+	font-size: 22px;
+	font-weight: 500;
+	color: #70594b;
+}
+.category-empty p {
+	font-size: 13px;
+}
+</style>
+
+<style scoped>
+.category-filters {
+	display: flex;
+	gap: 16px;
+	padding: 20px 24px;
+	max-width: 1000px;
+	margin: 0 auto;
+	align-items: center;
+}
+.category-type-select {
+	flex: 0 0 190px;
+}
+.category-tags-select {
+	flex: 1;
+	min-width: 0;
+}
+.category-tags-select :deep(.v-field__input) {
+	flex-wrap: nowrap;
+	overflow: hidden;
+}
+.selected-tag {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.selected-tag-count {
+	margin-left: 8px;
+	flex-shrink: 0;
+	font-size: 12px;
+}
+@media (max-width: 600px) {
+	.category-filters {
+		padding: 16px 12px;
+		gap: 10px;
+	}
+	.category-type-select {
+		flex-basis: 140px;
+	}
+	.selected-tag {
+		max-width: 80px;
+	}
+}
 </style>
