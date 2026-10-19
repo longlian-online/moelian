@@ -5,15 +5,6 @@
 
 			<template v-for="(shelf, shelfIndex) in shelves" :key="shelfIndex">
 				<v-row dense class="cards-grid" no-gutters>
-					<div class="shelf-decoration" aria-hidden="true">
-						<div v-for="n in 3" :key="n" class="decoration-spine">
-							<div class="spine-brand">
-								<img
-									class="spine-brand-orange"
-								 src="/moelian-orange.png" alt="" />
-							</div>
-						</div>
-					</div>
 					<div class="shelf-books-grid">
 						<v-col
 							v-for="card in shelf"
@@ -62,6 +53,8 @@
 									</div>
 								</v-tooltip>
 							</v-card>
+							<ShelfBookmark v-if="!props.mobile" class="shelf-bookmark"
+								:to="bookUrl(card)" :title="card.title" :author="card.author" />
 						</v-col>
 					</div>
 				</v-row>
@@ -741,5 +734,27 @@ const bookUrl = (work: ShelfWork) =>
 	width: 100%;
 	min-width: 0;
 	flex-shrink: 0;
+}
+</style>
+
+<style scoped>
+.shelf-display:not(.shelf-page--mobile) .cards-grid { padding: 32px 112px 0 32px; }
+.shelf-display:not(.shelf-page--mobile) .shelf-books-grid {
+	grid-template-columns: repeat(4, minmax(0, 238px));
+	gap: clamp(84px, 7vw, 118px);
+}
+.shelf-display:not(.shelf-page--mobile) .book-col { position: relative; }
+.shelf-display:not(.shelf-page--mobile) .shelf-labels { display: none; }
+.shelf-bookmark {
+	position: absolute;
+	z-index: 3;
+	top: -60px;
+	left: calc(100% + 10px);
+	width: 76px;
+	height: calc(var(--shelf-book-height) + 60px);
+}
+.cards-grid:first-of-type .shelf-bookmark {
+	top: -51px;
+	height: calc(var(--shelf-book-height) + 51px);
 }
 </style>
