@@ -24,6 +24,19 @@
 				>
 					<!-- 封面图 (左侧) -->
 					<div class="detail-cover-wrapper">
+						<NuxtLink
+							:to="`/${props.contentType}`"
+							class="detail-back-button"
+							aria-label="返回主页"
+							title="返回书架"
+						>
+							<svg viewBox="0 0 36 24" fill="none" aria-hidden="true">
+								<path
+									d="M31 13C23 11.5 15 12.7 5 12M12 5C9.5 7.2 7.4 9.7 4.5 12.1C7.5 14 9.2 16.9 12.5 19"
+								/>
+							</svg>
+							<span>书架</span>
+						</NuxtLink>
 						<div v-if="workDetail && !pending" class="detail-cover-inner">
 							<span
 								v-for="corner in ['tl', 'tr', 'bl', 'br']"
@@ -695,6 +708,40 @@ useSeoMeta({
 </script>
 
 <style scoped>
+.detail-back-button {
+	position: absolute;
+	top: 10px;
+	left: 18px;
+	z-index: 5;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	min-height: 44px;
+	padding: 0 6px;
+	color: #956e64;
+	text-decoration: none;
+	font-family: 'Noto Serif SC', 'Songti SC', serif;
+	font-size: 14px;
+	letter-spacing: 0.14em;
+	transition: color 180ms ease;
+}
+.detail-back-button svg {
+	width: 30px;
+	height: 24px;
+	stroke: currentColor;
+	stroke-width: 1.7;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+.detail-back-button:hover {
+	color: #8b6259;
+}
+.detail-back-button:focus-visible {
+	outline: 2px dashed #b58d83;
+	outline-offset: 2px;
+	border-radius: 4px;
+}
+
 /* 强制 75/25 比例布局 */
 .detail-main-container {
 	display: flex;
@@ -2324,5 +2371,13 @@ useSeoMeta({
 }
 .detail-main-container--mobile .detail-loading-card {
 	min-height: 0;
+}
+</style>
+
+<style scoped>
+.detail-main-card .detail-cover-wrapper,
+.detail-main-container--mobile .detail-main-card .detail-cover-wrapper {
+	position: relative;
+	padding-top: 60px;
 }
 </style>
