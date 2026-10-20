@@ -4,13 +4,8 @@ const props = defineProps<{
 	author?: string | null;
 	to: string;
 }>();
-// 使用作品链接稳定分配款式，保证 SSR、刷新和列表重排时保持一致。
-const artworkSrc = computed(() => {
-	let hash = 0;
-	for (const character of props.to)
-		hash = (hash * 31 + (character.codePointAt(0) ?? 0)) >>> 0;
-	return `/bookmarks/art-${String((hash % 13) + 1).padStart(2, '0')}.png`;
-});
+const pickArtwork = useRandomArtwork();
+const artworkSrc = computed(() => pickArtwork(props.to));
 const characters = computed(() => Array.from(props.title));
 const surface = useTemplateRef<HTMLElement>('surface');
 let motion: Animation | undefined;

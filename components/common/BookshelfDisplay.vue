@@ -745,7 +745,8 @@ const bookUrl = (work: ShelfWork) =>
 }
 .shelf-display:not(.shelf-page--mobile) .book-col { position: relative; }
 .shelf-display:not(.shelf-page--mobile) .shelf-labels { display: none; }
-.shelf-bookmark {
+/* 高于书签根样式的优先级，避免 SSR 与客户端样式加载顺序改变定位。 */
+.shelf-display .shelf-bookmark {
 	position: absolute;
 	z-index: 3;
 	top: -60px;

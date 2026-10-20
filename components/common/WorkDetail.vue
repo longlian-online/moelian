@@ -46,6 +46,14 @@
 								</template>
 							</Book3D>
 						</div>
+						<img
+							class="notebook-doodle notebook-doodle--cover"
+							:src="notebookArtwork[0]"
+							alt=""
+							aria-hidden="true"
+							width="600"
+							height="600"
+						/>
 						<div class="notebook-page-footer" aria-hidden="true">
 							<img src="/moelian-logo.png" class="notebook-logo" alt="" />
 							<span class="notebook-page-number">01</span>
@@ -247,6 +255,14 @@
 								</div>
 								<template v-else>开始阅读</template>
 							</v-btn>
+							<img
+								class="notebook-doodle notebook-doodle--info"
+								:src="notebookArtwork[1]"
+								alt=""
+								aria-hidden="true"
+								width="600"
+								height="600"
+							/>
 						</div>
 					</div>
 				</section>
@@ -337,6 +353,15 @@
 								</div>
 								<div class="recommendation-info">
 									<h3 class="recommendation-title">{{ card.title }}</h3>
+									<img
+										class="recommendation-doodle"
+										:src="pickArtwork(`${props.contentType}/${workId}:recommendation:${card.id}`)"
+										alt=""
+										aria-hidden="true"
+										width="600"
+										height="600"
+									/>
+
 									<span class="recommendation-author-name">{{
 										card.author || '未知作者'
 									}}</span>
@@ -421,6 +446,10 @@ const props = defineProps({
 const router = useRouter();
 const route = useRoute();
 const workId = computed(() => Number(route.params.id));
+const pickArtwork = useRandomArtwork();
+const notebookArtwork = computed(() =>
+	['cover', 'info'].map((page) => pickArtwork(`${props.contentType}/${workId.value}:${page}`)),
+);
 const notebookElement = ref<HTMLElement | null>(null);
 const notebookOpened = ref(false);
 
@@ -2096,5 +2125,93 @@ useSeoMeta({
 .detail-chapter-grid .chapter-btn:focus-visible { outline: 2px solid #bd8a79; outline-offset: -3px; }
 @media (max-width: 960px) {
 	.detail-chapter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+</style>
+
+<style scoped>
+/* 页角涂鸦保留原画颜色；不参与点击，阅读操作仍由按钮承接。 */
+.notebook-doodle {
+	display: block;
+	object-fit: contain;
+	pointer-events: none;
+	user-select: none;
+}
+.detail-main-card .detail-cover-wrapper {
+	padding-bottom: 112px;
+}
+.notebook-doodle--cover {
+	position: absolute;
+	right: 32px;
+	bottom: 36px;
+	width: 80px;
+	height: 80px;
+}
+.detail-action-button {
+	gap: 16px;
+	flex-wrap: wrap;
+	justify-content: space-between;
+}
+.notebook-doodle--info {
+	margin-left: auto;
+	width: clamp(64px, 8vw, 100px);
+	height: auto;
+	aspect-ratio: 1;
+	flex-shrink: 0;
+}
+.detail-main-container--mobile .detail-main-card .detail-cover-wrapper {
+	padding-bottom: 104px;
+}
+.detail-main-container--mobile .notebook-doodle--cover {
+	right: 24px;
+	bottom: 30px;
+	width: 64px;
+	height: 64px;
+}
+.detail-main-container--mobile .notebook-doodle--info {
+	display: none;
+}
+</style>
+
+<style scoped>
+.recommendation-paper .recommendation-content {
+	height: 180px;
+}
+.recommendation-paper .recommendation-info {
+	height: 180px;
+	grid-template-columns: minmax(0, 1fr) 80px;
+	grid-template-rows: 45px 18px 52px 41px;
+	column-gap: 8px;
+}
+.recommendation-title {
+	grid-column: 1 / -1;
+	grid-row: 1;
+}
+.recommendation-author-name {
+	grid-column: 1;
+	grid-row: 2;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.recommendation-paper .recommendation-meta {
+	grid-column: 1;
+	grid-row: 3;
+	align-self: start;
+	flex-wrap: wrap;
+	gap: 4px 8px;
+	overflow: visible;
+}
+.recommendation-description {
+	grid-column: 1 / -1;
+	grid-row: 4;
+}
+.recommendation-doodle {
+	grid-column: 2;
+	grid-row: 2 / 4;
+	align-self: center;
+	width: 80px;
+	height: 80px;
+	object-fit: contain;
+	pointer-events: none;
 }
 </style>
