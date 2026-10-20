@@ -6,6 +6,28 @@ const props = defineProps<{
 }>();
 const pickArtwork = useRandomArtwork();
 const artworkSrc = computed(() => pickArtwork(props.to));
+const basePending = ref(true);
+const artworkPending = ref(true);
+const baseFailed = ref(false);
+const artworkFailed = ref(false);
+watch(artworkSrc, () => {
+	artworkPending.value = true;
+	artworkFailed.value = false;
+});
+// 缓存图片可能早于水合完成，补查 complete，避免占位一直不消失。
+onMounted(() => {
+	for (const img of surface.value?.querySelectorAll<HTMLImageElement>('img') ??
+		[]) {
+		if (!img.complete) continue;
+		if (img.classList.contains('bookmark-character')) {
+			artworkPending.value = false;
+			artworkFailed.value = img.naturalWidth === 0;
+		} else {
+			basePending.value = false;
+			baseFailed.value = img.naturalWidth === 0;
+		}
+	}
+});
 const characters = computed(() => Array.from(props.title));
 const surface = useTemplateRef<HTMLElement>('surface');
 let motion: Animation | undefined;
@@ -43,7 +65,9 @@ onBeforeUnmount(() => motion?.cancel());
 <template>
 	<NuxtLink
 		class="bookmark"
+		:class="{ 'bookmark--loading': basePending || artworkPending }"
 		:to="props.to"
+		:aria-busy="basePending || artworkPending"
 		:title="`${props.title} · ${props.author || '未知作者'}`"
 		:aria-label="`${props.title} · ${props.author || '未知作者'}`"
 		@pointerenter="setFloating(true)"
@@ -57,11 +81,45 @@ onBeforeUnmount(() => motion?.cancel());
 				:class="`bookmark-layer--${layer}`"
 			>
 				<span class="bookmark-body">
+					<span
+						v-if="basePending || artworkPending || baseFailed"
+						class="bookmark-base-placeholder"
+						:class="{ 'bookmark-shimmer': basePending || artworkPending }"
+					>
+						<template v-if="basePending || artworkPending">
+							<span class="bookmark-skeleton-title" />
+							<span class="bookmark-skeleton-author" />
+						</template>
+					</span>
+					<span
+						v-if="basePending || artworkPending"
+						class="bookmark-skeleton-hook"
+					/>
 					<span class="bookmark-art" aria-hidden="true">
 						<span class="bookmark-image">
-							<img src="/bookmarks/base.png" alt="" width="820" height="1918" />
+							<img
+								class="bookmark-base-image"
+								:class="{ 'bookmark-image-hidden': basePending || baseFailed }"
+								src="/bookmarks/base.png"
+								alt=""
+								width="820"
+								height="1918"
+								@load="basePending = false"
+								@error="
+									basePending = false;
+									baseFailed = true;
+								"
+							/>
 							<img
 								class="bookmark-character"
+								:class="{
+									'bookmark-image-hidden': artworkPending || artworkFailed,
+								}"
+								@load="artworkPending = false"
+								@error="
+									artworkPending = false;
+									artworkFailed = true;
+								"
 								:src="artworkSrc"
 								alt=""
 								width="600"
@@ -71,11 +129,9 @@ onBeforeUnmount(() => motion?.cancel());
 					</span>
 					<span class="bookmark-title-area">
 						<span class="bookmark-title"
-							><span
-								v-for="(character, index) in characters"
-								:key="index"
-								>{{ character }}</span
-							></span
+							><span v-for="(character, index) in characters" :key="index">{{
+								character
+							}}</span></span
 						>
 					</span>
 					<span class="bookmark-author">{{ props.author || '未知作者' }}</span>
@@ -191,5 +247,88 @@ onBeforeUnmount(() => motion?.cancel());
 	text-overflow: ellipsis;
 	color: #243247;
 	text-shadow: none;
+}
+.bookmark-image img {
+	transition: opacity 200ms ease;
+}
+.bookmark-image .bookmark-image-hidden {
+	opacity: 0;
+}
+.bookmark-base-placeholder {
+	position: absolute;
+	top: 6%;
+	bottom: 6%;
+	left: 5%;
+	right: 5%;
+	border: 1px solid #ddc6b5;
+	border-radius: 8px 8px 4px 4px;
+	background: #f5e9dc;
+	overflow: hidden;
+}
+.bookmark--loading .bookmark-art,
+.bookmark--loading .bookmark-title-area,
+.bookmark--loading .bookmark-author {
+	opacity: 0;
+}
+.bookmark-art,
+.bookmark-title-area,
+.bookmark-author {
+	transition: opacity 200ms ease;
+}
+.bookmark-skeleton-title,
+.bookmark-skeleton-author {
+	position: absolute;
+	width: 5px;
+	border-radius: 4px;
+	background: #dacbbb;
+}
+.bookmark-skeleton-title {
+	top: 26%;
+	left: 34%;
+	height: 38%;
+}
+.bookmark-skeleton-author {
+	top: 54%;
+	left: 70%;
+	width: 3px;
+	height: 17%;
+}
+.bookmark-skeleton-hook {
+	position: absolute;
+	top: 0;
+	left: calc(50% - 4px);
+	width: 8px;
+	height: 10%;
+	border: 2px solid #c9b79e;
+	border-radius: 50%;
+	transform: rotate(-10deg);
+}
+.bookmark-shimmer::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(
+		105deg,
+		transparent 25%,
+		rgb(255 250 241 / 70%) 50%,
+		transparent 75%
+	);
+	animation: bookmark-shimmer 1.5s ease-in-out infinite;
+}
+@keyframes bookmark-shimmer {
+	from {
+		transform: translateX(-100%);
+	}
+	to {
+		transform: translateX(100%);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.bookmark-shimmer::after {
+		animation: none;
+	}
+	.bookmark-image img {
+		transition: none;
+	}
 }
 </style>
