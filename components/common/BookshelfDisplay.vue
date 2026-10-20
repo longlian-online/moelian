@@ -467,7 +467,8 @@ const bookUrl = (work: ShelfWork) =>
 	overflow: visible;
 	background: transparent;
 }
-.bookshelf .my-card :deep(.book-3d-wrapper) {
+/* 书架尺寸优先于 Book3D 默认留白，避免生产环境 CSS 顺序导致封面缩小。 */
+.bookshelf .my-card :deep(.book-3d-container.book-3d-home .book-3d-wrapper) {
 	width: calc(var(--shelf-book-height) * 0.72) !important;
 	max-width: 100%;
 }
