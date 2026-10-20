@@ -1,4 +1,5 @@
 import { useFetch } from '#imports';
+import type { MaybeRefOrGetter } from 'vue';
 import type { UseFetchOptions } from '#app';
 import type { AsyncData } from 'nuxt/app';
 import { useNuxtApp } from '#app';
@@ -14,7 +15,7 @@ interface ApiResponse<T> {
 
 // 定义 useApiFetch 的类型签名
 type ApiFetch = <T>(
-	url: string,
+	url: MaybeRefOrGetter<string>,
 	options?: UseFetchOptions<ApiResponse<T>>,
 ) => AsyncData<ApiResponse<T>, Error | null>;
 

@@ -3,9 +3,12 @@
 		class="detail-main-container"
 		:class="{ 'detail-main-container--mobile': props.mobile }"
 	>
-		<template v-if="pending">
-			<v-skeleton-loader type="image" />
-		</template>
+		<NetworkErrorState
+			v-if="error || (status === 'success' && !workDetail)"
+			:retrying="pending"
+			@retry="refresh()"
+			@home="navigateTo(`/${props.contentType}`)"
+		/>
 		<template v-else>
 			<!-- 左侧 75% 详情区 -->
 			<main class="detail-left-panel">
@@ -14,11 +17,14 @@
 					:key="workId"
 					ref="notebookElement"
 					class="detail-main-card"
-					:class="{ 'notebook-opening': notebookOpened }"
+					:class="{
+						'notebook-opening': notebookOpened,
+						'detail-loading-card': pending || !workDetail,
+					}"
 				>
 					<!-- 封面图 (左侧) -->
 					<div class="detail-cover-wrapper">
-						<div class="detail-cover-inner">
+						<div v-if="workDetail && !pending" class="detail-cover-inner">
 							<span
 								v-for="corner in ['tl', 'tr', 'bl', 'br']"
 								:key="corner"
@@ -46,7 +52,9 @@
 								</template>
 							</Book3D>
 						</div>
+						<div v-else class="detail-loading-cover" aria-hidden="true" />
 						<img
+							v-if="workDetail && !pending"
 							class="notebook-doodle notebook-doodle--cover"
 							:src="notebookArtwork[0]"
 							alt=""
@@ -54,7 +62,11 @@
 							width="600"
 							height="600"
 						/>
-						<div class="notebook-page-footer" aria-hidden="true">
+						<div
+							v-if="workDetail && !pending"
+							class="notebook-page-footer"
+							aria-hidden="true"
+						>
 							<img src="/moelian-logo.png" class="notebook-logo" alt="" />
 							<span class="notebook-page-number">01</span>
 						</div>
@@ -89,7 +101,7 @@
 					</div>
 					<!-- 信息内容区 (右侧) -->
 					<div class="detail-info-wrapper">
-						<div class="detail-info-content">
+						<div v-if="workDetail && !pending" class="detail-info-content">
 							<div class="detail-title-row">
 								<h1
 									v-copy="workDetail.title"
@@ -239,11 +251,16 @@
 							</div>
 						</div>
 
-						<div class="detail-action-button">
+						<v-skeleton-loader
+							v-else
+							type="heading, text, text, paragraph, paragraph, button"
+						/>
+						<div v-if="workDetail && !pending" class="detail-action-button">
 							<v-btn
 								class="start-read-btn"
 								:class="{ 'has-progress': continueProgress }"
 								:to="primaryReadTo"
+								:disabled="!primaryReadTo"
 							>
 								<div v-if="continueProgress" class="continue-read-content">
 									<span>继续阅读</span>
@@ -268,7 +285,10 @@
 				</section>
 
 				<!-- 章节列表 - 自动填充余下空间 -->
-				<section class="yuri-card detail-chapter-section">
+				<section
+					v-if="workDetail && !pending"
+					class="yuri-card detail-chapter-section"
+				>
 					<div class="detail-chapter-header">
 						<h2 class="detail-chapter-title">章节列表</h2>
 						<span class="detail-chapter-count">
@@ -312,6 +332,7 @@
 						</div>
 					</div>
 				</section>
+				<v-skeleton-loader v-else type="heading, list-item-three-line" />
 			</main>
 
 			<!-- 右侧 25% 推荐区 -->
@@ -322,7 +343,9 @@
 							<img
 								class="recommendation-orange"
 								aria-hidden="true"
-							 src="/moelian-orange.png" alt="" />
+								src="/moelian-orange.png"
+								alt=""
+							/>
 							你可能也喜欢
 						</h2>
 						<NuxtLink
@@ -332,8 +355,19 @@
 						>
 					</div>
 					<div class="recommendation-list">
+						<v-skeleton-loader
+							v-if="recommendationPending"
+							type="list-item-avatar-three-line, list-item-avatar-three-line"
+						/>
+						<div v-else-if="recommendationError" class="recommendation-empty">
+							<v-btn variant="text" @click="refreshRecommendations()"
+								>重试加载推荐</v-btn
+							>
+						</div>
 						<NuxtLink
-							v-for="card in recommendationsData"
+							v-for="card in recommendationPending || recommendationError
+								? []
+								: recommendationsData"
 							:key="card.id"
 							class="recommendation-item"
 							:to="`/${props.contentType}/${card.id}`"
@@ -355,7 +389,11 @@
 									<h3 class="recommendation-title">{{ card.title }}</h3>
 									<img
 										class="recommendation-doodle"
-										:src="pickArtwork(`${props.contentType}/${workId}:recommendation:${card.id}`)"
+										:src="
+											pickArtwork(
+												`${props.contentType}/${workId}:recommendation:${card.id}`,
+											)
+										"
 										alt=""
 										aria-hidden="true"
 										width="600"
@@ -383,7 +421,14 @@
 								</div>
 							</div>
 						</NuxtLink>
-						<p v-if="!recommendationsData?.length" class="recommendation-empty">
+						<p
+							v-if="
+								!recommendationPending &&
+								!recommendationError &&
+								!recommendationsData.length
+							"
+							class="recommendation-empty"
+						>
 							暂时没有更多推荐
 						</p>
 					</div>
@@ -448,12 +493,14 @@ const route = useRoute();
 const workId = computed(() => Number(route.params.id));
 const pickArtwork = useRandomArtwork();
 const notebookArtwork = computed(() =>
-	['cover', 'info'].map((page) => pickArtwork(`${props.contentType}/${workId.value}:${page}`)),
+	['cover', 'info'].map((page) =>
+		pickArtwork(`${props.contentType}/${workId.value}:${page}`),
+	),
 );
 const notebookElement = ref<HTMLElement | null>(null);
 const notebookOpened = ref(false);
 
-// 数据就绪且活页本进入视口时，仅播放一次开书动画。
+// 骨架与内容共用书本节点，进入视口时开书，数据返回时不重复播放。
 onMounted(() => {
 	watch(
 		notebookElement,
@@ -480,7 +527,6 @@ onMounted(() => {
 	);
 });
 
-const store = useWebWorkStore();
 const { findLatestProgress } = useReadingProgress();
 const continueProgress = ref<ReadingProgress | null>(null);
 
@@ -507,18 +553,25 @@ const SEGMENT_SIZE = 12;
 // 当前激活的 chunk 索引（0 为第一个 chunk）
 const activeChunkIndex = ref(0);
 
-const { data, pending } = await useApiFetch<WorkDetailRes>(
-	`/api/web/work/${workId.value}`,
-	{
+const { data, pending, status, error, refresh } =
+	await useApiFetch<WorkDetailRes>(() => `/api/web/work/${workId.value}`, {
 		method: 'GET',
-	},
-);
-const workDetail = data.value.data;
+		lazy: true,
+	});
+const workDetail = computed(() => data.value?.data);
 
 onMounted(() => {
-	continueProgress.value = findLatestProgress(
-		props.contentType as ReadingContentType,
-		workDetail.chapterList.map((chapter) => chapter.id),
+	watch(
+		() => workDetail.value?.chapterList,
+		(chapters) => {
+			continueProgress.value = chapters
+				? findLatestProgress(
+						props.contentType as ReadingContentType,
+						chapters.map((chapter) => chapter.id),
+					)
+				: null;
+		},
+		{ immediate: true },
 	);
 });
 
@@ -534,16 +587,13 @@ const continueProgressLabel = computed(() => {
 const primaryReadTo = computed(() => {
 	const chapterId =
 		continueProgress.value?.chapterId ?? sortedChapterList.value[0]?.id;
-	return `/${props.contentType}/chapter/${chapterId}`;
+	return chapterId ? `/${props.contentType}/chapter/${chapterId}` : undefined;
 });
 
 //排序数组根据no属性
-const sortedChapterList = computed(() => {
-	if (!workDetail.chapterList || workDetail.chapterList.length === 0) {
-		return [];
-	}
-	return workDetail.chapterList.slice();
-});
+const sortedChapterList = computed(
+	() => workDetail.value?.chapterList?.slice() ?? [],
+);
 
 // 根据排序后的数组长度生成分片信息：{ startIndex, endIndex, label }
 const chapterChips = computed(() => {
@@ -598,21 +648,24 @@ watch(
 	{ immediate: true },
 );
 
-const { data: recommendationsData } = await useAsyncData<WorkListRes['list']>(
-	computed(() => `recommendations-${workId.value}`),
-	async () => {
-		if (!workId.value || isNaN(workId.value)) return [];
-		if (props.contentType === 'manga') {
-			await store.getAllManga();
-			return store.getMangaRecommendations(workId.value);
-		} else {
-			await store.getAllNovel();
-			return store.getNovelRecommendations(workId.value);
-		}
-	},
-	{
-		watch: [workId],
-	},
+// 独立加载推荐，不占用书架列表状态，也不阻塞客户端导航。
+const {
+	data: recommendationResponse,
+	pending: recommendationPending,
+	error: recommendationError,
+	refresh: refreshRecommendations,
+} = await useApiFetch<WorkListRes>('/api/web/work', {
+	lazy: true,
+	query: computed(() => ({
+		type: props.contentType === 'manga' ? 'Manga' : 'Novel',
+		page: 1,
+		sortType: 'UPDATE',
+	})),
+});
+const recommendationsData = computed(() =>
+	(recommendationResponse.value?.data?.list ?? [])
+		.filter((work) => work.id !== workId.value)
+		.slice(0, 4),
 );
 
 function handleCoverClick() {
@@ -624,17 +677,20 @@ function handleCoverClick() {
 
 useSeoMeta({
 	title: () =>
-		[workDetail.title, workDetail.author].filter(Boolean).join(' - ') ||
-		'moelian',
+		[workDetail.value?.title, workDetail.value?.author]
+			.filter(Boolean)
+			.join(' - ') || 'moelian',
 	description: () =>
-		workDetail.description ||
-		`${workDetail.title}，作者：${workDetail.author}。在线查看作品简介与最新章节。`,
-	ogTitle: () => workDetail.title,
-	ogDescription: () => workDetail.description,
-	ogImage: () => workDetail.coverUrl,
-	twitterTitle: () => workDetail.title,
-	twitterDescription: () => workDetail.description,
-	twitterImage: () => workDetail.coverUrl,
+		workDetail.value
+			? workDetail.value.description ||
+				`${workDetail.value.title}，作者：${workDetail.value.author}。在线查看作品简介与最新章节。`
+			: '在线查看作品简介与最新章节。',
+	ogTitle: () => workDetail.value?.title,
+	ogDescription: () => workDetail.value?.description,
+	ogImage: () => workDetail.value?.coverUrl,
+	twitterTitle: () => workDetail.value?.title,
+	twitterDescription: () => workDetail.value?.description,
+	twitterImage: () => workDetail.value?.coverUrl,
 });
 </script>
 
@@ -2088,8 +2144,13 @@ useSeoMeta({
 	height: 144px;
 }
 @media (max-width: 380px) {
-	.recommendation-paper .recommendation-content { gap: 10px; grid-template-columns: 92px minmax(0, 1fr); }
-	.recommendation-paper .recommendation-cover { width: 92px; }
+	.recommendation-paper .recommendation-content {
+		gap: 10px;
+		grid-template-columns: 92px minmax(0, 1fr);
+	}
+	.recommendation-paper .recommendation-cover {
+		width: 92px;
+	}
 }
 </style>
 
@@ -2120,11 +2181,28 @@ useSeoMeta({
 		background: linear-gradient(140deg, #ff9baa, #fb758f) !important;
 	}
 }
-.detail-chapter-grid .chapter-btn :deep(.v-btn__content) { display: flex; align-items: center; gap: 10px; width: 100%; }
-.chapter-bookmark-dot { width: 10px; height: 10px; border: 2px solid currentColor; border-radius: 50%; opacity: .55; flex-shrink: 0; }
-.detail-chapter-grid .chapter-btn:focus-visible { outline: 2px solid #bd8a79; outline-offset: -3px; }
+.detail-chapter-grid .chapter-btn :deep(.v-btn__content) {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+}
+.chapter-bookmark-dot {
+	width: 10px;
+	height: 10px;
+	border: 2px solid currentColor;
+	border-radius: 50%;
+	opacity: 0.55;
+	flex-shrink: 0;
+}
+.detail-chapter-grid .chapter-btn:focus-visible {
+	outline: 2px solid #bd8a79;
+	outline-offset: -3px;
+}
 @media (max-width: 960px) {
-	.detail-chapter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.detail-chapter-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
 }
 </style>
 
@@ -2213,5 +2291,39 @@ useSeoMeta({
 	height: 80px;
 	object-fit: contain;
 	pointer-events: none;
+}
+</style>
+
+<style scoped>
+.detail-loading-card {
+	min-height: 560px;
+}
+.detail-loading-card .detail-cover-wrapper {
+	padding: 40px 26px;
+}
+.detail-loading-cover {
+	width: 266px;
+	max-width: 100%;
+	height: 369px;
+	flex-shrink: 0;
+	border-radius: 6px;
+	background: #e8ded0;
+	animation: detail-cover-pulse 1.5s ease-in-out infinite alternate;
+}
+@keyframes detail-cover-pulse {
+	to {
+		opacity: 0.55;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.detail-loading-cover {
+		animation: none;
+	}
+}
+.detail-loading-card :deep(.v-skeleton-loader) {
+	background-color: transparent;
+}
+.detail-main-container--mobile .detail-loading-card {
+	min-height: 0;
 }
 </style>
