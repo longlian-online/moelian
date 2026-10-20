@@ -5,15 +5,6 @@
 
 			<template v-for="(shelf, shelfIndex) in shelves" :key="shelfIndex">
 				<v-row dense class="cards-grid" no-gutters>
-					<div class="shelf-decoration" aria-hidden="true">
-						<div v-for="n in 3" :key="n" class="decoration-spine">
-							<div class="spine-brand">
-								<img
-									class="spine-brand-orange"
-								 src="/moelian-orange.png" alt="" />
-							</div>
-						</div>
-					</div>
 					<div class="shelf-books-grid">
 						<v-col
 							v-for="card in shelf"
@@ -62,6 +53,8 @@
 									</div>
 								</v-tooltip>
 							</v-card>
+							<ShelfBookmark v-if="!props.mobile" class="shelf-bookmark"
+								:to="bookUrl(card)" :title="card.title" :author="card.author" />
 						</v-col>
 					</div>
 				</v-row>
@@ -411,7 +404,7 @@ const bookUrl = (work: ShelfWork) =>
 		linear-gradient(95deg, #eedec0, #f6e9cc 35%, #e9d8b7 75%, #f3e5c6);
 	border-radius: 0;
 	border-top: 0;
-	padding-top: 38px !important;
+	padding-top: 22px !important;
 	padding-bottom: 100px !important;
 	background:
 		repeating-linear-gradient(
@@ -429,7 +422,7 @@ const bookUrl = (work: ShelfWork) =>
 	top: 0;
 	left: 0;
 	right: 0;
-	height: 38px;
+	height: 22px;
 	background: var(--wood);
 }
 .bookshelf .cards-grid {
@@ -531,7 +524,7 @@ const bookUrl = (work: ShelfWork) =>
 .shelf-board {
 	position: relative;
 	z-index: 1;
-	height: 56px;
+	height: 22px;
 	background: var(--wood);
 	border-top: 2px solid #f9eed9;
 	box-shadow: 0 16px 22px rgba(89, 59, 39, 0.14);
@@ -741,5 +734,28 @@ const bookUrl = (work: ShelfWork) =>
 	width: 100%;
 	min-width: 0;
 	flex-shrink: 0;
+}
+</style>
+
+<style scoped>
+.shelf-display:not(.shelf-page--mobile) .cards-grid { padding: 32px 112px 0 32px; }
+.shelf-display:not(.shelf-page--mobile) .shelf-books-grid {
+	grid-template-columns: repeat(4, minmax(0, 238px));
+	gap: clamp(84px, 7vw, 118px);
+}
+.shelf-display:not(.shelf-page--mobile) .book-col { position: relative; }
+.shelf-display:not(.shelf-page--mobile) .shelf-labels { display: none; }
+/* 高于书签根样式的优先级，避免 SSR 与客户端样式加载顺序改变定位。 */
+.shelf-display .shelf-bookmark {
+	position: absolute;
+	z-index: 3;
+	top: -60px;
+	left: calc(100% + 10px);
+	width: 76px;
+	height: calc(var(--shelf-book-height) + 60px);
+}
+.cards-grid:first-of-type .shelf-bookmark {
+	top: -51px;
+	height: calc(var(--shelf-book-height) + 51px);
 }
 </style>

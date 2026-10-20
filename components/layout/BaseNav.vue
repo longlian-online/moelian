@@ -1,231 +1,346 @@
-<template>
-	<v-app-bar
-		color="#A6A897"
-		:height="isMobile ? 80 : 64"
-		:elevation="['manga', 'novel'].includes(String(route.name)) ? 0 : undefined"
-	>
-		<v-container class="nav-container d-flex align-center py-0" style="max-width: 1200px">
-			<v-app-bar-nav-icon
-				v-if="isMobile"
-				variant="text"
-				@click="injectedToggleDrawer()"
-			></v-app-bar-nav-icon>
-			<!-- 桌面端导航条 -->
-			<template v-if="!isMobile">
-				<v-img
-					:src="logoUrl"
-					class="mx-2 flex-grow-0 flex-shrink-0"
-					width="100"
-					height="64"
-					alt="夢怜龍華"
-				/>
-				<v-tabs
-					v-model="activeTab"
-					background-color="transparent"
-					color="#333"
-					slider-color="#333"
-					class="flex-grow-0"
-				>
-					<v-tab value="index" to="/manga">漫画</v-tab>
-					<v-tab value="update" to="/novel">小说</v-tab>
-					<v-tab value="classify" to="/classify">分类</v-tab>
-					<!-- <v-tab value="classify" to="/classify">分类</v-tab>
-					<v-tab value="timeline" to="/timeline">时间表</v-tab>
-					<v-tab value="admin" to="/admin">管理端</v-tab> -->
-				</v-tabs>
-			</template>
-
-			<v-spacer v-if="!isMobile"></v-spacer>
-
-			<template v-if="!isMobile">
-				<v-text-field
-					class="nav-search"
-					v-model="currentInputKey"
-					:loading="currentLoading"
-					prepend-inner-icon="mdi-magnify"
-					density="compact"
-					label="输入关键词搜索"
-					variant="outlined"
-					hide-details
-					single-line
-					clearable
-					@keydown.enter="handleSearchClick()"
-					@click:clear="handleClearSearch"
-				>
-					<template #append-inner
-						><v-btn elevation="0" @click="handleSearchClick()"
-							>搜索</v-btn
-						></template
-					>
-				</v-text-field>
-			</template>
-
-			<!-- 移动端导航条 -->
-			<template v-if="isMobile">
-				<v-text-field
-					class="nav-search"
-					v-model="currentInputKey"
-					:loading="currentLoading"
-					density="default"
-					label="输入关键词"
-					variant="outlined"
-					hide-details
-					single-line
-					clearable
-					@keydown.enter="handleSearchClick()"
-					@click:clear="handleClearSearch"
-				>
-					<template #append-inner
-						><v-btn
-							elevation="0"
-							icon="mdi-magnify"
-							@click="handleSearchClick()"
-						></v-btn
-					></template>
-				</v-text-field>
-			</template>
-
-			<!-- <template v-if="isMobile">
-				<v-btn icon="mdi-dots-vertical" variant="text"></v-btn>
-			</template> -->
-		</v-container>
-	</v-app-bar>
-</template>
-
 <script setup lang="ts">
 const route = useRoute();
 const router = useRouter();
 const store = useWebWorkStore();
-
-const isCategoryRoute = computed(() => route.path.startsWith('/classify/'));
+const { isMobile } = useDevice();
+const compact = ref(isMobile);
+const searchOpen = ref(false);
+const scrollHidden = ref(false);
+const searchField = useTemplateRef<{ focus: () => void }>('searchField');
+const searchId = `nav-search-${useId()}`;
+const toggleDrawer = inject<() => void>('toggle-drawer-fn', () => {});
 const currentInputKey = ref(String(route.query.key ?? ''));
+const links = [
+	{ to: '/manga', label: '漫画' },
+	{ to: '/novel', label: '小说' },
+	{ to: '/classify', label: '分类' },
+];
+const isActive = (path: string) =>
+	route.path === path || route.path.startsWith(`${path}/`);
+const barHeight = computed(() =>
+	compact.value ? 56 + (searchOpen.value ? 56 : 0) : 64,
+);
+const currentLoading = computed(() =>
+	route.path.startsWith('/novel') ? store.novelIsLoading : store.mangaIsLoading,
+);
 watch(
 	() => route.query.key,
 	(key) => {
 		currentInputKey.value = String(key ?? '');
 	},
 );
-const currentLoading = computed(() =>
-	route.path.startsWith('/novel') ? store.novelIsLoading : store.mangaIsLoading,
-);
+
+// SSR 先按设备判断；挂载后响应窗口宽度，首轮水合结构保持一致。
+onMounted(() => {
+	const media = window.matchMedia('(max-width: 760px)');
+	const update = () => {
+		compact.value = media.matches;
+		if (!compact.value) searchOpen.value = false;
+	};
+	update();
+	media.addEventListener('change', update);
+	let previousY = window.scrollY;
+	let travel = 0;
+	const onScroll = () => {
+		const y = Math.max(
+			0,
+			Math.min(
+				window.scrollY,
+				document.documentElement.scrollHeight - window.innerHeight,
+			),
+		);
+		const delta = y - previousY;
+		previousY = y;
+		if (y <= barHeight.value || searchOpen.value) {
+			scrollHidden.value = false;
+			travel = 0;
+			return;
+		}
+		travel = Math.sign(delta) === Math.sign(travel) ? travel + delta : delta;
+		if (Math.abs(travel) >= 8) scrollHidden.value = travel > 0;
+	};
+	window.addEventListener('scroll', onScroll, { passive: true });
+	onBeforeUnmount(() => {
+		media.removeEventListener('change', update);
+		window.removeEventListener('scroll', onScroll);
+	});
+});
+
+const openSearch = async () => {
+	scrollHidden.value = false;
+	searchOpen.value = true;
+	await nextTick();
+	searchField.value?.focus();
+};
 const handleSearchClick = () => {
 	const path = route.path.startsWith('/novel')
 		? '/novel'
-		: isCategoryRoute.value
+		: route.path.startsWith('/classify/')
 			? route.path
 			: '/manga';
-	router.push({
+	return router.push({
 		path,
 		query: { ...route.query, key: currentInputKey.value || undefined },
 	});
 };
 const handleClearSearch = () => {
 	currentInputKey.value = '';
-	handleSearchClick();
+	void handleSearchClick();
 };
-
-const { isMobile } = useDevice();
-const logoUrl = useRuntimeConfig().public.logoUrl;
-const injectedToggleDrawer = inject('toggle-drawer-fn', () => {
-	console.error('Error: toggle-drawer-fn not provided!');
-}) as () => void;
-
-const activeTab = ref('index');
-
-// 确保 ref 的值与路由同步
-watch(
-	() => route.path,
-	(newPath) => {
-		if (newPath === '/') {
-			activeTab.value = 'home';
-		} else if (newPath.startsWith('/manga')) {
-			activeTab.value = 'index';
-		} else if (newPath.startsWith('/novel')) {
-			activeTab.value = 'update';
-		}
-	},
-	{
-		immediate: true,
-	},
-);
 </script>
 
-<style scoped>
-.searchInputText {
-	margin-left: 16px;
-	margin-right: 8px;
-	align-self: center;
-}
+<template>
+	<v-app-bar
+		class="journal-bar"
+		color="#fffaf1"
+		:height="barHeight"
+		:class="{ 'journal-bar--hidden': scrollHidden && !searchOpen }"
+		:inert="scrollHidden && !searchOpen"
+		:elevation="0"
+	>
+		<div class="journal-header" :class="{ 'journal-header--compact': compact }">
+			<div class="journal-top">
+				<v-btn
+					v-if="compact"
+					class="journal-icon"
+					icon="mdi-menu"
+					variant="text"
+					aria-label="打开菜单"
+					@click="toggleDrawer"
+				/>
+				<NavBrand :compact="compact" />
+				<nav v-if="!compact" class="journal-tabs" aria-label="主导航">
+					<NuxtLink
+						v-for="link in links"
+						:key="link.to"
+						:to="link.to"
+						class="journal-tab"
+						:class="{ 'journal-tab--active': isActive(link.to) }"
+						:aria-current="isActive(link.to) ? 'page' : undefined"
+						>{{ link.label }}</NuxtLink
+					>
+				</nav>
+				<v-btn
+					v-if="compact"
+					class="journal-icon journal-search-toggle"
+					icon="mdi-magnify"
+					variant="text"
+					aria-label="展开搜索"
+					:aria-expanded="searchOpen"
+					:aria-controls="searchId"
+					@click="searchOpen ? (searchOpen = false) : openSearch()"
+				/>
+				<form
+					v-if="!compact"
+					class="journal-search"
+					role="search"
+					@submit.prevent="handleSearchClick"
+				>
+					<v-text-field
+						v-model="currentInputKey"
+						class="journal-search-field"
+						:loading="currentLoading"
+						prepend-inner-icon="mdi-magnify"
+						label="搜索漫画、小说"
+						variant="outlined"
+						density="compact"
+						hide-details
+						single-line
+						clearable
+						@keydown.enter.prevent="handleSearchClick"
+						@click:clear="handleClearSearch"
+					>
+						<template #append-inner
+							><v-btn
+								type="button"
+								variant="text"
+								size="small"
+								@click="handleSearchClick"
+								>搜索</v-btn
+							></template
+						>
+					</v-text-field>
+				</form>
+			</div>
+			<form
+				v-if="compact && searchOpen"
+				:id="searchId"
+				class="journal-search journal-mobile-search"
+				role="search"
+				@submit.prevent="handleSearchClick"
+				@keydown.esc="searchOpen = false"
+			>
+				<v-text-field
+					ref="searchField"
+					v-model="currentInputKey"
+					class="journal-search-field"
+					:loading="currentLoading"
+					label="搜索漫画、小说"
+					variant="outlined"
+					density="compact"
+					hide-details
+					single-line
+					clearable
+					@keydown.enter.prevent="handleSearchClick"
+					@click:clear="handleClearSearch"
+				>
+					<template #append-inner
+						><v-btn
+							type="button"
+							icon="mdi-magnify"
+							variant="text"
+							size="small"
+							aria-label="搜索"
+							@click="handleSearchClick"
+					/></template>
+				</v-text-field>
+				<v-btn
+					icon="mdi-close"
+					variant="text"
+					size="small"
+					aria-label="关闭搜索"
+					@click="searchOpen = false"
+				/>
+			</form>
+		</div>
+	</v-app-bar>
+</template>
 
-.v-app-bar .v-img {
-	align-self: center;
-}
-</style>
-
 <style scoped>
-.nav-tag-filter {
-	flex: 0 1 220px;
-	min-width: 140px;
-	margin-right: 12px;
+.journal-bar {
+	border-bottom: 1px solid #e7d8c7;
+	box-shadow: 0 3px 12px rgb(106 77 51 / 5%) !important;
+	color: #6f5949 !important;
 }
-.nav-search {
-	flex: 0 1 440px;
-	min-width: 160px;
+/* 保留 Vuetify 的布局占位，只移动页眉，避免滚动方向被布局回弹干扰。 */
+.journal-bar--hidden {
+	transform: translateY(-100%) !important;
+	pointer-events: none;
 }
-.nav-tag-filter :deep(.v-field__input) {
-	flex-wrap: nowrap;
-	overflow: hidden;
+.journal-header {
+	width: 100%;
+	max-width: 1200px;
+	margin-inline: auto;
+	padding-inline: 24px;
+	min-width: 0;
 }
-.nav-selected-tag {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	max-width: 115px;
+.journal-top {
+	display: flex;
+	align-items: center;
+	gap: 28px;
+	height: 64px;
+	min-width: 0;
 }
-.nav-tag-count {
+.journal-tabs {
+	display: flex;
+	align-items: center;
+	gap: 8px;
 	flex-shrink: 0;
-	margin-left: 6px;
-	font-size: 12px;
 }
-@media (max-width: 600px) {
-	.nav-tag-filter {
-		flex: 0 0 120px;
-		min-width: 0;
-		margin-right: 8px;
+.journal-tab {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 64px;
+	height: 36px;
+	padding: 0 16px;
+	border-radius: 7px 7px 3px 3px;
+	color: #88705e;
+	font-size: 14px;
+	text-decoration: none;
+	transition:
+		background-color 150ms,
+		color 150ms;
+}
+.journal-tab:hover {
+	background: #f5ece1;
+	color: #654a3a;
+}
+.journal-tab--active {
+	background: #f5e7e2;
+	color: #996866;
+}
+.journal-tab--active::after {
+	content: '';
+	position: absolute;
+	bottom: 3px;
+	left: calc(50% - 10px);
+	width: 20px;
+	height: 2px;
+	border-radius: 2px;
+	background: #c68d85;
+}
+.journal-tab:focus-visible {
+	outline: 2px solid #b78079;
+	outline-offset: 3px;
+}
+.journal-search {
+	flex: 0 1 360px;
+	margin-left: auto;
+	min-width: 0;
+}
+.journal-search-field :deep(.v-field) {
+	background: #f7f0e5;
+	border-radius: 9px;
+	color: #8b7561;
+	font-size: 13px;
+}
+.journal-search-field :deep(.v-field__outline) {
+	--v-field-border-opacity: 0.18;
+}
+.journal-search-field :deep(.v-field__input) {
+	min-width: 0;
+}
+.journal-search-field :deep(.v-btn) {
+	color: #96745f;
+}
+.journal-icon {
+	flex: 0 0 40px;
+	width: 40px;
+	height: 40px;
+	color: #92755f;
+}
+.journal-header--compact {
+	padding-inline: 12px;
+}
+.journal-header--compact .journal-top {
+	height: 56px;
+	gap: 8px;
+}
+.journal-header--compact .journal-top :deep(.nav-brand) {
+	margin-inline: auto;
+}
+.journal-mobile-search {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	height: 56px;
+	width: 100%;
+}
+.journal-mobile-search .journal-search-field {
+	flex: 1;
+	min-width: 0;
+}
+@media (min-width: 761px) and (max-width: 1000px) {
+	.journal-header {
+		padding-inline: 16px;
 	}
-	.nav-search {
-		flex: 1;
-		min-width: 0;
+	.journal-top {
+		gap: 16px;
 	}
-	.nav-selected-tag {
-		max-width: 50px;
-		font-size: 12px;
+	.journal-tabs {
+		gap: 2px;
 	}
-	.nav-search :deep(.v-field__input) {
-		min-width: 0;
-		padding-inline: 8px;
-	}
-	.nav-search :deep(.v-btn) {
-		width: 28px;
-		height: 32px;
+	.journal-tab {
+		min-width: 54px;
+		padding-inline: 12px;
 	}
 }
-</style>
-
-<style scoped>
-.nav-container { width: 100%; min-width: 0; }
-@media (max-width: 600px) {
-	.nav-container { max-width: 100%; padding-inline: 12px; gap: 8px; }
-	.nav-container :deep(.v-app-bar-nav-icon) { flex: 0 0 auto; }
-	.nav-container .nav-search { flex: 0 1 240px; width: 65%; min-width: 0; max-width: 65%; margin-left: auto; }
-	.nav-search :deep(.v-input__control),
-	.nav-search :deep(.v-field),
-	.nav-search :deep(.v-field__field) { min-width: 0; }
-}
-</style>
-
-<style scoped>
-@media (max-width: 600px) {
-	.nav-container { padding-top: 12px !important; padding-bottom: 12px !important; }
+@media (prefers-reduced-motion: reduce) {
+	.journal-tab {
+		transition: none;
+	}
 }
 </style>
