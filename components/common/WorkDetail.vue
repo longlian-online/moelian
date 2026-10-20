@@ -441,11 +441,11 @@
 		<div class="share-dialog-content">
 			<div class="share-dialog-header">
 				<div>
-					<span class="share-dialog-eyebrow">SHARE POSTER</span>
 					<h3 class="share-dialog-title">生成分享海报</h3>
 				</div>
 				<v-btn
 					icon="mdi-close"
+					aria-label="关闭分享"
 					variant="text"
 					@click="showShareDialog = false"
 				/>
@@ -1490,23 +1490,22 @@ useSeoMeta({
 }
 
 .share-dialog-content {
-	background: white;
+	background: #fffaf4;
 	border-radius: 22px;
-	padding: 24px;
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	max-height: calc(100dvh - 32px);
+	overflow: hidden;
 }
 
 .share-dialog-header {
 	display: flex;
-	align-items: flex-start;
+	align-items: center;
 	justify-content: space-between;
+	gap: 16px;
+	flex-shrink: 0;
 	margin-bottom: 16px;
-}
-
-.share-dialog-eyebrow {
-	color: #ff758c;
-	font-size: 10px;
-	font-weight: 900;
-	letter-spacing: 0.16em;
 }
 
 .share-dialog-title {

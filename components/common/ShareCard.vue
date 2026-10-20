@@ -16,9 +16,25 @@
 		<canvas ref="posterCanvas" class="share-poster-canvas"></canvas>
 		<div class="share-actions">
 			<v-btn
+				class="share-action-btn share-action-system"
+				color="#a77770"
+				prepend-icon="mdi-share-variant-outline"
+				size="large"
+				variant="flat"
+				:disabled="!canSystemShare"
+				:title="
+					canSystemShare
+						? '打开系统分享'
+						: '当前浏览器不支持系统分享，请使用分享链接'
+				"
+				@click="systemShare"
+				>系统分享</v-btn
+			>
+			<v-btn
 				class="share-action-btn"
-				color="primary"
+				color="#a77770"
 				prepend-icon="mdi-download"
+				variant="outlined"
 				size="large"
 				:disabled="!posterImage || isGenerating"
 				:loading="isGenerating"
@@ -28,7 +44,7 @@
 			</v-btn>
 			<v-btn
 				class="share-action-btn"
-				color="primary"
+				color="#a77770"
 				prepend-icon="mdi-link-variant"
 				size="large"
 				variant="outlined"
@@ -37,7 +53,6 @@
 				分享链接
 			</v-btn>
 		</div>
-		<p class="save-poster-tip">保存图片后，可发送到任意聊天或社交平台</p>
 	</div>
 </template>
 
@@ -61,6 +76,23 @@ const props = defineProps<{
 const posterCanvas = ref<HTMLCanvasElement | null>(null);
 const posterImage = ref('');
 const isGenerating = ref(false);
+const canSystemShare = ref(false);
+onMounted(() => {
+	canSystemShare.value = typeof navigator.share === 'function';
+});
+async function systemShare() {
+	if (!canSystemShare.value) return;
+	try {
+		await navigator.share({
+			title: props.title || '作品分享',
+			text: '想推荐给喜欢百合的你',
+			url: props.shareUrl,
+		});
+	} catch (error) {
+		if (error instanceof Error && error.name === 'AbortError') return;
+		$tip('系统分享失败，可以复制分享链接', { color: 'error' });
+	}
+}
 const POSTER_WIDTH = 760;
 const POSTER_HEIGHT = 1110;
 const DESIGN_WIDTH = 900;
@@ -257,16 +289,16 @@ async function generateCard() {
 			const headerLogo = await loadImage('/moelian-logo.png', 'anonymous');
 			ctx.save();
 			ctx.globalCompositeOperation = 'multiply';
-			drawImageContain(ctx, headerLogo, 180, 96, 220, 70);
+			drawImageContain(ctx, headerLogo, COVER_X, 96, 220, 70);
 			ctx.restore();
 		} catch {
 			ctx.fillStyle = '#a77ac4';
 			ctx.font = '900 30px serif';
 			ctx.textAlign = 'left';
-			ctx.fillText('moelian', 180, 145);
+			ctx.fillText('moelian', COVER_X, 145);
 		}
 		const searchWidth = 230;
-		const searchX = 560 - searchWidth / 2;
+		const searchX = COVER_X + COVER_WIDTH - searchWidth;
 		ctx.fillStyle = '#fffafa';
 		roundedRect(ctx, searchX, 111, searchWidth, 40, 20);
 		ctx.fill();
@@ -286,7 +318,7 @@ async function generateCard() {
 		ctx.fillStyle = '#76595b';
 		ctx.font = '700 17px sans-serif';
 		ctx.textAlign = 'center';
-		ctx.fillText('夢怜龍華汉化组', 560, 137);
+		ctx.fillText('夢怜龍華汉化组', searchX + (searchWidth - 28) / 2, 137);
 		let coverImage: HTMLImageElement | undefined;
 		if (props.coverUrl) {
 			try {
@@ -406,12 +438,17 @@ defineExpose({ generateCard, downloadPoster });
 	display: flex;
 	flex-direction: column;
 	gap: 14px;
+	min-height: 0;
+	max-height: calc(100dvh - 150px);
+	overflow: hidden;
 }
 .share-poster-preview {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: center;
-	overflow: hidden;
+	overflow: auto;
+	min-height: 0;
+	flex: 1 1 auto;
 }
 .poster-skeleton {
 	min-height: 420px;
@@ -428,7 +465,11 @@ defineExpose({ generateCard, downloadPoster });
 .share-poster-canvas {
 	display: none;
 }
+.share-action-system {
+	grid-column: 1 / -1;
+}
 .share-actions {
+	flex-shrink: 0;
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 10px;
@@ -437,11 +478,5 @@ defineExpose({ generateCard, downloadPoster });
 	border-radius: 12px !important;
 	font-weight: 800 !important;
 	letter-spacing: 0.06em !important;
-}
-.save-poster-tip {
-	margin: -4px 0 0;
-	color: #9b7f7f;
-	font-size: 12px;
-	text-align: center;
 }
 </style>

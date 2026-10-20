@@ -1,5 +1,15 @@
 <template>
 	<div class="novel-quote-share-card">
+		<div class="novel-quote-share-card__header">
+			<strong>分享阅读片段</strong
+			><v-btn
+				icon="mdi-close"
+				variant="text"
+				size="small"
+				aria-label="关闭分享"
+				@click="emit('close')"
+			/>
+		</div>
 		<div class="novel-quote-share-card__preview">
 			<v-skeleton-loader
 				v-if="isGenerating"
@@ -15,10 +25,11 @@
 		</div>
 		<canvas ref="posterCanvas" class="novel-quote-share-card__canvas"></canvas>
 		<v-fade-transition>
-			<div v-if="posterImage && !isGenerating" class="novel-quote-share-card__actions">
+			<div class="novel-quote-share-card__actions">
 				<v-btn
 					v-if="canSystemShare"
-					color="primary"
+					:disabled="!posterImage || isGenerating"
+					color="#a77770"
 					prepend-icon="mdi-share-variant-outline"
 					aria-label="系统分享"
 					title="系统分享"
@@ -27,8 +38,9 @@
 					系统分享
 				</v-btn>
 				<v-btn
-					color="primary"
+					color="#a77770"
 					prepend-icon="mdi-download"
+					:disabled="!posterImage || isGenerating"
 					aria-label="保存海报"
 					title="保存海报"
 					@click="downloadPoster"
@@ -37,7 +49,6 @@
 				</v-btn>
 			</div>
 		</v-fade-transition>
-		<p class="novel-quote-share-card__tip">保存后可发送到任意聊天或社交平台</p>
 	</div>
 </template>
 
@@ -50,6 +61,8 @@ import {
 	loadImage,
 	roundedRect,
 } from '~/utils/posterCanvas';
+
+const emit = defineEmits<{ close: [] }>();
 
 const props = defineProps<{
 	quote: string;
@@ -202,7 +215,14 @@ async function generateCard() {
 				tintContext.fillStyle = '#e58fb5';
 				tintContext.fillRect(0, 0, tintCanvas.width, tintCanvas.height);
 				ctx.globalAlpha = 0.22;
-				drawImageContain(ctx, tintCanvas, cardLeft, cardTop, cardWidth, cardHeight);
+				drawImageContain(
+					ctx,
+					tintCanvas,
+					cardLeft,
+					cardTop,
+					cardWidth,
+					cardHeight,
+				);
 			}
 			ctx.restore();
 			ctx.globalAlpha = 1;
@@ -213,12 +233,14 @@ async function generateCard() {
 			// 装饰素材加载失败时不影响海报生成。
 		}
 		ctx.fillStyle = 'rgba(255, 241, 248, 0.78)';
-		roundedRect(ctx, cardLeft, cardTop, cardWidth, layout.cardBottom - cardTop, [
-			NOVEL_POSTER_METRICS.cardRadius,
-			NOVEL_POSTER_METRICS.cardRadius,
-			0,
-			0,
-		]);
+		roundedRect(
+			ctx,
+			cardLeft,
+			cardTop,
+			cardWidth,
+			layout.cardBottom - cardTop,
+			[NOVEL_POSTER_METRICS.cardRadius, NOVEL_POSTER_METRICS.cardRadius, 0, 0],
+		);
 		ctx.fill();
 
 		ctx.fillStyle = '#d85a9a';
@@ -260,12 +282,14 @@ async function generateCard() {
 		}
 
 		ctx.fillStyle = 'rgba(249, 218, 235, 0.82)';
-		roundedRect(ctx, cardLeft, layout.footerTop, cardWidth, layout.footerHeight, [
-			0,
-			0,
-			NOVEL_POSTER_METRICS.cardRadius,
-			NOVEL_POSTER_METRICS.cardRadius,
-		]);
+		roundedRect(
+			ctx,
+			cardLeft,
+			layout.footerTop,
+			cardWidth,
+			layout.footerHeight,
+			[0, 0, NOVEL_POSTER_METRICS.cardRadius, NOVEL_POSTER_METRICS.cardRadius],
+		);
 		ctx.fill();
 		ctx.fillStyle = '#c6879b';
 		roundedRect(
@@ -310,7 +334,13 @@ async function generateCard() {
 		const qr = await loadImage(qrDataUrl);
 		const qrX = 664;
 		const qrY = layout.qrTop;
-		ctx.drawImage(qr, qrX, qrY, NOVEL_POSTER_METRICS.qrSize, NOVEL_POSTER_METRICS.qrSize);
+		ctx.drawImage(
+			qr,
+			qrX,
+			qrY,
+			NOVEL_POSTER_METRICS.qrSize,
+			NOVEL_POSTER_METRICS.qrSize,
+		);
 		try {
 			const lily = await loadImage('/novel-share-yuri-lily.png');
 			ctx.globalCompositeOperation = 'multiply';
@@ -326,7 +356,11 @@ async function generateCard() {
 		ctx.fillStyle = '#9d8189';
 		ctx.font = '600 14px sans-serif';
 		ctx.textAlign = 'center';
-		ctx.fillText('推荐给喜欢百合的你', 730, qrY + NOVEL_POSTER_METRICS.qrSize + 24);
+		ctx.fillText(
+			'推荐给喜欢百合的你',
+			730,
+			qrY + NOVEL_POSTER_METRICS.qrSize + 24,
+		);
 		ctx.textAlign = 'left';
 
 		posterImage.value = canvas.toDataURL('image/png');
@@ -390,7 +424,11 @@ defineExpose({ generateCard, downloadPoster });
 	flex-direction: column;
 	gap: 14px;
 	padding: 20px;
-	background: #fff;
+	background: #fffaf4;
+	max-height: calc(100dvh - 48px);
+	min-height: 0;
+	overflow: hidden;
+	border-radius: 20px;
 }
 
 .novel-quote-share-card__preview,
@@ -401,8 +439,9 @@ defineExpose({ generateCard, downloadPoster });
 }
 
 .novel-quote-share-card__preview {
-	min-height: 280px;
-	overflow: hidden;
+	min-height: 0;
+	flex: 1 1 auto;
+	overflow: auto;
 	background: #f7f0f4;
 }
 
@@ -414,17 +453,17 @@ defineExpose({ generateCard, downloadPoster });
 	display: none;
 }
 
+.novel-quote-share-card__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-shrink: 0;
+	color: #765f68;
+}
 .novel-quote-share-card__actions {
+	flex-shrink: 0;
 	display: flex;
 	justify-content: center;
 	gap: 12px;
-}
-
-.novel-quote-share-card__tip {
-	margin: 0;
-	color: #765f68;
-	font-size: 0.875rem;
-	font-weight: 500;
-	text-align: center;
 }
 </style>
