@@ -45,3 +45,28 @@ describe('书架书签定位', () => {
 		expect(getComputedStyle(bookmark).position).toBe('absolute');
 	});
 });
+
+
+describe('书架封面尺寸', () => {
+	const bookStyles = componentStyles('Book3D.vue', 'data-v-book');
+	it.each([
+		['书本样式后加载', [shelfStyles, bookStyles]],
+		['书架样式后加载', [bookStyles, shelfStyles]],
+	])('%s时不额外缩减封面宽度', (_, styles) => {
+		for (const css of styles) {
+			const style = document.createElement('style');
+			style.textContent = css;
+			document.head.append(style);
+		}
+		document.body.innerHTML = `<div class="bookshelf" data-v-shelf>
+			<div class="my-card" data-v-shelf>
+				<div class="book-3d-container book-3d-home" data-v-shelf data-v-book>
+					<div class="book-3d-wrapper" data-v-book></div>
+				</div>
+			</div>
+		</div>`;
+		const wrapper = document.querySelector('.book-3d-wrapper');
+		if (!wrapper) throw new Error('缺少封面测试元素');
+		expect(getComputedStyle(wrapper).maxWidth).toBe('100%');
+	});
+});
