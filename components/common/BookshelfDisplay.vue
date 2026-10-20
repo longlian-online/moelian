@@ -404,7 +404,7 @@ const bookUrl = (work: ShelfWork) =>
 		linear-gradient(95deg, #eedec0, #f6e9cc 35%, #e9d8b7 75%, #f3e5c6);
 	border-radius: 0;
 	border-top: 0;
-	padding-top: 38px !important;
+	padding-top: 22px !important;
 	padding-bottom: 100px !important;
 	background:
 		repeating-linear-gradient(
@@ -422,7 +422,7 @@ const bookUrl = (work: ShelfWork) =>
 	top: 0;
 	left: 0;
 	right: 0;
-	height: 38px;
+	height: 22px;
 	background: var(--wood);
 }
 .bookshelf .cards-grid {
@@ -524,7 +524,7 @@ const bookUrl = (work: ShelfWork) =>
 .shelf-board {
 	position: relative;
 	z-index: 1;
-	height: 56px;
+	height: 22px;
 	background: var(--wood);
 	border-top: 2px solid #f9eed9;
 	box-shadow: 0 16px 22px rgba(89, 59, 39, 0.14);
