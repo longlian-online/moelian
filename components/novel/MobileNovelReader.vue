@@ -212,7 +212,7 @@ defineEmits<{
 	shareSelection: [quote: string];
 }>();
 
-const controlsVisible = ref(false);
+const controlsVisible = useScrollReveal();
 const chapterNavigationProps = computed(() => ({
 	chapters: props.chapters,
 	selectedChapterId: props.selectedChapterId,
@@ -257,14 +257,6 @@ function handleReadingTap(event: MouseEvent) {
 	}
 	controlsVisible.value = !controlsVisible.value;
 }
-const hideControls = () => {
-	controlsVisible.value = false;
-};
-onMounted(() =>
-	window.addEventListener('scroll', hideControls, { passive: true }),
-);
-onBeforeUnmount(() => window.removeEventListener('scroll', hideControls));
-
 /** 此组件不对外暴露 slot */
 </script>
 
