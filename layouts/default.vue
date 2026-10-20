@@ -14,6 +14,7 @@
 		<v-main>
 			<slot></slot>
 		</v-main>
+		<BackToTop v-if="!route.meta.baseNav && !route.meta.readerTheme" />
 		<!-- 全局组件 -->
 		<Tip></Tip>
 		<ConfirmDialog

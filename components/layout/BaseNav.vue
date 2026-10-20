@@ -5,6 +5,7 @@ const store = useWebWorkStore();
 const { isMobile } = useDevice();
 const compact = ref(isMobile);
 const searchOpen = ref(false);
+const scrollHidden = ref(false);
 const searchField = useTemplateRef<{ focus: () => void }>('searchField');
 const searchId = `nav-search-${useId()}`;
 const toggleDrawer = inject<() => void>('toggle-drawer-fn', () => {});
@@ -34,13 +35,39 @@ onMounted(() => {
 	const media = window.matchMedia('(max-width: 760px)');
 	const update = () => {
 		compact.value = media.matches;
+		if (!compact.value) searchOpen.value = false;
 	};
 	update();
 	media.addEventListener('change', update);
-	onBeforeUnmount(() => media.removeEventListener('change', update));
+	let previousY = window.scrollY;
+	let travel = 0;
+	const onScroll = () => {
+		const y = Math.max(
+			0,
+			Math.min(
+				window.scrollY,
+				document.documentElement.scrollHeight - window.innerHeight,
+			),
+		);
+		const delta = y - previousY;
+		previousY = y;
+		if (y <= barHeight.value || searchOpen.value) {
+			scrollHidden.value = false;
+			travel = 0;
+			return;
+		}
+		travel = Math.sign(delta) === Math.sign(travel) ? travel + delta : delta;
+		if (Math.abs(travel) >= 8) scrollHidden.value = travel > 0;
+	};
+	window.addEventListener('scroll', onScroll, { passive: true });
+	onBeforeUnmount(() => {
+		media.removeEventListener('change', update);
+		window.removeEventListener('scroll', onScroll);
+	});
 });
 
 const openSearch = async () => {
+	scrollHidden.value = false;
 	searchOpen.value = true;
 	await nextTick();
 	searchField.value?.focus();
@@ -67,6 +94,8 @@ const handleClearSearch = () => {
 		class="journal-bar"
 		color="#fffaf1"
 		:height="barHeight"
+		:class="{ 'journal-bar--hidden': scrollHidden && !searchOpen }"
+		:inert="scrollHidden && !searchOpen"
 		:elevation="0"
 	>
 		<div class="journal-header" :class="{ 'journal-header--compact': compact }">
@@ -182,6 +211,11 @@ const handleClearSearch = () => {
 	border-bottom: 1px solid #e7d8c7;
 	box-shadow: 0 3px 12px rgb(106 77 51 / 5%) !important;
 	color: #6f5949 !important;
+}
+/* 保留 Vuetify 的布局占位，只移动页眉，避免滚动方向被布局回弹干扰。 */
+.journal-bar--hidden {
+	transform: translateY(-100%) !important;
+	pointer-events: none;
 }
 .journal-header {
 	width: 100%;
