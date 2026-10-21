@@ -6,28 +6,36 @@
 	>
 		<slot></slot>
 	</div>
-	<v-fade-transition>
-		<div
-			v-if="isMenuVisible"
-			ref="menu"
-			class="novel-selection-share__menu"
-			:style="menuStyle"
-		>
-			<v-btn
-				color="primary"
-				prepend-icon="mdi-share-variant-outline"
-				size="small"
-				aria-label="分享选中文本"
-				@click="shareSelection"
+	<Teleport to="body">
+		<v-fade-transition>
+			<div
+				v-if="isMenuVisible"
+				ref="menu"
+				class="novel-selection-share__menu"
+				:style="menuStyle"
+				@pointerdown.prevent
 			>
-				分享
-			</v-btn>
-		</div>
-	</v-fade-transition>
+				<v-btn
+					color="#a77770"
+					prepend-icon="mdi-share-variant-outline"
+					height="44"
+					width="136"
+					rounded="pill"
+					aria-label="分享选中文本"
+					@click="shareSelection"
+				>
+					分享选段
+				</v-btn>
+			</div>
+		</v-fade-transition>
+	</Teleport>
 </template>
 
 <script setup lang="ts">
-import { normalizeNovelQuote } from '~/utils/novelShare';
+import {
+	normalizeNovelQuote,
+	getNovelSelectionMenuPosition,
+} from '~/utils/novelShare';
 
 const emit = defineEmits<{
 	share: [quote: string];
@@ -75,10 +83,11 @@ function showMenu(position?: { left: number; top: number }) {
 		const selection = window.getSelection();
 		const rect = selection?.getRangeAt(0).getBoundingClientRect();
 		if (!rect) return;
-		menuPosition.value = {
-			left: Math.min(window.innerWidth - 92, Math.max(12, rect.right - 80)),
-			top: Math.min(window.innerHeight - 48, Math.max(12, rect.bottom + 8)),
-		};
+		menuPosition.value = getNovelSelectionMenuPosition(
+			rect,
+			window.innerWidth,
+			window.innerHeight,
+		);
 	}
 	isMenuVisible.value = true;
 }
@@ -87,10 +96,18 @@ function openContextMenu(event: MouseEvent) {
 	const quote = getSelectionQuote();
 	if (!quote) return;
 	event.preventDefault();
-	showMenu({
-		left: Math.min(window.innerWidth - 92, Math.max(12, event.clientX)),
-		top: Math.min(window.innerHeight - 48, Math.max(12, event.clientY)),
-	});
+	showMenu(
+		getNovelSelectionMenuPosition(
+			{
+				left: event.clientX,
+				right: event.clientX + 136,
+				top: event.clientY,
+				bottom: event.clientY,
+			},
+			window.innerWidth,
+			window.innerHeight,
+		),
+	);
 }
 
 function handleSelectionChange() {
@@ -146,6 +163,4 @@ onBeforeUnmount(() => {
 	z-index: 3000;
 	box-shadow: 0 8px 22px rgba(104, 69, 121, 0.24);
 }
-
-
 </style>

@@ -1,10 +1,16 @@
 <template>
-	<v-navigation-drawer v-model="drawer" temporary location="left">
+	<v-navigation-drawer
+		v-model="drawer"
+		temporary
+		location="left"
+		color="#fffaf1"
+	>
+		<div class="drawer-brand"><NavBrand /></div>
 		<v-divider></v-divider>
 		<v-tabs
 			direction="vertical"
-			color="primary"
-			slider-color="primary"
+			color="#a8786f"
+			slider-color="#a8786f"
 			class="my-drawer-tabs"
 		>
 			<v-tab value="manga" to="/manga">
@@ -36,4 +42,26 @@
 const drawer = inject('drawer-state', ref(false));
 </script>
 
-<style scoped></style>
+<style scoped>
+.drawer-brand {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-height: 80px;
+	padding: 12px;
+	background: #fffaf1;
+}
+.drawer-brand :deep(.nav-brand) {
+	gap: 8px;
+}
+.drawer-brand :deep(.brand-moelian) {
+	width: 96px;
+}
+.drawer-brand :deep(.brand-chinese) {
+	width: 88px;
+}
+.drawer-brand :deep(.brand-cross) {
+	width: 16px;
+	height: 16px;
+}
+</style>

@@ -386,8 +386,8 @@ async function handleCreateUser() {
 		return;
 	}
 
-	const { postData } = await userStore.createUser();
-	if (postData.value) {
+	const { postData, postError } = await userStore.createUser();
+	if (!postError.value && postData.value?.code === 0 && postData.value.data) {
 		const userData = postData.value.data;
 		newUserInfo.value = {
 			username: userData.username,
@@ -403,27 +403,35 @@ async function handleCreateUser() {
 }
 
 async function handleDeleteUser() {
-	const { deleteRes } = await userStore.deleteUser(userIdToDelete.value!);
-	if (deleteRes.value) {
+	const { deleteRes, deleteError } = await userStore.deleteUser(
+		userIdToDelete.value!,
+	);
+	if (!deleteError.value && deleteRes.value?.code === 0) {
 		$tip('用户删除成功！', { color: 'success', icon: 'mdi-check-circle' });
 		userStore.refreshList();
 	}
 }
 
 async function handleUpdateUserStatus() {
-	const { updateRes } = await userStore.updateUserStatus(
+	const { updateRes, updateError } = await userStore.updateUserStatus(
 		userStatusId.value!,
 		userStatus.value,
 	);
-	if (updateRes.value) {
+	if (!updateError.value && updateRes.value?.code === 0) {
 		$tip('用户状态更新成功！', { color: 'success', icon: 'mdi-check-circle' });
 		userStore.refreshList();
 	}
 }
 
 async function handleResetPassword() {
-	const { resetRes } = await userStore.resetPassword(userResetId.value!);
-	if (resetRes.value?.data?.newPassword) {
+	const { resetRes, resetError } = await userStore.resetPassword(
+		userResetId.value!,
+	);
+	if (
+		!resetError.value &&
+		resetRes.value?.code === 0 &&
+		resetRes.value.data?.newPassword
+	) {
 		resetInfo.value = {
 			username: userResetName.value, // 来自点击按钮时保存的值
 			password: resetRes.value.data.newPassword,

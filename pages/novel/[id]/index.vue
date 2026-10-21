@@ -1,20 +1,15 @@
 <template>
-	<DesktopDetail
-		v-if="!isMobile"
-		btn-content="加入书架"
+	<WorkDetail
+		:mobile="isMobile"
 		recommended-title="推荐小说"
 		content-type="novel"
-	></DesktopDetail>
-	<MobileDetail
-		v-else
-		btn-content="加入书架"
-		recommended-title="推荐小说"
-		content-type="novel"
-	></MobileDetail>
+	/>
 </template>
 
 <script setup lang="ts">
+import { WorkDetailParams } from '~/shared/dto/web/work';
+definePageMeta({
+	validate: (route) => WorkDetailParams.safeParse(route.params).success,
+});
 const { isMobile } = useDevice();
 </script>
-
-<style scoped></style>

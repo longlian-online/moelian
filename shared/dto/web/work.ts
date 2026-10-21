@@ -2,6 +2,15 @@ import { z } from 'zod';
 import { WebPage } from '.';
 import { ContentType, type LengthType, type SerialStatus } from '_db';
 
+export const WorkDetailParams = z.object({
+	id: z
+		.string()
+		.regex(/^[1-9]\d*$/)
+		.transform(Number)
+		.pipe(z.number().int().positive().max(2147483647)),
+});
+export type WorkDetailParams = z.infer<typeof WorkDetailParams>;
+
 export const WorkListReq = z.object({
 	page: WebPage,
 	type: z.enum(ContentType),

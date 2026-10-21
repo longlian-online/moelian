@@ -1,8 +1,5 @@
 <template>
-	<div>
-		<DesktopNovelHomePage v-if="!isMobile"></DesktopNovelHomePage>
-		<MobileNovelHomePage v-if="isMobile"></MobileNovelHomePage>
-	</div>
+	<BookshelfHome content-type="novel" :mobile="isMobile" />
 </template>
 
 <script setup lang="ts">

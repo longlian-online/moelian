@@ -188,13 +188,17 @@ const changePassword = async () => {
 	}
 
 	try {
-		await useApiFetch<UpdatePasswordReq>('/api/admin/me/password', {
-			method: 'PATCH',
+		const { data, error } = await useApiFetch<UpdatePasswordReq>(
+			'/api/admin/me/password',
+			{
+				method: 'PATCH',
 
-			body: {
-				newPassword: newPassword.value,
+				body: {
+					newPassword: newPassword.value,
+				},
 			},
-		});
+		);
+		if (error.value || data.value?.code !== 0) return;
 		// 成功反馈
 		$tip('密码修改成功！');
 		// 关闭对话框

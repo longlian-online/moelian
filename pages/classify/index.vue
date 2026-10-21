@@ -50,7 +50,7 @@
 								</template>
 								<template #error>
 									<v-img
-										src="/error-default.jpg"
+										:src="publicAssets.imageError"
 										cover
 										height="100%"
 										width="100%"
@@ -94,6 +94,7 @@
 </template>
 
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 useHead({
 	title: '作品分类 - 夢怜龍華',
 	meta: [

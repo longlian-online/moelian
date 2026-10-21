@@ -1,7 +1,5 @@
 <template>
-	<div>
-		<Admin></Admin>
-	</div>
+	<AdminWorkList />
 </template>
 
 <script setup lang="ts">
@@ -14,4 +12,3 @@ useHead({
 });
 </script>
 
-<style scoped></style>

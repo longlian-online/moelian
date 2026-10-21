@@ -1,6 +1,6 @@
 <template>
 	<ClientOnly>
-		<div :key="String($route.params.id)">
+		<div :key="String($route.params.id)" class="manga-reader-surface">
 			<!-- 双页模式 -->
 			<TwoPageReader
 				v-if="pageLayout"
@@ -44,6 +44,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatChapterTitle } from '~/utils/chapterSeo';
 import type {
 	WorkContentRes,
 	WorkDetailChapterItem,
@@ -224,32 +225,23 @@ onBeforeUnmount(() => {
 	persistPageProgress();
 });
 
-watchEffect(() => {
+const chapterSeoTitle = computed(() => {
 	const chapter = currentChapter.value;
-
-	// 生成标题
-	let titleContent: string;
-	if (chapter) {
-		titleContent = `第${chapter.no}话 ${chapter.title || '无标题'} - 漫画阅读`;
-	} else {
-		// 数据获取中或失败时显示的默认标题
-		titleContent = '漫画阅读器 - 正在加载';
-	}
-
-	useHead({
-		title: titleContent,
-		meta: [
-			{
-				name: 'description',
-				content: '百合漫画阅读器，提供流畅的漫画阅读体验，支持单页和双页模式。',
-			},
-			{
-				name: 'keywords',
-				content:
-					'百合, 百合漫画,夢怜龍華, 夢怜龙华, 百合小说, 百合轻小说, 百合漫画推荐, 百合漫画阅读, 百合漫画更新',
-			},
-		],
-	});
+	const work = data.value?.data?.work;
+	if (!chapter || !work) return 'moelian';
+	return `${formatChapterTitle(chapter.title, chapter.no, 'manga')} - ${work.title}`;
+});
+const chapterSeoDescription = computed(() => {
+	const work = data.value?.data?.work;
+	return work ? `${chapterSeoTitle.value}。作者：${work.author}。` : 'moelian';
+});
+useSeoMeta({
+	title: () => chapterSeoTitle.value,
+	description: () => chapterSeoDescription.value,
+	ogTitle: () => chapterSeoTitle.value,
+	ogDescription: () => chapterSeoDescription.value,
+	twitterTitle: () => chapterSeoTitle.value,
+	twitterDescription: () => chapterSeoDescription.value,
 });
 </script>
 

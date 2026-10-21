@@ -26,27 +26,14 @@
 					<div class="d-flex justify-center align-center h-100">
 						<v-img
 							max-width="100%"
+							transition="fade-transition"
 							contain
 							class="pa-0 h-100 w-100"
-							:src="getPageImage(i) || '/error-default.jpg'"
+							:src="getPageImage(i) || publicAssets.imageError"
 						>
-							<template #placeholder>
-								<div class="d-flex fill-height align-center justify-center">
-									<v-skeleton-loader
-										class="fill-height fill-width position-absolute"
-									/>
-
-									<v-progress-circular
-										indeterminate
-										color="primary"
-										size="40"
-										width="4"
-										style="z-index: 1"
-									/>
-								</div>
-							</template>
+							<template #placeholder><MangaPageSkeleton /></template>
 							<template #error>
-								<v-img src="/error-default.jpg" width="100%" cover>
+								<v-img :src="publicAssets.imageError" width="100%" cover>
 									<div
 										class="d-flex fill-height align-center justify-center bg-black-alpha-50"
 									>
@@ -108,6 +95,7 @@
 </template>
 
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 import type { PropType } from 'vue';
 import type { VWindow } from 'vuetify/components';
 import type { WorkDetailChapterItem } from '~/shared/dto/web/work';

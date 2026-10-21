@@ -1,8 +1,5 @@
 <template>
-	<v-sheet>
-		<DesktopHomePage v-if="!isMobile"></DesktopHomePage>
-		<MobileHomePage v-if="isMobile"></MobileHomePage>
-	</v-sheet>
+	<BookshelfHome content-type="manga" :mobile="isMobile" />
 </template>
 
 <script setup lang="ts">

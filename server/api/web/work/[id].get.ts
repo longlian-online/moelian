@@ -1,3 +1,4 @@
+import { WorkDetailParams } from '#shared/dto/web/work';
 import type { WorkDetailRes } from '#shared/dto/web/work';
 import { detailForWeb } from '~/server/service/work';
 import { getResourceURL } from '~/server/service/resource';
@@ -5,7 +6,7 @@ import { ResourceType } from '_db';
 
 export default defineWrappedResponseHandler(
 	async (event): Promise<WorkDetailRes> => {
-		const id = getId(event);
+		const { id } = WorkDetailParams.parse(getRouterParams(event));
 		const { work, lastChapter, chapters } = await detailForWeb(id);
 
 		const baseUrl = useRuntimeConfig(event).storage.cos.url;

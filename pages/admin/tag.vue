@@ -28,7 +28,7 @@
 				</v-toolbar>
 				<div class="image-preview-stage">
 					<v-img
-						:src="previewImageUrl || '/error-default.jpg'"
+						:src="previewImageUrl || publicAssets.imageError"
 						max-height="80vh"
 						width="100%"
 						contain
@@ -379,6 +379,7 @@
 </template>
 
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 import { showConfirm } from '~/composables/useConfirm';
 import { useNuxtApp } from '#app';
 import { uploadToCos } from '~/composables/useCosUpload';
@@ -775,7 +776,7 @@ const handleSubmit = async () => {
 
 		if (isEditing.value && editingTagId.value) {
 			// 更新标签
-			const { error } = await useApiFetch(
+			const { data, error } = await useApiFetch(
 				`/api/admin/tag/${editingTagId.value}`,
 				{
 					method: 'PUT',
@@ -783,7 +784,7 @@ const handleSubmit = async () => {
 				},
 			);
 
-			if (error.value) {
+			if (error.value || data.value?.code !== 0) {
 				return;
 			}
 
@@ -793,12 +794,12 @@ const handleSubmit = async () => {
 			});
 		} else {
 			// 创建标签
-			const { error } = await useApiFetch('/api/admin/tag', {
+			const { data, error } = await useApiFetch('/api/admin/tag', {
 				method: 'POST',
 				body: requestBody,
 			});
 
-			if (error.value) {
+			if (error.value || data.value?.code !== 0) {
 				return;
 			}
 
@@ -864,11 +865,11 @@ const confirmDelete = (item: { id: number; content: string }) => {
 
 // 执行删除
 const handleDelete = async (id: number) => {
-	const { error } = await useApiFetch(`/api/admin/tag/${id}`, {
+	const { data, error } = await useApiFetch(`/api/admin/tag/${id}`, {
 		method: 'DELETE',
 	});
 
-	if (error.value) {
+	if (error.value || data.value?.code !== 0) {
 		return;
 	}
 

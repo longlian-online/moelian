@@ -16,9 +16,25 @@
 		<canvas ref="posterCanvas" class="share-poster-canvas"></canvas>
 		<div class="share-actions">
 			<v-btn
+				class="share-action-btn share-action-system"
+				color="#a77770"
+				prepend-icon="mdi-share-variant-outline"
+				size="large"
+				variant="flat"
+				:disabled="!canSystemShare"
+				:title="
+					canSystemShare
+						? '打开系统分享'
+						: '当前浏览器不支持系统分享，请使用分享链接'
+				"
+				@click="systemShare"
+				>系统分享</v-btn
+			>
+			<v-btn
 				class="share-action-btn"
-				color="primary"
+				color="#a77770"
 				prepend-icon="mdi-download"
+				variant="outlined"
 				size="large"
 				:disabled="!posterImage || isGenerating"
 				:loading="isGenerating"
@@ -28,7 +44,7 @@
 			</v-btn>
 			<v-btn
 				class="share-action-btn"
-				color="primary"
+				color="#a77770"
 				prepend-icon="mdi-link-variant"
 				size="large"
 				variant="outlined"
@@ -37,11 +53,11 @@
 				分享链接
 			</v-btn>
 		</div>
-		<p class="save-poster-tip">保存图片后，可发送到任意聊天或社交平台</p>
 	</div>
 </template>
 
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 import QRCode from 'qrcode';
 import {
 	downloadPosterImage,
@@ -61,52 +77,44 @@ const props = defineProps<{
 const posterCanvas = ref<HTMLCanvasElement | null>(null);
 const posterImage = ref('');
 const isGenerating = ref(false);
+const canSystemShare = ref(false);
+onMounted(() => {
+	canSystemShare.value = typeof navigator.share === 'function';
+});
+async function systemShare() {
+	if (!canSystemShare.value) return;
+	try {
+		await navigator.share({
+			title: props.title || '作品分享',
+			text: '想推荐给喜欢百合的你',
+			url: props.shareUrl,
+		});
+	} catch (error) {
+		if (error instanceof Error && error.name === 'AbortError') return;
+		$tip('系统分享失败，可以复制分享链接', { color: 'error' });
+	}
+}
 const POSTER_WIDTH = 760;
 const POSTER_HEIGHT = 1110;
 const DESIGN_WIDTH = 900;
-const SPINE_TEXTURE_WIDTH = 50;
-const SPINE_WIDTH = 36;
 const COVER_X = 218;
 const COVER_Y = 182;
 const COVER_WIDTH = 500;
 const COVER_HEIGHT = 750;
 
-function getBookCoverSource(image: HTMLImageElement) {
-	const targetRatio = (COVER_WIDTH + SPINE_TEXTURE_WIDTH) / COVER_HEIGHT;
-	const imageRatio = image.naturalWidth / image.naturalHeight;
-	let sourceX = 0;
-	let sourceY = 0;
-	let sourceWidth = image.naturalWidth;
-	let sourceHeight = image.naturalHeight;
-	if (imageRatio > targetRatio) {
-		sourceWidth = image.naturalHeight * targetRatio;
-		sourceX = (image.naturalWidth - sourceWidth) / 2;
-	} else {
-		sourceHeight = image.naturalWidth / targetRatio;
-		sourceY = (image.naturalHeight - sourceHeight) / 2;
-	}
-	const spineSourceWidth =
-		sourceWidth * (SPINE_TEXTURE_WIDTH / (COVER_WIDTH + SPINE_TEXTURE_WIDTH));
-	return {
-		sourceX,
-		sourceY,
-		sourceWidth,
-		sourceHeight,
-		spineSourceWidth,
-	};
-}
-
 function drawBookCoverFront(
 	ctx: CanvasRenderingContext2D,
 	image: HTMLImageElement,
 ) {
-	const source = getBookCoverSource(image);
+	const ratio = COVER_WIDTH / COVER_HEIGHT;
+	const sourceWidth = Math.min(image.naturalWidth, image.naturalHeight * ratio);
+	const sourceHeight = sourceWidth / ratio;
 	ctx.drawImage(
 		image,
-		source.sourceX + source.spineSourceWidth,
-		source.sourceY,
-		source.sourceWidth - source.spineSourceWidth,
-		source.sourceHeight,
+		(image.naturalWidth - sourceWidth) / 2,
+		(image.naturalHeight - sourceHeight) / 2,
+		sourceWidth,
+		sourceHeight,
 		COVER_X,
 		COVER_Y,
 		COVER_WIDTH,
@@ -241,87 +249,28 @@ function drawFallbackCover(ctx: CanvasRenderingContext2D) {
 	ctx.fillText('发现值得阅读的故事', DESIGN_WIDTH / 2, 555);
 }
 
-function drawBookStructure(
-	ctx: CanvasRenderingContext2D,
-	cover?: HTMLImageElement,
-) {
+// 与新版 Book3D 一致：封面正放，右后方叠两层薄纸页。
+function drawBookStructure(ctx: CanvasRenderingContext2D) {
 	ctx.save();
-	ctx.shadowColor = 'rgba(71, 53, 49, 0.34)';
-	ctx.shadowBlur = 30;
-	ctx.shadowOffsetX = 12;
-	ctx.shadowOffsetY = 20;
-	ctx.fillStyle = 'rgba(71, 53, 49, 0.1)';
-	roundedRect(
-		ctx,
-		COVER_X - SPINE_WIDTH,
-		COVER_Y + 8,
-		COVER_WIDTH + SPINE_WIDTH + 16,
-		COVER_HEIGHT + 14,
-		18,
-	);
-	ctx.fill();
-	ctx.restore();
-
-	ctx.fillStyle = '#eee7e3';
-	ctx.beginPath();
-	ctx.moveTo(COVER_X + COVER_WIDTH, COVER_Y + 12);
-	ctx.lineTo(COVER_X + COVER_WIDTH + 15, COVER_Y + 24);
-	ctx.lineTo(COVER_X + COVER_WIDTH + 15, COVER_Y + COVER_HEIGHT - 6);
-	ctx.lineTo(COVER_X + COVER_WIDTH, COVER_Y + COVER_HEIGHT);
-	ctx.closePath();
-	ctx.fill();
-	for (let offset = 0; offset < 10; offset += 3) {
-		ctx.strokeStyle = `rgba(155, 127, 127, ${0.2 - offset * 0.01})`;
-		ctx.beginPath();
-		ctx.moveTo(COVER_X + COVER_WIDTH + offset, COVER_Y + 34);
-		ctx.lineTo(COVER_X + COVER_WIDTH + offset, COVER_Y + COVER_HEIGHT - 18);
-		ctx.stroke();
-	}
-
-	ctx.save();
-	ctx.beginPath();
-	ctx.moveTo(COVER_X - SPINE_WIDTH, COVER_Y + 30);
-	ctx.lineTo(COVER_X, COVER_Y);
-	ctx.lineTo(COVER_X, COVER_Y + COVER_HEIGHT);
-	ctx.lineTo(COVER_X - SPINE_WIDTH, COVER_Y + COVER_HEIGHT - 30);
-	ctx.closePath();
-	ctx.clip();
-	if (cover) {
-		const source = getBookCoverSource(cover);
-		ctx.drawImage(
-			cover,
-			source.sourceX,
-			source.sourceY,
-			source.spineSourceWidth,
-			source.sourceHeight,
-			COVER_X - SPINE_WIDTH,
-			COVER_Y,
-			SPINE_WIDTH,
+	ctx.shadowColor = 'rgba(71, 53, 49, 0.16)';
+	ctx.shadowBlur = 22;
+	ctx.shadowOffsetY = 12;
+	for (const [offset, color] of [
+		[24, '#e3dfe1'],
+		[12, '#eeedee'],
+	] as const) {
+		ctx.fillStyle = color;
+		roundedRect(
+			ctx,
+			COVER_X + offset,
+			COVER_Y + offset,
+			COVER_WIDTH,
 			COVER_HEIGHT,
+			14,
 		);
-	} else {
-		ctx.fillStyle = '#c98596';
-		ctx.fillRect(COVER_X - SPINE_WIDTH, COVER_Y, SPINE_WIDTH, COVER_HEIGHT);
+		ctx.fill();
 	}
-	const spineShade = ctx.createLinearGradient(
-		COVER_X - SPINE_WIDTH,
-		0,
-		COVER_X,
-		0,
-	);
-	spineShade.addColorStop(0, 'rgba(61, 39, 44, 0.56)');
-	spineShade.addColorStop(0.7, 'rgba(61, 39, 44, 0.18)');
-	spineShade.addColorStop(1, 'rgba(255, 255, 255, 0.16)');
-	ctx.fillStyle = spineShade;
-	ctx.fillRect(COVER_X - SPINE_WIDTH, COVER_Y, SPINE_WIDTH, COVER_HEIGHT);
 	ctx.restore();
-
-	ctx.strokeStyle = 'rgba(255, 255, 255, 0.68)';
-	ctx.lineWidth = 3;
-	ctx.beginPath();
-	ctx.moveTo(COVER_X + 3, COVER_Y + 18);
-	ctx.lineTo(COVER_X + 3, COVER_Y + COVER_HEIGHT - 18);
-	ctx.stroke();
 }
 
 async function generateCard() {
@@ -338,19 +287,19 @@ async function generateCard() {
 		ctx.fillRect(0, 0, POSTER_WIDTH, POSTER_HEIGHT);
 		ctx.translate(-70, -80);
 		try {
-			const headerLogo = await loadImage('/image.png', 'anonymous');
+			const headerLogo = await loadImage(publicAssets.logo, 'anonymous');
 			ctx.save();
 			ctx.globalCompositeOperation = 'multiply';
-			drawImageContain(ctx, headerLogo, 180, 96, 220, 70);
+			drawImageContain(ctx, headerLogo, COVER_X, 96, 220, 70);
 			ctx.restore();
 		} catch {
 			ctx.fillStyle = '#a77ac4';
 			ctx.font = '900 30px serif';
 			ctx.textAlign = 'left';
-			ctx.fillText('moelian', 180, 145);
+			ctx.fillText('moelian', COVER_X, 145);
 		}
 		const searchWidth = 230;
-		const searchX = 560 - searchWidth / 2;
+		const searchX = COVER_X + COVER_WIDTH - searchWidth;
 		ctx.fillStyle = '#fffafa';
 		roundedRect(ctx, searchX, 111, searchWidth, 40, 20);
 		ctx.fill();
@@ -370,7 +319,7 @@ async function generateCard() {
 		ctx.fillStyle = '#76595b';
 		ctx.font = '700 17px sans-serif';
 		ctx.textAlign = 'center';
-		ctx.fillText('夢怜龍華汉化组', 560, 137);
+		ctx.fillText('夢怜龍華汉化组', searchX + (searchWidth - 28) / 2, 137);
 		let coverImage: HTMLImageElement | undefined;
 		if (props.coverUrl) {
 			try {
@@ -379,7 +328,7 @@ async function generateCard() {
 				coverImage = undefined;
 			}
 		}
-		drawBookStructure(ctx, coverImage);
+		drawBookStructure(ctx);
 		ctx.save();
 		roundedRect(ctx, COVER_X, COVER_Y, COVER_WIDTH, COVER_HEIGHT, 14);
 		ctx.clip();
@@ -490,12 +439,17 @@ defineExpose({ generateCard, downloadPoster });
 	display: flex;
 	flex-direction: column;
 	gap: 14px;
+	min-height: 0;
+	max-height: calc(100dvh - 150px);
+	overflow: hidden;
 }
 .share-poster-preview {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: center;
-	overflow: hidden;
+	overflow: auto;
+	min-height: 0;
+	flex: 1 1 auto;
 }
 .poster-skeleton {
 	min-height: 420px;
@@ -512,7 +466,11 @@ defineExpose({ generateCard, downloadPoster });
 .share-poster-canvas {
 	display: none;
 }
+.share-action-system {
+	grid-column: 1 / -1;
+}
 .share-actions {
+	flex-shrink: 0;
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 10px;
@@ -521,11 +479,5 @@ defineExpose({ generateCard, downloadPoster });
 	border-radius: 12px !important;
 	font-weight: 800 !important;
 	letter-spacing: 0.06em !important;
-}
-.save-poster-tip {
-	margin: -4px 0 0;
-	color: #9b7f7f;
-	font-size: 12px;
-	text-align: center;
 }
 </style>

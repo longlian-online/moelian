@@ -1,5 +1,12 @@
 <template>
-	<v-app id="app">
+	<v-app
+		id="app"
+		:class="{
+			'bookshelf-layout': ['manga', 'novel'].includes(String(route.name)),
+			'classify-layout': route.path.startsWith('/classify'),
+			'manga-reader-layout': route.meta.readerTheme === 'manga',
+		}"
+	>
 		<AppDrawer></AppDrawer>
 		<Transition name="fade">
 			<BaseNav v-if="!$route.meta.baseNav && isNavbarVisible"></BaseNav>
@@ -7,6 +14,7 @@
 		<v-main>
 			<slot></slot>
 		</v-main>
+		<BackToTop v-if="!route.meta.baseNav && !route.meta.readerTheme" />
 		<!-- 全局组件 -->
 		<Tip></Tip>
 		<ConfirmDialog
@@ -57,6 +65,38 @@ watch(
 </script>
 
 <style>
+.manga-reader-layout .v-main {
+	padding: 0 !important;
+}
+.manga-reader-layout .v-application__wrap {
+	background: #121212;
+}
+
+.classify-layout .v-main {
+	padding-bottom: 0;
+	background: #fdfaf8;
+}
+.classify-layout .v-application__wrap {
+	background: #eef0e9;
+}
+
+.bookshelf-layout .v-application__wrap,
+.bookshelf-layout .v-main,
+.bookshelf-layout .v-main > .v-sheet {
+	background: #eee3d3;
+}
+.bookshelf-layout .v-main {
+	padding-bottom: 0;
+}
+.bookshelf-layout .v-pagination {
+	padding: 12px 0;
+	color: #707766;
+}
+.bookshelf-layout .v-pagination .v-pagination__item--is-active {
+	background: #dce2d2;
+	border-radius: 8px;
+}
+
 .v-main {
 	padding-bottom: 56px;
 }

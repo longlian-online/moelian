@@ -1,3 +1,4 @@
+import { publicAssets } from '~/utils/assets';
 export function useCoverCanvas() {
 	/**
 	 * 生成封面图（固定 278×400px）
@@ -38,7 +39,7 @@ export function useCoverCanvas() {
 				resolve(dataURLToFile(dataURL, `${title}.jpg`));
 			};
 
-			bgImg.src = bgUrl || '/default.jpg';
+			bgImg.src = bgUrl || publicAssets.defaultCover;
 		});
 	}
 
