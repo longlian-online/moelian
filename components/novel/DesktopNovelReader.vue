@@ -24,93 +24,13 @@
 				</div>
 
 				<v-sheet elevation="1" class="pa-6">
-					<NovelSelectionShare @share="$emit('shareSelection', $event)">
-						<div
-							class="content-box"
-							:class="{ 'content-box--loading': loading }"
-							:aria-busy="loading"
-						>
-							<NetworkErrorState
-								v-if="loadFailed && !loading"
-								@retry="$emit('retry')"
-								@home="navigateTo('/')"
-							/>
-							<NovelContentSkeleton v-else-if="loading" />
-							<div
-								v-for="(
-									{ content, isCenter, type, label }, index
-								) in loadedContent"
-								:key="index"
-								:data-reading-block="index"
-								class="novel-reading-block"
-							>
-								<template v-if="type === 'img'">
-									<div class="d-flex flex-column align-center my-8 w-100">
-										<v-card
-											elevation="4"
-											class="pa-3 rounded-xl lily-frame"
-											max-width="85%"
-										>
-											<v-img :src="content" width="100%" class="rounded-lg">
-												<template #placeholder>
-													<v-skeleton-loader
-														type="image"
-														width="100%"
-														height="400"
-														class="rounded-lg"
-													></v-skeleton-loader>
-												</template>
-												<template #error>
-													<v-img
-														src="/error-default.jpg"
-														width="100%"
-														class="rounded-lg"
-													></v-img>
-												</template>
-											</v-img>
-										</v-card>
-										<div class="lily-label-container mt-4 d-flex align-center">
-											<svg
-												class="lily-icon"
-												viewBox="0 0 100 100"
-												width="20"
-												height="20"
-											>
-												<path
-													d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10"
-													fill="#ff6b9d"
-												/>
-											</svg>
-											<span v-if="label" class="lily-text mx-3">{{
-												label
-											}}</span>
-											<svg
-												class="lily-icon"
-												viewBox="0 0 100 100"
-												width="20"
-												height="20"
-												style="transform: scaleX(-1)"
-											>
-												<path
-													d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10"
-													fill="#ff6b9d"
-												/>
-											</svg>
-										</div>
-									</div>
-								</template>
-								<template v-else>
-									<p
-										class="my-content"
-										:style="{ textAlign: isCenter ? 'center' : 'left' }"
-									>
-										<span>{{ content }}</span>
-									</p>
-									<br />
-								</template>
-							</div>
-						</div>
-					</NovelSelectionShare>
+					<NovelReadingContent
+						:loaded-content="loadedContent"
+						:loading="loading"
+						:load-failed="loadFailed"
+						@retry="$emit('retry')"
+						@share="$emit('shareSelection', $event)"
+					/>
 					<div class="d-flex justify-space-between align-center">
 						<v-btn
 							elevation="0"
@@ -251,6 +171,7 @@
 </template>
 
 <script setup lang="ts">
+import type { NovelReadingBlock } from '~/shared/types/novel-content';
 import type { WorkDetailChapterItem } from '~/shared/dto/web/work';
 
 /**
@@ -269,12 +190,7 @@ import type { WorkDetailChapterItem } from '~/shared/dto/web/work';
 const props = defineProps<{
 	loading?: boolean;
 	loadFailed?: boolean;
-	loadedContent: {
-		content: string;
-		isCenter: boolean;
-		type?: 'text' | 'img';
-		label?: string;
-	}[];
+	loadedContent: NovelReadingBlock[];
 	chapters: WorkDetailChapterItem[];
 	selectedChapterId: number | null;
 	isFirstChapter: boolean;
@@ -300,42 +216,11 @@ defineEmits<{
 	shareSelection: [quote: string];
 }>();
 
-const headerVisible = ref(true);
+const headerVisible = useScrollReveal(true, {
+	showAtTop: 63,
+	animationFrame: true,
+});
 const catalogVisible = ref(false);
-let lastScrollY = 0;
-let directionDistance = 0;
-let lastDirection = 0;
-let scrollFrame = 0;
-const updateHeader = () => {
-	scrollFrame = 0;
-	const y = Math.max(0, window.scrollY);
-	const delta = y - lastScrollY;
-	lastScrollY = y;
-	if (y < 64) {
-		headerVisible.value = true;
-		directionDistance = 0;
-		return;
-	}
-	if (!delta) return;
-	const direction = delta > 0 ? 1 : -1;
-	directionDistance =
-		direction === lastDirection
-			? directionDistance + Math.abs(delta)
-			: Math.abs(delta);
-	lastDirection = direction;
-	if (directionDistance >= 8) headerVisible.value = direction < 0;
-};
-const handleScroll = () => {
-	if (!scrollFrame) scrollFrame = requestAnimationFrame(updateHeader);
-};
-onMounted(() => {
-	lastScrollY = window.scrollY;
-	window.addEventListener('scroll', handleScroll, { passive: true });
-});
-onBeforeUnmount(() => {
-	window.removeEventListener('scroll', handleScroll);
-	if (scrollFrame) cancelAnimationFrame(scrollFrame);
-});
 function selectCatalogChapter(chapter: WorkDetailChapterItem) {
 	catalogVisible.value = false;
 	props.navigateToChapter(chapter);
@@ -345,34 +230,6 @@ function selectCatalogChapter(chapter: WorkDetailChapterItem) {
 </script>
 
 <style scoped>
-.content-box p {
-	text-indent: 2em;
-}
-
-.content-box :deep(.v-img__img) {
-	position: relative !important;
-}
-
-.lily-frame {
-	background-color: #fff0f5; /* 樱花粉衬底 */
-	border: 4px solid #ff6b9d; /* 更鲜艳的粉色边框 */
-	border-radius: 12px;
-	box-shadow: 0 4px 15px rgba(255, 107, 157, 0.3);
-	position: relative;
-	overflow: hidden;
-}
-
-.lily-text {
-	color: #ff6b9d !important; /* 统一为鲜艳的粉色 */
-	font-weight: 600;
-	letter-spacing: 1px;
-	font-size: 0.875rem;
-}
-
-.lily-icon {
-	opacity: 0.6;
-}
-
 .custom-breadcrumbs :deep(.v-breadcrumbs-item) {
 	max-width: 400px;
 	min-width: 50px;
@@ -394,48 +251,6 @@ function selectCatalogChapter(chapter: WorkDetailChapterItem) {
 	width: 100%;
 }
 
-.my-content span {
-	background-image: linear-gradient(orange, orange);
-	background-repeat: no-repeat;
-	background-size: 0% 2px;
-	background-position: right bottom;
-	transition: background-size 1s ease-out;
-}
-.my-content span:hover {
-	background-size: 100% 2px;
-	background-position: left bottom;
-	transition: background-size 1s ease-out;
-}
-</style>
-
-<style scoped>
-.content-box {
-	position: relative;
-	min-height: 70vh;
-}
-.novel-reading-block {
-	opacity: 1;
-	animation: novel-content-reveal 0.35s ease both;
-}
-@keyframes novel-content-reveal {
-	from {
-		opacity: 0;
-	}
-	to {
-		opacity: 1;
-	}
-}
-.content-box--loading .novel-reading-block {
-	opacity: 0;
-}
-@media (prefers-reduced-motion: reduce) {
-	.novel-reading-block {
-		animation: none;
-	}
-}
-</style>
-
-<style scoped>
 .novel-bar-spacer {
 	height: 64px;
 }
@@ -502,9 +317,7 @@ function selectCatalogChapter(chapter: WorkDetailChapterItem) {
 		transition: none;
 	}
 }
-</style>
 
-<style scoped>
 .novel-quick-actions .novel-action-button {
 	min-width: 64px;
 	height: 68px;

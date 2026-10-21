@@ -5,13 +5,7 @@ import type { AsyncData } from 'nuxt/app';
 import { useNuxtApp } from '#app';
 import { ErrorMap } from '~/shared/errors';
 
-// 定义接口，以便 TypeScript 知道返回的数据结构
-// 响应业务逻辑错误的时候是没有data的
-interface ApiResponse<T> {
-	code: number;
-	message: string;
-	data?: T;
-}
+import type { ApiResponse } from '~/shared/types/api';
 
 // 定义 useApiFetch 的类型签名
 type ApiFetch = <T>(

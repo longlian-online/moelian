@@ -1,3 +1,6 @@
+import { defineStore } from 'pinia';
+import { computed, reactive, toRef } from 'vue';
+import { fetchWorkPage } from '~/utils/workList';
 import type { WorkListReq, WorkListRes } from '~/shared/dto/web/work';
 import { ContentType } from '_db';
 // ⚠️ 后端写死的每页限制：24
@@ -16,6 +19,7 @@ interface WorkListState {
 	data: WorkListRes | null;
 	// 加载状态
 	isLoading: boolean;
+	error: string | null;
 	searchKey: string; //  实际用于 API 请求的关键词
 	tags: string[];
 	inputKey: string; //  绑定到输入框 V-Model 的关键词
@@ -31,6 +35,7 @@ export const useWebWorkStore = defineStore('web-work', () => {
 		type: ContentType.Manga,
 		data: null,
 		isLoading: false,
+		error: null,
 		searchKey: '',
 		inputKey: '',
 		tags: [],
@@ -41,39 +46,40 @@ export const useWebWorkStore = defineStore('web-work', () => {
 		type: ContentType.Novel,
 		data: null,
 		isLoading: false,
+		error: null,
 		searchKey: '',
 		inputKey: '',
 		tags: [],
 	});
 
-	// 2. 核心请求方法 (Action)
-
+	// 控制器属于本 store 实例，避免跨 SSR 请求共享；即使取消未生效也校验身份。
+	const requests = new WeakMap<WorkListState, AbortController>();
 	const fetchWorkList = async (state: WorkListState) => {
+		requests.get(state)?.abort();
+		const controller = new AbortController();
+		requests.set(state, controller);
 		state.isLoading = true;
+		state.error = null;
 		const query: WorkListReq = {
 			page: state.page,
 			type: state.type,
-			key: state.searchKey, // 使用 searchKey
+			key: state.searchKey,
 			sortType: 'UPDATE',
 			tags: [...state.tags],
 		};
-
 		try {
-			const { data } = await useApiFetch<WorkListRes>('/api/web/work', {
-				method: 'GET',
-				query: query,
-			});
-			//解包数据
-			if (data.value && data.value.data) {
-				state.data = data.value.data;
-			} else {
-				state.data = { total: 0, list: [] }; // 处理无 data 的情况
+			const result = await fetchWorkPage(query, controller.signal);
+			if (requests.get(state) === controller) state.data = result;
+		} catch (error: unknown) {
+			if (requests.get(state) === controller && !controller.signal.aborted) {
+				state.data = null;
+				state.error = error instanceof Error ? error.message : '作品加载失败';
 			}
-		} catch (error) {
-			console.error(`获取 ${state.type} 列表失败:`, error);
-			state.data = { total: 0, list: [] };
 		} finally {
-			state.isLoading = false;
+			if (requests.get(state) === controller) {
+				requests.delete(state);
+				state.isLoading = false;
+			}
 		}
 	};
 

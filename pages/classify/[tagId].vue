@@ -1,5 +1,11 @@
 <template>
-	<div class="category-results" :class="{ 'category-results--empty': mangaPending || novelPending || !works.length }">
+	<div
+		class="category-results"
+		:class="{
+			'category-results--empty':
+				pending || tagPending || error || tagError || !works.length,
+		}"
+	>
 		<div class="category-filters">
 			<v-select
 				v-model="selectedType"
@@ -32,14 +38,16 @@
 				</template>
 			</v-select>
 		</div>
-		<div
-			v-if="mangaPending || novelPending"
-			class="category-empty"
-			role="status"
-		>
+		<div v-if="pending || tagPending" class="category-empty" role="status">
 			<v-progress-circular indeterminate :size="28" :width="2" />
 			<p>正在寻找相关作品…</p>
 		</div>
+		<NetworkErrorState
+			v-else-if="error || tagError"
+			:retrying="pending || tagPending"
+			@retry="retryResults"
+			@home="navigateTo('/')"
+		/>
 		<div v-else-if="!works.length" class="category-empty" role="status">
 			<img src="/moelian-logo.png" alt="moelian" class="category-empty-logo" />
 			<h2>暂时没有找到相关作品</h2>
@@ -48,37 +56,20 @@
 				>查看全部作品</v-btn
 			>
 		</div>
-		<VInfiniteScroll
+		<WorkInfiniteScroll
 			v-else
-			:key="filterKey"
+			:revision="listRevision"
 			class="category-infinite"
-			:margin="240"
 			@load="loadMore"
 		>
 			<BookshelfDisplay :works="works" :mobile="isMobile" />
-			<template #loading
-				><div class="category-status">正在加载作品…</div></template
-			>
-			<template #empty
-				><div class="category-status">
-					{{
-						works.length
-							? '已经看到最后一本了'
-							: '没有找到相关作品，试试其他标签吧。'
-					}}
-				</div></template
-			>
-			<template #error="{ props: retryProps }"
-				><v-btn v-bind="retryProps" variant="text"
-					>加载失败，点击重试</v-btn
-				></template
-			>
-		</VInfiniteScroll>
+		</WorkInfiniteScroll>
 	</div>
 </template>
 
 <script setup lang="ts">
-import { VInfiniteScroll } from 'vuetify/components';
+import { useWorkPagination } from '~/composables/useWorkPagination';
+import { fetchWorkPage } from '~/utils/workList';
 import type { WorkListRes } from '~/shared/dto/web/work';
 import type { TagWebItem } from '~/shared/dto/web';
 const route = useRoute();
@@ -89,7 +80,12 @@ const clearFilters = () =>
 		query: { ...route.query, tags: '', key: undefined, type: undefined },
 	});
 const { isMobile } = useDevice();
-const { data: tagData } = await useApiFetch<TagWebItem[]>('/api/web/tag/all');
+const {
+	data: tagData,
+	pending: tagPending,
+	error: tagError,
+	refresh: refreshTags,
+} = await useApiFetch<TagWebItem[]>('/api/web/tag/all');
 const selectedTags = computed(() => {
 	if (route.query.tags !== undefined) {
 		const raw = route.query.tags;
@@ -140,97 +136,59 @@ const query = computed(() => ({
 	key: String(route.query.key ?? ''),
 	sortType: 'UPDATE',
 }));
-const { data: mangaData, pending: mangaPending } =
-	await useApiFetch<WorkListRes>('/api/web/work', {
-		query: computed(() => ({ ...query.value, type: 'Manga' })),
-	});
-const { data: novelData, pending: novelPending } =
-	await useApiFetch<WorkListRes>('/api/web/work', {
-		query: computed(() => ({ ...query.value, type: 'Novel' })),
-	});
-const extraWorks = ref<WorkListRes['list']>([]);
-const page = ref(1);
-let revision = 0;
-let request: AbortController | null = null;
-watch(
-	filterKey,
-	() => {
-		revision++;
-		request?.abort();
-		request = null;
-		extraWorks.value = [];
-		page.value = 1;
-	},
-	{ flush: 'sync' },
+async function requestPage(
+	page: number,
+	signal?: AbortSignal,
+): Promise<WorkListRes> {
+	const types: ('Manga' | 'Novel')[] =
+		selectedType.value === 'all'
+			? ['Manga', 'Novel']
+			: selectedType.value === 'Novel'
+				? ['Novel']
+				: ['Manga'];
+	const snapshot = query.value;
+	const results = await Promise.all(
+		types.map((type) =>
+			fetchWorkPage({ ...snapshot, page, type, sortType: 'UPDATE' }, signal),
+		),
+	);
+	return {
+		total: results.reduce((total, result) => total + result.total, 0),
+		list: results.flatMap((result) => result.list),
+	};
+}
+// 首屏作为一个整体失败或成功，避免把半份分类结果当成完整结果。
+const {
+	data: firstPage,
+	pending,
+	error,
+	refresh,
+} = await useAsyncData(
+	() => `category-works:${filterKey.value}`,
+	(_, { signal }) => requestPage(1, signal),
 );
-onBeforeUnmount(() => request?.abort());
+const {
+	works: loadedWorks,
+	revision: listRevision,
+	loadMore,
+} = useWorkPagination({
+	firstPage,
+	resetKey: filterKey,
+	pending,
+	requestPage,
+});
 const works = computed(() =>
-	[
-		...(selectedType.value === 'Novel'
-			? []
-			: (mangaData.value?.data?.list ?? [])),
-		...(selectedType.value === 'Manga'
-			? []
-			: (novelData.value?.data?.list ?? [])),
-		...extraWorks.value,
-	].sort(
-		(a, b) =>
-			new Date(b.chapterUpdatedAt ?? 0).getTime() -
-			new Date(a.chapterUpdatedAt ?? 0).getTime(),
-	),
+	loadedWorks.value
+		.slice()
+		.sort(
+			(a, b) =>
+				new Date(b.chapterUpdatedAt ?? 0).getTime() -
+				new Date(a.chapterUpdatedAt ?? 0).getTime(),
+		),
 );
-async function loadMore({
-	done,
-}: {
-	done: (status: 'ok' | 'empty' | 'error') => void;
-}) {
-	if (mangaPending.value || novelPending.value || request) {
-		done('ok');
-		return;
-	}
-	const total =
-		(selectedType.value === 'Novel' ? 0 : (mangaData.value?.data?.total ?? 0)) +
-		(selectedType.value === 'Manga' ? 0 : (novelData.value?.data?.total ?? 0));
-	if (works.value.length >= total) {
-		done('empty');
-		return;
-	}
-	const controller = new AbortController();
-	request = controller;
-	const currentRevision = revision;
-	try {
-		const responses = await Promise.all(
-			(selectedType.value === 'all'
-				? ['Manga', 'Novel']
-				: [selectedType.value]
-			).map((type) =>
-				$fetch<{ code: number; message: string; data: WorkListRes }>(
-					'/api/web/work',
-					{
-						query: { ...query.value, page: page.value + 1, type },
-						signal: controller.signal,
-					},
-				),
-			),
-		);
-		if (controller.signal.aborted || revision !== currentRevision) {
-			done('empty');
-			return;
-		}
-		if (responses.some((response) => response.code !== 0 || !response.data))
-			throw new Error('加载失败');
-		const ids = new Set(works.value.map((work) => work.id));
-		const additions = responses
-			.flatMap((response) => response.data.list)
-			.filter((work) => !ids.has(work.id));
-		extraWorks.value.push(...additions);
-		page.value++;
-		done(!additions.length || works.value.length >= total ? 'empty' : 'ok');
-	} catch {
-		done(controller.signal.aborted ? 'empty' : 'error');
-	} finally {
-		if (request === controller) request = null;
-	}
+async function retryResults() {
+	if (tagError.value) await refreshTags();
+	await refresh();
 }
 useSeoMeta({
 	title: () => `${selectedTags.value.join('、') || '全部作品'} - moelian`,
@@ -245,17 +203,7 @@ useSeoMeta({
 	background: #eef0e9;
 }
 .category-infinite {
-	width: 100%;
-	overflow: visible;
-}
-.category-infinite :deep(.v-infinite-scroll__side:first-child) {
-	display: none;
-}
-.category-status {
-	padding: 22px 16px;
-	text-align: center;
-	font-size: 13px;
-	color: #808773;
+	--work-status-color: #808773;
 }
 </style>
 
@@ -333,7 +281,9 @@ useSeoMeta({
 </style>
 
 <style scoped>
-.category-results { position: relative; }
+.category-results {
+	position: relative;
+}
 .category-filters {
 	position: absolute;
 	top: 0;
@@ -345,18 +295,35 @@ useSeoMeta({
 	padding: 10px 24px;
 	margin: 0;
 }
-.category-results :deep(.bookshelf) { padding-top: 64px !important; }
-.category-results :deep(.bookshelf::before) { height: 64px; }
-.category-results--empty { padding-top: 64px; }
+.category-results :deep(.bookshelf) {
+	padding-top: 64px !important;
+}
+.category-results :deep(.bookshelf::before) {
+	height: 64px;
+}
+.category-results--empty {
+	padding-top: 64px;
+}
 .category-results--empty::before {
 	content: '';
 	position: absolute;
 	inset: 0 0 auto;
 	height: 64px;
-	background: repeating-linear-gradient(1deg, transparent 0 3px, rgba(142,104,56,.055) 4px 5px, transparent 6px 11px), linear-gradient(95deg,#eedec0,#f6e9cc 35%,#e9d8b7 75%,#f3e5c6);
+	background:
+		repeating-linear-gradient(
+			1deg,
+			transparent 0 3px,
+			rgba(142, 104, 56, 0.055) 4px 5px,
+			transparent 6px 11px
+		),
+		linear-gradient(95deg, #eedec0, #f6e9cc 35%, #e9d8b7 75%, #f3e5c6);
 }
-.category-filters :deep(.v-field) { color: #705039; }
+.category-filters :deep(.v-field) {
+	color: #705039;
+}
 @media (max-width: 600px) {
-	.category-filters { padding: 10px 12px; }
+	.category-filters {
+		padding: 10px 12px;
+	}
 }
 </style>

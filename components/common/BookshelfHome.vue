@@ -6,8 +6,13 @@
 	>
 		<v-row justify="center" class="content-row">
 			<v-col>
-				<!-- 加载状态 -->
-				<template v-if="!workState.data">
+				<NetworkErrorState
+					v-if="workState.error"
+					:retrying="workState.isLoading"
+					@retry="refresh()"
+					@home="navigateTo('/')"
+				/>
+				<template v-else-if="workState.isLoading || !workState.data">
 					<div class="d-flex align-center flex-wrap" style="flex-wrap: wrap">
 						<v-col
 							v-for="n in 8"
@@ -42,10 +47,9 @@
 				</template>
 
 				<template v-else>
-					<VInfiniteScroll
-						:key="`${props.contentType}-${listRevision}`"
+					<WorkInfiniteScroll
+						:revision="listRevision"
 						class="bookshelf-infinite"
-						:margin="240"
 						@load="loadMoreWorks"
 					>
 						<BookshelfDisplay
@@ -83,27 +87,8 @@
 									>小说</NuxtLink
 								>
 							</nav>
-						</BookshelfDisplay>
-						<template #loading>
-							<div class="bookshelf-load-status">
-								<v-progress-circular indeterminate :size="20" :width="2" />
-								正在加载更多作品…
-							</div>
-						</template>
-						<template #empty
-							><div class="bookshelf-load-status bookshelf-end-note" role="status">
-								已经看到最后一本了
-							</div></template
-						>
-						<template #error="{ props: retryProps }">
-							<v-btn
-								v-bind="retryProps"
-								variant="text"
-								class="bookshelf-load-status"
-								>加载失败，点击重试</v-btn
-							>
-						</template>
-					</VInfiniteScroll>
+						</BookshelfDisplay></WorkInfiniteScroll
+					>
 				</template>
 			</v-col>
 		</v-row>
@@ -111,9 +96,8 @@
 </template>
 
 <script setup lang="ts">
-import { VInfiniteScroll } from 'vuetify/components';
-import type { WorkListRes } from '~/shared/dto/web/work';
-export type WorkItemType = WorkListRes['list'][number];
+import { useWorkPagination } from '~/composables/useWorkPagination';
+import { fetchWorkPage } from '~/utils/workList';
 
 const props = withDefaults(
 	defineProps<{ contentType: 'manga' | 'novel'; mobile?: boolean }>(),
@@ -130,90 +114,27 @@ const workState = computed(() =>
 		: webWorkStore.novelState,
 );
 const totalItems = computed(() => workState.value.data?.total ?? 0);
-const appendedWorks = ref<WorkItemType[]>([]);
-const loadedPage = ref(1);
-const listRevision = ref(0);
-const exhausted = ref(false);
-let appendRequest: AbortController | null = null;
-const cards = computed<WorkItemType[]>(() => [
-	...(workState.value.data?.list ?? []),
-	...appendedWorks.value,
-]);
-
-// 搜索、切换类型或首屏重新请求后，丢弃旧结果和未完成的追加请求。
-watch(
-	[
-		() => workState.value.data,
-		() => workState.value.searchKey,
-		() => workState.value.tags,
-		() => props.contentType,
-	],
-	() => {
-		appendRequest?.abort();
-		appendRequest = null;
-		appendedWorks.value = [];
-		loadedPage.value = 1;
-		exhausted.value = false;
-		listRevision.value++;
-	},
-	{ flush: 'sync' },
-);
-onBeforeUnmount(() => appendRequest?.abort());
-
-type LoadStatus = 'ok' | 'empty' | 'error';
-async function loadMoreWorks({ done }: { done: (status: LoadStatus) => void }) {
-	if (
-		workState.value.isLoading ||
-		exhausted.value ||
-		cards.value.length >= totalItems.value
-	) {
-		done('empty');
-		return;
-	}
-	if (appendRequest) {
-		done('ok');
-		return;
-	}
-	const revision = listRevision.value;
-	const controller = new AbortController();
-	appendRequest = controller;
-	const nextPage = loadedPage.value + 1;
-	try {
-		const response = await $fetch<{
-			code: number;
-			message: string;
-			data?: WorkListRes;
-		}>('/api/web/work', {
-			query: {
-				page: nextPage,
+const {
+	works: cards,
+	revision: listRevision,
+	loadMore: loadMoreWorks,
+} = useWorkPagination({
+	firstPage: () => workState.value.data,
+	resetKey: () => JSON.stringify([props.contentType, route.query]),
+	pending: () => workState.value.isLoading,
+	requestPage: (page, signal) =>
+		fetchWorkPage(
+			{
+				page,
 				type: workState.value.type,
 				key: workState.value.searchKey,
-				tags: workState.value.tags,
+				tags: [...workState.value.tags],
 				sortType: 'UPDATE',
 			},
-			signal: controller.signal,
-		});
-		if (revision !== listRevision.value || controller.signal.aborted) {
-			done('empty');
-			return;
-		}
-		if (response.code !== 0 || !response.data)
-			throw new Error(response.message || '加载失败');
-		const existingIds = new Set(cards.value.map((work) => work.id));
-		appendedWorks.value.push(
-			...response.data.list.filter((work) => !existingIds.has(work.id)),
-		);
-		loadedPage.value = nextPage;
-		exhausted.value =
-			response.data.list.length === 0 || nextPage * 24 >= response.data.total;
-		done(exhausted.value ? 'empty' : 'ok');
-	} catch {
-		done(controller.signal.aborted ? 'empty' : 'error');
-	} finally {
-		if (appendRequest === controller) appendRequest = null;
-	}
-}
-const { error } = await useAsyncData(
+			signal,
+		),
+});
+const { refresh } = await useAsyncData(
 	computed(
 		() => `${props.contentType}-list-data-${JSON.stringify(route.query)}`,
 	),
@@ -229,40 +150,19 @@ const { error } = await useAsyncData(
 		return cards.value;
 	},
 );
-
-if (error.value) {
-	console.error('作品列表数据加载失败:', error.value);
-}
 </script>
 
 <style scoped>
-.shelf-page { padding: 0; }
-.shelf-page > .content-row { margin: 0; }
-.shelf-page > .content-row > .v-col { padding: 0; }
+.shelf-page {
+	padding: 0;
+}
+.shelf-page > .content-row {
+	margin: 0;
+}
+.shelf-page > .content-row > .v-col {
+	padding: 0;
+}
 
-.bookshelf-infinite {
-	width: 100%;
-	min-width: 0;
-	overflow: visible;
-}
-.bookshelf-infinite > .bookshelf {
-	width: 100%;
-	flex-shrink: 0;
-	margin-inline: 0 !important;
-}
-/* 单向加载不需要顶部状态区，避免多出一条空白。 */
-.bookshelf-infinite :deep(.v-infinite-scroll__side:first-child) {
-	display: none;
-}
-.bookshelf-load-status {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 10px;
-	padding: 18px 12px;
-	color: #7c6557;
-	font-size: 13px;
-}
 /* 骨架屏样式 - 强制覆盖 */
 .skeleton-book :deep(.v-skeleton-loader__bone.v-skeleton-loader__image) {
 	height: 400px !important;
@@ -328,48 +228,5 @@ if (error.value) {
 html.bookshelf-page-active,
 html.bookshelf-page-active body {
 	overscroll-behavior-y: none;
-}
-.v-overlay__content.shelf-work-tooltip {
-	background: #fffaf2;
-	color: #705247;
-	border: 1px solid #e7d4bc;
-	border-radius: 8px;
-	padding: 12px 16px;
-	box-shadow: 0 5px 18px rgba(78, 53, 35, 0.15);
-	font-size: 13px;
-	line-height: 1.8;
-}
-.shelf-work-tooltip .shelf-tooltip-title {
-	font-weight: 700;
-	font-size: 15px;
-	line-height: 1.5;
-	margin-bottom: 4px;
-	overflow-wrap: anywhere;
-}
-/* 全局样式 - 强制骨架屏高度 */
-.skeleton-book .v-skeleton-loader__bone.v-skeleton-loader__image {
-	height: 400px !important;
-	min-height: 400px !important;
-	max-height: 400px !important;
-}
-
-.skeleton-book .v-skeleton-loader__bone {
-	height: 400px !important;
-}
-
-/* Book3D 组件居中显示 - 移除强制铺满的全局样式 */
-</style>
-
-<style scoped>
-.bookshelf-infinite :deep(.v-infinite-scroll__side:last-child) {
- padding: 0;
- background: #eee3d3;
-}
-.bookshelf-end-note {
- padding: 16px 12px 4px;
- font-family: 'Noto Serif SC', 'Songti SC', serif;
- font-size: 12px;
- letter-spacing: .1em;
- color: #7c6557;
 }
 </style>
