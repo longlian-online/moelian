@@ -1,7 +1,9 @@
+import { publicAssets } from '~/utils/assets';
+
 /** 从现有透明手绘素材中随机选取一张。 */
 export function getRandomArtwork(): string {
-	const number = Math.floor(Math.random() * 13) + 1;
-	return `/bookmarks/art-${String(number).padStart(2, '0')}.png`;
+	const index = Math.floor(Math.random() * publicAssets.artworks.length);
+	return publicAssets.artworks[index];
 }
 
 /** 选图结果写入可序列化状态，同一位置在水合和重渲染时复用。 */

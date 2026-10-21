@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 withDefaults(
 	defineProps<{ fullscreen?: boolean; retrying?: boolean; message?: string }>(),
 	{
@@ -16,7 +17,7 @@ defineEmits<{ retry: []; home: [] }>();
 		role="alert"
 	>
 		<div class="network-content">
-			<img src="/network-error.png" alt="网络错误" class="network-image" />
+			<img :src="publicAssets.networkError" alt="网络错误" class="network-image" />
 			<h2 class="error-title error-title--network">{{ message }}</h2>
 			<div class="network-actions">
 				<v-btn

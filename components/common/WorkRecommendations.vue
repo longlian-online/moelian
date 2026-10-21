@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 import type { WorkListRes } from '~/shared/dto/web/work';
 defineProps<{
 	works: WorkListRes['list'];
@@ -24,7 +25,7 @@ const pickArtwork = useRandomArtwork();
 					<img
 						class="recommendation-orange"
 						aria-hidden="true"
-						src="/moelian-orange.png"
+						:src="publicAssets.orangeLogo"
 						alt=""
 					/>
 					你可能也喜欢

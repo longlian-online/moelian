@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 withDefaults(defineProps<{ compact?: boolean }>(), { compact: false });
 const logoUrl = useRuntimeConfig().public.logoUrl;
 </script>
@@ -12,7 +13,7 @@ const logoUrl = useRuntimeConfig().public.logoUrl;
 	>
 		<img
 			class="brand-moelian"
-			src="/moelian-logo.png"
+			:src="publicAssets.logo"
 			width="112"
 			height="38"
 			alt="moelian"

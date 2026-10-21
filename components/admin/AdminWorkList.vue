@@ -4,7 +4,7 @@
 		<v-dialog v-model="imageDialog" max-width="600px">
 			<v-card>
 				<v-img
-					:src="currentImage || '/error-default.jpg'"
+					:src="currentImage || publicAssets.imageError"
 					min-height="400px"
 					max-height="80vh"
 					width="100%"
@@ -12,7 +12,7 @@
 					class="bg-grey-lighten-2"
 				>
 					<template #error>
-						<v-img src="/error-default.jpg" cover height="100%" width="100%" />
+						<v-img :src="publicAssets.imageError" cover height="100%" width="100%" />
 					</template>
 					<template #placeholder>
 						<div class="d-flex fill-height align-center justify-center">
@@ -196,7 +196,7 @@
 
 				<template #[`item.cover`]="{ item }">
 					<v-img
-						:src="item.cover || '/error-default.jpg'"
+						:src="item.cover || publicAssets.imageError"
 						width="70"
 						height="100"
 						cover
@@ -207,7 +207,7 @@
 						<template #error>
 							<v-img
 								cover
-								src="/error-default.jpg"
+								:src="publicAssets.imageError"
 								height="100%"
 								width="100%"
 							/> </template
@@ -306,6 +306,7 @@
 </template>
 
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 import { useAdminWorkStore } from '~/stores/admin-work';
 import dayjs from 'dayjs';
 import { useClipboard } from '~/utils/useClipboard';

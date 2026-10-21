@@ -188,13 +188,14 @@
 </template>
 
 <script lang="ts" setup>
+import { publicAssets } from '~/utils/assets';
 import { VForm } from 'vuetify/components';
 import type {
 	WorkAdminListItem,
 	WorkPutReq,
 } from '../../shared/dto/admin/work';
 import { useCoverCanvas } from '@/composables/useCoverCanvas';
-import defaultCover from '~/public/default.jpg';
+const defaultCover = publicAssets.defaultCover;
 
 const { $tip } = useNuxtApp();
 const props = defineProps<{

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 const props = defineProps<{
 	title: string;
 	author?: string | null;
@@ -100,7 +101,7 @@ onBeforeUnmount(() => motion?.cancel());
 							<img
 								class="bookmark-base-image"
 								:class="{ 'bookmark-image-hidden': basePending || baseFailed }"
-								src="/bookmarks/base.png"
+								:src="publicAssets.bookmarkBase"
 								alt=""
 								width="820"
 								height="1918"

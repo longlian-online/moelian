@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import type { SessionCreateRes } from '~/shared/dto/session';
-import { useApiFetch } from '~/utils/apiFetch';
+import { useApiFetch } from '~/composables/useApiFetch';
 import { useCookie } from '#app';
 
 export const useAuthStore = defineStore('auth', () => {

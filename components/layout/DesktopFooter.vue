@@ -85,11 +85,14 @@
 </template>
 
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 const pickArtwork = useRandomArtwork();
 const firstArtwork = pickArtwork('footer-first');
 const secondArtwork = pickArtwork('footer-second');
 // 两张抽到同一原画时，顺取下一张，仍保持 SSR 与水合结果一致。
-const nextArtwork = `/bookmarks/art-${String((Number(firstArtwork.match(/art-(\d+)/)?.[1]) % 13) + 1).padStart(2, '0')}.png`;
+const nextArtwork = publicAssets.artworks[
+	(publicAssets.artworks.indexOf(firstArtwork) + 1) % publicAssets.artworks.length
+];
 const footerArtwork = [
 	firstArtwork,
 	secondArtwork === firstArtwork ? nextArtwork : secondArtwork,
@@ -101,28 +104,28 @@ const channels = [
 		label: 'bilibili',
 		name: '夢怜龍華 · bilibili',
 		url: 'https://space.bilibili.com/3546956804655680',
-		qr: '/community/bilibili.svg',
+		qr: publicAssets.bilibiliQr,
 	},
 	{
 		id: 'yamibo',
 		label: '百合会',
 		name: '夢怜龍華 · 百合会',
 		url: 'https://bbs.yamibo.com/space-uid-664313.html',
-		qr: '/community/yamibo.svg',
+		qr: publicAssets.yamiboQr,
 	},
 	{
 		id: 'chat',
 		label: '同好水群',
 		name: '夢怜龍華水群区域',
 		url: 'https://qm.qq.com/q/W9R7IrAdwY',
-		qr: '/community/qq-chat.svg',
+		qr: publicAssets.qqChatQr,
 	},
 	{
 		id: 'join',
 		label: '加入汉化组',
 		name: '夢怜龍華组审核群',
 		url: 'https://qm.qq.com/q/VruI3cSc0w',
-		qr: '/community/qq-join.svg',
+		qr: publicAssets.qqJoinQr,
 	},
 ];
 </script>

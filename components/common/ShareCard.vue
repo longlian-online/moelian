@@ -57,6 +57,7 @@
 </template>
 
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 import QRCode from 'qrcode';
 import {
 	downloadPosterImage,
@@ -286,7 +287,7 @@ async function generateCard() {
 		ctx.fillRect(0, 0, POSTER_WIDTH, POSTER_HEIGHT);
 		ctx.translate(-70, -80);
 		try {
-			const headerLogo = await loadImage('/moelian-logo.png', 'anonymous');
+			const headerLogo = await loadImage(publicAssets.logo, 'anonymous');
 			ctx.save();
 			ctx.globalCompositeOperation = 'multiply';
 			drawImageContain(ctx, headerLogo, COVER_X, 96, 220, 70);

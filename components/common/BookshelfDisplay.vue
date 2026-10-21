@@ -88,7 +88,7 @@
 					>
 						<img
 							class="shelf-bracket-orange"
-							src="/moelian-orange.png"
+							:src="publicAssets.orangeLogo"
 							alt=""
 						/>
 					</div>
@@ -98,6 +98,7 @@
 	</div>
 </template>
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 import type { WorkListRes } from '~/shared/dto/web/work';
 type ShelfWork = WorkListRes['list'][number] & { type?: string };
 const props = withDefaults(

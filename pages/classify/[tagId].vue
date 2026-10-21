@@ -49,7 +49,7 @@
 			@home="navigateTo('/')"
 		/>
 		<div v-else-if="!works.length" class="category-empty" role="status">
-			<img src="/moelian-logo.png" alt="moelian" class="category-empty-logo" />
+			<img :src="publicAssets.logo" alt="moelian" class="category-empty-logo" />
 			<h2>暂时没有找到相关作品</h2>
 			<p>试试减少标签，或换个关键词吧。</p>
 			<v-btn variant="text" color="primary" @click="clearFilters"
@@ -68,6 +68,7 @@
 </template>
 
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 import { useWorkPagination } from '~/composables/useWorkPagination';
 import { fetchWorkPage } from '~/utils/workList';
 import type { WorkListRes } from '~/shared/dto/web/work';

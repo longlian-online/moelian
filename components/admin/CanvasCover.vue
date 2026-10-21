@@ -7,6 +7,7 @@
 </template>
 
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 import { onMounted, ref, watch } from 'vue';
 
 const props = defineProps({
@@ -20,7 +21,7 @@ const props = defineProps({
 	},
 	url: {
 		type: String,
-		default: 'default.jpg', // 默认背景
+		default: publicAssets.defaultCover, // 默认背景
 	},
 	width: {
 		type: Number,

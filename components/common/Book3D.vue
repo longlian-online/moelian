@@ -51,7 +51,7 @@
 							>
 								<img
 									class="skeleton-cover-symbol"
-									src="/moelian-logo.png"
+									:src="publicAssets.logo"
 									alt=""
 									aria-hidden="true"
 								/>
@@ -78,7 +78,7 @@
 							<template #error>
 								<v-img
 									cover
-									src="/error-default.jpg"
+									:src="publicAssets.imageError"
 									height="100%"
 									width="100%"
 									gradient="to bottom, rgba(0,0,0,.0), rgba(0,0,0,.4)"
@@ -101,6 +101,7 @@
 </template>
 
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 interface Props {
 	homepage?: boolean;
 	coverUrl: string;

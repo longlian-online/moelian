@@ -28,7 +28,7 @@
 				</v-toolbar>
 				<div class="image-preview-stage">
 					<v-img
-						:src="previewImageUrl || '/error-default.jpg'"
+						:src="previewImageUrl || publicAssets.imageError"
 						max-height="80vh"
 						width="100%"
 						contain
@@ -379,6 +379,7 @@
 </template>
 
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 import { showConfirm } from '~/composables/useConfirm';
 import { useNuxtApp } from '#app';
 import { uploadToCos } from '~/composables/useCosUpload';
