@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { createApp, h } from 'vue';
+import { createApp, h, ref } from 'vue';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useScrollReveal } from '~/composables/useScrollReveal';
 
@@ -57,6 +57,37 @@ describe('阅读控制栏滚动显隐', () => {
 		app.unmount();
 		y = 50;
 		window.dispatchEvent(new Event('scroll'));
+		expect(visible!.value).toBe(false);
+	});
+	it('导航在顶部或搜索展开时保持显示，关闭搜索后继续按滚动方向切换', () => {
+		let y = 100;
+		vi.spyOn(window, 'scrollY', 'get').mockImplementation(() => y);
+		const searching = ref(false);
+		let visible: ReturnType<typeof useScrollReveal>;
+		const app = createApp({
+			setup() {
+				visible = useScrollReveal(true, {
+					showAtTop: 64,
+					alwaysVisible: searching,
+				});
+				return () => h('div');
+			},
+		});
+		app.mount(document.createElement('div'));
+		dispose = () => app.unmount();
+		const scroll = (value: number) => {
+			y = value;
+			window.dispatchEvent(new Event('scroll'));
+		};
+		scroll(200);
+		expect(visible!.value).toBe(false);
+		scroll(10);
+		expect(visible!.value).toBe(true);
+		searching.value = true;
+		scroll(300);
+		expect(visible!.value).toBe(true);
+		searching.value = false;
+		scroll(320);
 		expect(visible!.value).toBe(false);
 	});
 });

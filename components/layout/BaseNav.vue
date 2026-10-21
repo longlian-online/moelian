@@ -5,7 +5,12 @@ const store = useWebWorkStore();
 const { isMobile } = useDevice();
 const compact = ref(isMobile);
 const searchOpen = ref(false);
-const scrollHidden = ref(false);
+const headerVisible = useScrollReveal(true, {
+	showAtTop: () => barHeight.value,
+	alwaysVisible: searchOpen,
+	clampToDocument: true,
+	animationFrame: true,
+});
 const searchField = useTemplateRef<{ focus: () => void }>('searchField');
 const searchId = `nav-search-${useId()}`;
 const toggleDrawer = inject<() => void>('toggle-drawer-fn', () => {});
@@ -39,35 +44,11 @@ onMounted(() => {
 	};
 	update();
 	media.addEventListener('change', update);
-	let previousY = window.scrollY;
-	let travel = 0;
-	const onScroll = () => {
-		const y = Math.max(
-			0,
-			Math.min(
-				window.scrollY,
-				document.documentElement.scrollHeight - window.innerHeight,
-			),
-		);
-		const delta = y - previousY;
-		previousY = y;
-		if (y <= barHeight.value || searchOpen.value) {
-			scrollHidden.value = false;
-			travel = 0;
-			return;
-		}
-		travel = Math.sign(delta) === Math.sign(travel) ? travel + delta : delta;
-		if (Math.abs(travel) >= 8) scrollHidden.value = travel > 0;
-	};
-	window.addEventListener('scroll', onScroll, { passive: true });
-	onBeforeUnmount(() => {
-		media.removeEventListener('change', update);
-		window.removeEventListener('scroll', onScroll);
-	});
+	onBeforeUnmount(() => media.removeEventListener('change', update));
 });
 
 const openSearch = async () => {
-	scrollHidden.value = false;
+	headerVisible.value = true;
 	searchOpen.value = true;
 	await nextTick();
 	searchField.value?.focus();
@@ -94,8 +75,8 @@ const handleClearSearch = () => {
 		class="journal-bar"
 		color="#fffaf1"
 		:height="barHeight"
-		:class="{ 'journal-bar--hidden': scrollHidden && !searchOpen }"
-		:inert="scrollHidden && !searchOpen"
+		:class="{ 'journal-bar--hidden': !headerVisible && !searchOpen }"
+		:inert="!headerVisible && !searchOpen"
 		:elevation="0"
 	>
 		<div class="journal-header" :class="{ 'journal-header--compact': compact }">

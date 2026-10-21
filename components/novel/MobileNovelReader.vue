@@ -4,7 +4,12 @@
 		@pointerdown="recordPointer"
 		@click="handleReadingTap"
 	>
-		<v-system-bar class="my-theme-color" data-novel-top-bar :class="{ 'reader-status--hidden': controlsVisible }" :aria-hidden="controlsVisible">
+		<v-system-bar
+			class="my-theme-color"
+			data-novel-top-bar
+			:class="{ 'reader-status--hidden': controlsVisible }"
+			:aria-hidden="controlsVisible"
+		>
 			<div class="title-box d-flex align-center pa-2">
 				<div v-if="currentChapter.id !== 0" class="title-box d-flex pa-2">
 					<div class="ml-4 text-ellipsis-single-line">
@@ -22,89 +27,14 @@
 			</ClientOnly>
 		</v-system-bar>
 		<v-sheet class="pa-2">
-			<NovelSelectionShare @share="$emit('shareSelection', $event)">
-				<div
-					class="content-box"
-					:class="{ 'content-box--loading': loading }"
-					:aria-busy="loading"
-				>
-					<NetworkErrorState
-						v-if="loadFailed && !loading"
-						@retry="$emit('retry')"
-						@home="navigateTo('/')"
-					/>
-					<NovelContentSkeleton v-else-if="loading" />
-					<div
-						v-for="({ content, isCenter, type, label }, index) in loadedContent"
-						:key="index"
-						:data-reading-block="index"
-						class="novel-reading-block"
-					>
-						<template v-if="type === 'img'">
-							<div class="d-flex flex-column align-center my-6 w-100">
-								<v-card
-									elevation="4"
-									class="pa-2 rounded-lg lily-frame"
-									max-width="92%"
-								>
-									<v-img :src="content" width="100%" class="rounded-lg">
-										<template #placeholder>
-											<v-skeleton-loader
-												type="image"
-												width="100%"
-												height="250"
-												class="rounded-lg"
-											></v-skeleton-loader>
-										</template>
-										<template #error>
-											<v-img
-												src="/error-default.jpg"
-												width="100%"
-												class="rounded-lg"
-											></v-img>
-										</template>
-									</v-img>
-								</v-card>
-								<div class="lily-label-container mt-3 d-flex align-center">
-									<svg
-										class="lily-icon"
-										viewBox="0 0 100 100"
-										width="16"
-										height="16"
-									>
-										<path
-											d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10"
-											fill="#ff6b9d"
-										/>
-									</svg>
-									<span v-if="label" class="lily-text mx-2">{{ label }}</span>
-									<svg
-										class="lily-icon"
-										viewBox="0 0 100 100"
-										width="16"
-										height="16"
-										style="transform: scaleX(-1)"
-									>
-										<path
-											d="M50 10 C60 40 90 50 50 90 C10 50 40 40 50 10"
-											fill="#ff6b9d"
-										/>
-									</svg>
-								</div>
-							</div>
-						</template>
-						<template v-else>
-							<p
-								class="my-content"
-								:style="{ textAlign: isCenter ? 'center' : 'left' }"
-							>
-								<span>{{ content }}</span>
-							</p>
-							<br />
-						</template>
-					</div>
-				</div>
-			</NovelSelectionShare>
+			<NovelReadingContent
+				:loaded-content="loadedContent"
+				:loading="loading"
+				:load-failed="loadFailed"
+				mobile
+				@retry="$emit('retry')"
+				@share="$emit('shareSelection', $event)"
+			/>
 			<MobileNovelChapterNav
 				v-bind="chapterNavigationProps"
 				@update:selected-chapter-id="$emit('update:selectedChapterId', $event)"
@@ -161,6 +91,7 @@
 </template>
 
 <script setup lang="ts">
+import type { NovelReadingBlock } from '~/shared/types/novel-content';
 import type { WorkDetailChapterItem } from '~/shared/dto/web/work';
 
 /**
@@ -181,12 +112,7 @@ const props = defineProps<{
 	workId?: number;
 	loading?: boolean;
 	loadFailed?: boolean;
-	loadedContent: {
-		content: string;
-		isCenter: boolean;
-		type?: 'text' | 'img';
-		label?: string;
-	}[];
+	loadedContent: NovelReadingBlock[];
 	chapters: WorkDetailChapterItem[];
 	selectedChapterId: number | null;
 	isFirstChapter: boolean;
@@ -261,27 +187,6 @@ function handleReadingTap(event: MouseEvent) {
 </script>
 
 <style scoped>
-.content-box p {
-	text-indent: 2em;
-}
-
-.content-box :deep(.v-img__img) {
-	position: relative !important;
-}
-
-.lily-frame {
-	background-color: #fff0f5;
-	border: 3px solid #ff6b9d;
-	border-radius: 12px;
-	box-shadow: 0 3px 12px rgba(255, 107, 157, 0.25);
-}
-
-.lily-text {
-	color: #ff6b9d !important;
-	font-weight: 600;
-	font-size: 0.75rem;
-}
-
 .selection-text-ellipsis {
 	white-space: nowrap;
 	overflow: hidden;
@@ -302,48 +207,6 @@ function handleReadingTap(event: MouseEvent) {
 	color: rgb(var(--v-theme-on-background));
 }
 
-.my-content span {
-	background-image: linear-gradient(orange, orange);
-	background-repeat: no-repeat;
-	background-size: 0% 2px;
-	background-position: right bottom;
-	transition: background-size 1s ease-out;
-}
-.my-content span:hover {
-	background-size: 100% 2px;
-	background-position: left bottom;
-	transition: background-size 1s ease-out;
-}
-</style>
-
-<style scoped>
-.content-box {
-	position: relative;
-	min-height: 70vh;
-}
-.novel-reading-block {
-	opacity: 1;
-	animation: novel-content-reveal 0.35s ease both;
-}
-@keyframes novel-content-reveal {
-	from {
-		opacity: 0;
-	}
-	to {
-		opacity: 1;
-	}
-}
-.content-box--loading .novel-reading-block {
-	opacity: 0;
-}
-@media (prefers-reduced-motion: reduce) {
-	.novel-reading-block {
-		animation: none;
-	}
-}
-</style>
-
-<style scoped>
 .mobile-reader {
 	min-height: 100dvh;
 }
@@ -410,8 +273,9 @@ function handleReadingTap(event: MouseEvent) {
 		transition: none;
 	}
 }
-</style>
 
-<style scoped>
-.reader-status--hidden { opacity: 0; pointer-events: none; }
+.reader-status--hidden {
+	opacity: 0;
+	pointer-events: none;
+}
 </style>

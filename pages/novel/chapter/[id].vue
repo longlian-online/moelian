@@ -45,27 +45,11 @@
 			<ThemeSetting />
 		</v-dialog>
 
-		<v-dialog v-model="isWorkShareDialog" max-width="520" scrollable>
-			<v-card class="pa-4">
-				<div class="d-flex align-center justify-space-between mb-3">
-					<h3>分享作品</h3>
-					<v-btn
-						icon="mdi-close"
-						variant="text"
-						aria-label="关闭分享"
-						@click="isWorkShareDialog = false"
-					/>
-				</div>
-				<ShareCard
-					v-if="workShareDetail"
-					ref="workShareCardRef"
-					:cover-url="workShareDetail.coverUrl"
-					:title="workShareDetail.title"
-					:author="workShareDetail.author"
-					:share-url="workShareUrl"
-				/>
-			</v-card>
-		</v-dialog>
+		<WorkShareDialog
+			v-model="isWorkShareDialog"
+			:work="workShareDetail"
+			:share-url="workShareUrl"
+		/>
 
 		<v-dialog v-model="isShareDialog" max-width="560" scrollable>
 			<NovelQuoteShareCard
@@ -118,24 +102,22 @@ const isShareDialog = ref(false);
 const isWorkShareDialog = ref(false);
 const workShareDetail = ref<WorkDetailRes | null>(null);
 const workShareUrl = ref('');
-const workShareCardRef = ref<InstanceType<
-	typeof import('~/components/common/ShareCard.vue').default
-> | null>(null);
+const { $tip } = useNuxtApp();
 let loadingWorkShare = false;
 async function openWorkShare() {
 	const work = chapterData.value?.work;
 	if (!work || loadingWorkShare) return;
 	loadingWorkShare = true;
 	try {
-		const { data, error } = await useApiFetch<WorkDetailRes>(
+		const response = await $fetch<{ code: number; data?: WorkDetailRes }>(
 			`/api/web/work/${work.id}`,
 		);
-		if (error.value || data.value?.code !== 0 || !data.value.data) return;
-		workShareDetail.value = data.value.data;
+		if (response.code !== 0 || !response.data) throw new Error('分享加载失败');
+		workShareDetail.value = response.data;
 		workShareUrl.value = `${window.location.origin}/novel/${work.id}`;
 		isWorkShareDialog.value = true;
-		await nextTick();
-		await workShareCardRef.value?.generateCard();
+	} catch {
+		$tip('作品分享加载失败，请重试', { color: 'error' });
 	} finally {
 		loadingWorkShare = false;
 	}

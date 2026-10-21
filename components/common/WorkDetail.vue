@@ -3,8 +3,12 @@
 		class="detail-main-container"
 		:class="{ 'detail-main-container--mobile': props.mobile }"
 	>
+		<NotFoundState
+			v-if="responseStatus === 404"
+			@home="navigateTo(`/${props.contentType}`)"
+		/>
 		<NetworkErrorState
-			v-if="error || (status === 'success' && !workDetail)"
+			v-else-if="responseStatus === 503"
 			:retrying="pending"
 			@retry="refresh()"
 			@home="navigateTo(`/${props.contentType}`)"
@@ -298,208 +302,52 @@
 				</section>
 
 				<!-- 章节列表 - 自动填充余下空间 -->
-				<section
+				<WorkChapterList
 					v-if="workDetail && !pending"
-					class="yuri-card detail-chapter-section"
-				>
-					<div class="detail-chapter-header">
-						<h2 class="detail-chapter-title">章节列表</h2>
-						<span class="detail-chapter-count">
-							CHAPTERS
-							{{
-								sortedChapterList.length > 0
-									? `01-${String(sortedChapterList.length).padStart(2, '0')}`
-									: '00-00'
-							}}
-						</span>
-					</div>
-					<div class="detail-chapter-content">
-						<div class="detail-chapter-chips">
-							<button
-								v-for="(chip, idx) in chapterChips"
-								:key="chip.label"
-								v-copy="chip.label"
-								v-tooltip="chip.label"
-								class="detail-chapter-chip"
-								:class="{
-									'detail-chapter-chip-active': idx === activeChunkIndex,
-									'detail-chapter-chip-overflow': isChipOverflow(chip.label),
-								}"
-								@click="selectChunkByIndex(idx)"
-							>
-								{{ chip.label }}
-							</button>
-						</div>
-						<div class="detail-chapter-grid">
-							<v-btn
-								v-for="item in filteredChapterList"
-								:key="item.id"
-								v-copy="item.title"
-								v-tooltip="item.title"
-								class="chapter-btn"
-								:to="`/${props.contentType}/chapter/${item.id}`"
-							>
-								<span class="chapter-bookmark-dot" aria-hidden="true"></span>
-								<span class="chapter-btn-text">{{ item.title }}</span>
-							</v-btn>
-						</div>
-					</div>
-				</section>
+					:key="workId"
+					:chapters="sortedChapterList"
+					:content-type="props.contentType"
+					:mobile="props.mobile"
+				/>
 				<v-skeleton-loader v-else type="heading, list-item-three-line" />
 			</main>
 
 			<!-- 右侧 25% 推荐区 -->
-			<aside class="detail-right-panel" :aria-label="props.recommendedTitle">
-				<div class="detail-recommend-card recommendation-paper">
-					<div class="detail-recommend-header">
-						<h2 class="detail-recommend-title">
-							<img
-								class="recommendation-orange"
-								aria-hidden="true"
-								src="/moelian-orange.png"
-								alt=""
-							/>
-							你可能也喜欢
-						</h2>
-						<NuxtLink
-							class="detail-recommend-more"
-							:to="`/${props.contentType}`"
-							>更多 ›</NuxtLink
-						>
-					</div>
-					<div class="recommendation-list">
-						<v-skeleton-loader
-							v-if="recommendationPending"
-							type="list-item-avatar-three-line, list-item-avatar-three-line"
-						/>
-						<div v-else-if="recommendationError" class="recommendation-empty">
-							<v-btn variant="text" @click="refreshRecommendations()"
-								>重试加载推荐</v-btn
-							>
-						</div>
-						<NuxtLink
-							v-for="card in recommendationPending || recommendationError
-								? []
-								: recommendationsData"
-							:key="card.id"
-							class="recommendation-item"
-							:to="`/${props.contentType}/${card.id}`"
-						>
-							<div class="recommendation-content">
-								<div class="recommendation-cover">
-									<Book3D
-										homepage
-										:cover-url="card.coverUrl"
-										:title="card.title"
-										:author="card.author"
-										:height="110"
-										:width="78"
-										:show-title="false"
-										:show-spine-text="false"
-									/>
-								</div>
-								<div class="recommendation-info">
-									<h3 class="recommendation-title">{{ card.title }}</h3>
-									<img
-										class="recommendation-doodle"
-										:src="
-											pickArtwork(
-												`${props.contentType}/${workId}:recommendation:${card.id}`,
-											)
-										"
-										alt=""
-										aria-hidden="true"
-										width="600"
-										height="600"
-									/>
-
-									<span class="recommendation-author-name">{{
-										card.author || '未知作者'
-									}}</span>
-									<div class="recommendation-meta">
-										<span
-											:class="{
-												'recommendation-meta--finished':
-													card.serialType !== 'Serializing',
-											}"
-											>{{
-												card.serialType === 'Serializing' ? '连载中' : '已完结'
-											}}</span
-										>
-										<span>共 {{ card.lastNo ?? 0 }} 章</span>
-									</div>
-									<p class="recommendation-description">
-										{{ card.description || '暂无简介，点击了解作品详情。' }}
-									</p>
-								</div>
-							</div>
-						</NuxtLink>
-						<p
-							v-if="
-								!recommendationPending &&
-								!recommendationError &&
-								!recommendationsData.length
-							"
-							class="recommendation-empty"
-						>
-							暂时没有更多推荐
-						</p>
-					</div>
-				</div>
-			</aside>
+			<WorkRecommendations
+				:works="recommendationsData"
+				:content-type="props.contentType"
+				:work-id="workId"
+				:title="props.recommendedTitle"
+				:mobile="props.mobile"
+				:pending="recommendationPending"
+				:error="recommendationError"
+				@retry="refreshRecommendations()"
+			/>
 		</template>
 	</div>
 
-	<v-dialog v-model="showShareDialog" max-width="520">
-		<div class="share-dialog-content">
-			<div class="share-dialog-header">
-				<div>
-					<h3 class="share-dialog-title">生成分享海报</h3>
-				</div>
-				<v-btn
-					icon="mdi-close"
-					aria-label="关闭分享"
-					variant="text"
-					@click="showShareDialog = false"
-				/>
-			</div>
-			<ShareCard
-				ref="shareCardRef"
-				:cover-url="workDetail?.coverUrl"
-				:share-url="shareUrl"
-				:title="workDetail?.title"
-				:author="workDetail?.author"
-			/>
-		</div>
-	</v-dialog>
+	<WorkShareDialog
+		v-model="showShareDialog"
+		:work="workDetail"
+		:share-url="shareUrl"
+	/>
 </template>
 
 <script setup lang="ts">
 import type { WorkDetailRes, WorkListRes } from '~/shared/dto/web/work';
-import type {
-	ReadingContentType,
-	ReadingProgress,
-} from '~/shared/types/reading-progress';
+import type { ReadingProgress } from '~/shared/types/reading-progress';
 import dayjs from 'dayjs';
+import type { ApiResponse } from '~/shared/types/api';
+import { getWorkDetailStatus } from '~/utils/workDetailStatus';
 
-const props = defineProps({
-	mobile: { type: Boolean, default: false },
-	recommendedTitle: {
-		type: String,
-		required: true,
-	},
-	btnContent: {
-		type: String,
-		required: true,
-	},
-	contentType: {
-		type: String,
-		required: true,
-		validator: (value: string) => {
-			return ['manga', 'novel'].includes(value);
-		},
-	},
-});
+const props = withDefaults(
+	defineProps<{
+		mobile?: boolean;
+		recommendedTitle: string;
+		contentType: 'manga' | 'novel';
+	}>(),
+	{ mobile: false },
+);
 
 const router = useRouter();
 const route = useRoute();
@@ -544,34 +392,33 @@ const { findLatestProgress } = useReadingProgress();
 const continueProgress = ref<ReadingProgress | null>(null);
 
 const showShareDialog = ref(false);
-const shareCardRef = ref<InstanceType<
-	typeof import('~/components/common/ShareCard.vue').default
-> | null>(null);
+const requestUrl = useRequestURL();
+const shareUrl = computed(
+	() => `${requestUrl.origin}/${props.contentType}/${workId.value}`,
+);
 
-const shareUrl = computed(() => {
-	if (typeof window === 'undefined') return '';
-	return `${window.location.origin}/${props.contentType}/${workId.value}`;
+const { data, pending, status, error, refresh } = await useFetch<
+	ApiResponse<WorkDetailRes>
+>(() => `/api/web/work/${workId.value}`, {
+	method: 'GET',
+	lazy: true,
 });
-
-watch(showShareDialog, (visible) => {
-	if (visible) {
-		nextTick(() => {
-			shareCardRef.value?.generateCard();
-		});
-	}
-});
-
-// 每页分片大小（可自定义）
-const SEGMENT_SIZE = 12;
-// 当前激活的 chunk 索引（0 为第一个 chunk）
-const activeChunkIndex = ref(0);
-
-const { data, pending, status, error, refresh } =
-	await useApiFetch<WorkDetailRes>(() => `/api/web/work/${workId.value}`, {
-		method: 'GET',
-		lazy: true,
+const workDetail = computed(() =>
+	data.value?.code === 0 ? data.value.data : undefined,
+);
+const responseStatus = computed(() =>
+	getWorkDetailStatus(
+		data.value,
+		error.value,
+		pending.value || status.value === 'idle',
+	),
+);
+const requestEvent = useRequestEvent();
+if (import.meta.server && requestEvent) {
+	watch(responseStatus, (code) => setResponseStatus(requestEvent, code), {
+		immediate: true,
 	});
-const workDetail = computed(() => data.value?.data);
+}
 
 onMounted(() => {
 	watch(
@@ -579,7 +426,7 @@ onMounted(() => {
 		(chapters) => {
 			continueProgress.value = chapters
 				? findLatestProgress(
-						props.contentType as ReadingContentType,
+						props.contentType,
 						chapters.map((chapter) => chapter.id),
 					)
 				: null;
@@ -606,59 +453,6 @@ const primaryReadTo = computed(() => {
 //排序数组根据no属性
 const sortedChapterList = computed(
 	() => workDetail.value?.chapterList?.slice() ?? [],
-);
-
-// 根据排序后的数组长度生成分片信息：{ startIndex, endIndex, label }
-const chapterChips = computed(() => {
-	const list = sortedChapterList.value;
-	const total = list.length;
-	if (total === 0) return [];
-
-	const chips: { startIndex: number; endIndex: number; label: string }[] = [];
-	for (let start = 0; start < total; start += SEGMENT_SIZE) {
-		const end = Math.min(start + SEGMENT_SIZE - 1, total - 1);
-		const label = start === end ? `${start + 1}` : `${start + 1}-${end + 1}`;
-		chips.push({ startIndex: start, endIndex: end, label });
-	}
-	return chips;
-});
-
-// 选择某个 chunk（通过 chunk 索引）
-function selectChunkByIndex(index: number) {
-	if (index < 0 || index >= chapterChips.value.length) return;
-	activeChunkIndex.value = index;
-}
-
-// 判断 chip 内容是否超出（用于动态对齐）
-// chip 最小宽度 80px，最大宽度 120px，padding 左右各 32px，所以内容区域约 56px
-// 14px 字体，中文字符约 14px 宽，数字约 8px 宽
-// 估算：如果标签长度超过 4 个字符（如 "1-12" 是 4 个字符），可能溢出
-const isChipOverflow = (label: string) => {
-	// 计算实际字符宽度（中文字符算 2，数字和符号算 1）
-	const charWidth = label.split('').reduce((sum, char) => {
-		return sum + (/[\u4e00-\u9fa5]/.test(char) ? 2 : 1);
-	}, 0);
-	// 如果字符宽度超过 5（约等于 4 个中文字符或 5 个数字），可能溢出
-	return charWidth > 5;
-};
-
-// 根据当前 activeChunkIndex 返回要显示的章节（按排序后的顺序 slice）
-const filteredChapterList = computed(() => {
-	const chips = chapterChips.value;
-	if (chips.length === 0) return [];
-	const chunk = chips[activeChunkIndex.value] || chips[0];
-	return sortedChapterList.value.slice(chunk.startIndex, chunk.endIndex + 1);
-});
-
-// 如果 sortedChapterList 改变，重置 activeChunkIndex 为 0（或保持同一 chunk）
-watch(
-	sortedChapterList,
-	() => {
-		if (activeChunkIndex.value >= chapterChips.value.length) {
-			activeChunkIndex.value = 0;
-		}
-	},
-	{ immediate: true },
 );
 
 // 独立加载推荐，不占用书架列表状态，也不阻塞客户端导航。
@@ -741,19 +535,15 @@ useSeoMeta({
 	outline-offset: 2px;
 	border-radius: 4px;
 }
-
-/* 强制 75/25 比例布局 */
 .detail-main-container {
 	display: flex;
 	width: 100%;
-	max-width: 1240px;
 	margin: 0 auto;
 	min-height: 100vh;
 	align-items: stretch;
 	padding: 24px 16px;
 	box-sizing: border-box;
 }
-
 .detail-left-panel {
 	width: 75%;
 	flex-shrink: 0;
@@ -762,23 +552,12 @@ useSeoMeta({
 	flex-direction: column;
 	gap: 24px;
 }
-
 .detail-right-panel {
 	width: 25%;
 	flex-shrink: 0;
 	padding-left: 12px;
 	display: flex;
 }
-
-/* 百合风核心卡片基础样式 */
-.yuri-card {
-	background: white !important;
-	box-shadow: 0 20px 40px -10px rgba(125, 90, 90, 0.1) !important;
-	border-radius: 20px;
-	overflow: hidden;
-	border: 1px solid #f2ece6;
-}
-
 .yuri-title {
 	font-size: 32px;
 	font-weight: 900;
@@ -791,7 +570,6 @@ useSeoMeta({
 	display: block;
 	margin: 0;
 }
-
 .detail-title-row {
 	display: flex;
 	align-items: center;
@@ -799,7 +577,6 @@ useSeoMeta({
 	gap: 12px;
 	margin-bottom: 24px;
 }
-
 .share-btn {
 	flex-shrink: 0;
 	color: #ff758c !important;
@@ -810,22 +587,14 @@ useSeoMeta({
 	padding: 0 16px !important;
 	font-size: 14px !important;
 }
-
 .share-btn:hover {
 	color: #ffffff !important;
 	background: #ff758c !important;
 }
-
-/* 作品主卡片 */
 .detail-main-card {
-	padding: 32px;
-	display: flex;
 	flex-direction: row;
-	gap: 40px;
-	align-items: stretch;
 	flex-shrink: 0;
 }
-
 .detail-cover-wrapper {
 	width: 33.333%;
 	flex-shrink: 0;
@@ -833,7 +602,6 @@ useSeoMeta({
 	align-items: center;
 	justify-content: center;
 }
-
 .detail-cover-inner {
 	position: relative;
 	width: 100%;
@@ -843,20 +611,14 @@ useSeoMeta({
 	align-items: center;
 	justify-content: center;
 }
-
-/* Book3D 组件样式覆盖 */
 .detail-cover-inner :deep(.book-3d-container) {
 	width: 100%;
-	height: 100%;
 	margin: 0;
 }
-
 .detail-cover-inner :deep(.book-3d-wrapper) {
 	width: 100%;
 	max-width: 280px;
 }
-
-/* 封面标签通配样式 */
 .cover-badge {
 	position: absolute;
 	bottom: 12px;
@@ -876,7 +638,6 @@ useSeoMeta({
 	align-items: center;
 	gap: 6px;
 }
-
 .cover-badge-dot {
 	width: 6px;
 	height: 6px;
@@ -884,14 +645,12 @@ useSeoMeta({
 	border-radius: 50%;
 	animation: pulse 2s ease-in-out infinite;
 }
-
 .cover-badge-small {
 	transform: scale(0.75);
 	transform-origin: bottom left;
 	margin-left: -4px;
 	margin-bottom: -4px;
 }
-
 @keyframes pulse {
 	0%,
 	100% {
@@ -901,7 +660,6 @@ useSeoMeta({
 		opacity: 0.5;
 	}
 }
-
 .detail-info-wrapper {
 	flex: 1;
 	display: flex;
@@ -909,13 +667,10 @@ useSeoMeta({
 	justify-content: space-between;
 	min-width: 0; /* 允许 flex 子元素收缩 */
 }
-
 .detail-info-content {
 	flex: 1;
 	min-width: 0; /* 允许 flex 子元素收缩 */
 }
-
-/* 标签基础样式 */
 .info-label {
 	font-size: 11px;
 	font-weight: 900;
@@ -924,68 +679,54 @@ useSeoMeta({
 	display: block;
 	margin-bottom: -2px;
 }
-
 .info-content {
 	font-size: 16px;
 	font-weight: 700;
 	color: #7d5a5a;
 }
-
 .info-underline {
 	margin-top: 4px;
 	width: 100%;
 	height: 3px;
 	border-radius: 9999px;
 }
-
 .color-pink .info-label {
 	color: #ff9a9e;
 }
-
 .color-pink .info-underline {
 	background: linear-gradient(to right, #ff9a9e, transparent);
 }
-
 .color-purple .info-label {
 	color: #a78bfa;
 }
-
 .color-purple .info-underline {
 	background: linear-gradient(to right, #a78bfa, transparent);
 }
-
 .color-cyan .info-label {
 	color: #4dd0e1;
 }
-
 .color-cyan .info-underline {
 	background: linear-gradient(to right, #4dd0e1, transparent);
 }
-
-/* 信息行布局 */
 .detail-info-row {
 	display: flex;
 	align-items: flex-end;
 	justify-content: space-between;
 	margin-bottom: 20px;
 }
-
 .detail-info-item {
 	position: relative;
 	display: inline-block;
 }
-
 .detail-info-item-full {
 	margin-bottom: 20px;
 	min-width: 240px;
 }
-
 .detail-tags-group {
 	display: flex;
 	gap: 8px;
 	flex-shrink: 0;
 }
-
 .yuri-tag {
 	padding: 4px 12px;
 	border-radius: 8px;
@@ -995,38 +736,31 @@ useSeoMeta({
 	display: inline-flex;
 	align-items: center;
 }
-
 .serializing-tag {
 	background: #fff0f3;
 	color: #ff758c;
 	border-color: #ffcad4;
 }
-
 .finished-tag {
 	background: #f0fff4;
 	color: #2ed573;
 	border-color: #b7ebc6;
 }
-
 .length-tag {
 	background: #fcf8f2;
 	color: #c9c1ab;
 	border-color: #e8dfd5;
 }
-
-/* 简介 */
 .detail-description {
 	font-size: 14px;
 	line-height: 1.6;
 	color: #7d5a5a;
 	margin-bottom: 24px;
 }
-
 .description-label {
 	color: #9a8471;
 	margin-right: 4px;
 }
-
 .line-clamp-4 {
 	/* 简介不足四行时仍保留空间，稳定下方章节数的位置。 */
 	min-height: 6.4em;
@@ -1036,8 +770,6 @@ useSeoMeta({
 	line-clamp: 4;
 	overflow: hidden;
 }
-
-/* 章节数 */
 .yuri-concentration-box {
 	background: #fefcf9;
 	padding: 16px;
@@ -1045,39 +777,33 @@ useSeoMeta({
 	border: 1px solid #f2ece6;
 	margin-bottom: 24px;
 }
-
 .yuri-concentration-header {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
 	margin-bottom: 8px;
 }
-
 .yuri-concentration-label {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 	color: #ff758c;
 }
-
 .yuri-heart-icon {
 	width: 16px;
 	height: 16px;
 }
-
 .yuri-concentration-text {
 	font-size: 11px;
 	font-weight: 900;
 	color: #9a8471;
 	letter-spacing: 0.1em;
 }
-
 .yuri-concentration-value {
 	font-size: 16px;
 	font-weight: 900;
 	color: #ff758c;
 }
-
 .yuri-progress-bar {
 	height: 8px;
 	width: 100%;
@@ -1086,28 +812,22 @@ useSeoMeta({
 	overflow: hidden;
 	padding: 2px;
 }
-
 .yuri-progress-fill {
 	height: 100%;
 	background: linear-gradient(to right, #ff9a9e, #ff758c, #fecfef);
 	border-radius: 9999px;
 	transition: width 0.7s ease;
 }
-
-/* 开始阅读按钮 */
 .detail-action-button {
 	margin-top: 24px;
 	display: flex;
 	align-items: center;
-	justify-content: flex-start;
 }
-
 .continue-read-content {
 	display: flex;
 	align-items: center;
 	gap: 14px;
 }
-
 .continue-read-progress {
 	position: relative;
 	display: flex;
@@ -1119,13 +839,11 @@ useSeoMeta({
 	font-weight: 700;
 	letter-spacing: 0.04em;
 }
-
 .continue-read-label {
 	font-size: 9px;
 	font-weight: 900;
 	opacity: 0.72;
 }
-
 .continue-read-underline {
 	position: absolute;
 	right: 0;
@@ -1135,7 +853,6 @@ useSeoMeta({
 	border-radius: 9999px;
 	background: linear-gradient(to right, rgba(255, 255, 255, 0.9), transparent);
 }
-
 .start-read-btn {
 	height: 48px !important;
 	background: #ff758c !important;
@@ -1151,358 +868,14 @@ useSeoMeta({
 	align-items: center !important;
 	justify-content: center !important;
 }
-
 .start-read-btn:hover {
 	background: #ff5e78 !important;
 	transform: scale(0.98);
 }
-
 .start-read-btn.has-progress {
 	padding-right: 28px !important;
 	padding-left: 28px !important;
 }
-
-/* 章节列表 */
-.detail-chapter-section {
-	flex: 1;
-	display: flex;
-	flex-direction: column;
-}
-
-.detail-chapter-header {
-	padding: 20px 24px;
-	border-bottom: 1px solid #f2ece6;
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	background: #fdfaf8;
-}
-
-.detail-chapter-title {
-	font-size: 20px;
-	font-weight: 900;
-	color: #5a463d;
-	letter-spacing: -0.01em;
-}
-
-.detail-chapter-count {
-	font-size: 14px;
-	font-weight: 700;
-	color: #c9c1ab;
-	letter-spacing: 0.05em;
-}
-
-.detail-chapter-content {
-	padding: 24px;
-}
-
-.detail-chapter-chips {
-	display: flex;
-	gap: 12px;
-	margin-bottom: 24px;
-	overflow-x: auto;
-	padding-bottom: 8px;
-	scrollbar-width: thin;
-	scrollbar-color: #f2ece6 transparent;
-}
-
-.detail-chapter-chips::-webkit-scrollbar {
-	height: 6px;
-}
-
-.detail-chapter-chips::-webkit-scrollbar-track {
-	background: transparent;
-}
-
-.detail-chapter-chips::-webkit-scrollbar-thumb {
-	background: #f2ece6;
-	border-radius: 3px;
-}
-
-.detail-chapter-chips::-webkit-scrollbar-thumb:hover {
-	background: #e8dfd5;
-}
-
-.detail-chapter-chip {
-	padding: 10px 32px;
-	border-radius: 12px;
-	font-size: 14px;
-	font-weight: 900;
-	border: none;
-	cursor: pointer;
-	transition: all 0.2s ease;
-	white-space: nowrap;
-	background: #fcf8f2;
-	color: #c9c1ab;
-	flex-shrink: 0;
-	min-width: 80px;
-	max-width: 120px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	position: relative;
-}
-
-/* 内容未超出时居中 */
-.detail-chapter-chip:not(.detail-chapter-chip-overflow) {
-	justify-content: center;
-}
-
-/* 内容超出时左对齐 */
-.detail-chapter-chip-overflow {
-	justify-content: flex-start;
-	padding-left: 16px;
-	padding-right: 16px;
-}
-
-.detail-chapter-chip:hover {
-	background: #f2ece6;
-}
-
-.detail-chapter-chip-active {
-	background: #ff758c !important;
-	color: white !important;
-}
-
-.detail-chapter-chip-active:hover {
-	background: #ff5e78 !important;
-}
-
-.detail-chapter-grid {
-	display: grid;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
-	gap: 16px;
-}
-
-@media (max-width: 1200px) {
-	.detail-chapter-grid {
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-	}
-}
-
-@media (max-width: 768px) {
-	.detail-chapter-grid {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
-}
-
-.chapter-btn {
-	width: 100%;
-	min-width: 0 !important;
-	max-width: 100%;
-	border: 1px solid #f2ece6 !important;
-	transition: all 0.2s ease !important;
-	color: #7d5a5a !important;
-	padding: 16px !important;
-	border-radius: 8px !important;
-	text-align: center !important;
-	font-size: 14px !important;
-	font-weight: 900 !important;
-	text-transform: none !important;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	display: flex !important;
-	align-items: center !important;
-	justify-content: center !important;
-	background: transparent !important;
-}
-
-.chapter-btn-text {
-	display: block;
-	min-width: 0;
-	max-width: 100%;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.chapter-btn :deep(.v-btn__content) {
-	display: block;
-	min-width: 0;
-	max-width: 100%;
-	overflow: hidden;
-}
-
-.chapter-btn:hover {
-	border-color: #ff758c !important;
-	background: transparent !important;
-	color: #ff758c !important;
-}
-
-.chapter-btn-active {
-	border-color: #f2ece6 !important;
-	background: transparent !important;
-	color: #7d5a5a !important;
-}
-
-/* 推荐区 */
-.detail-recommend-card {
-	width: 100%;
-	height: 100%;
-	display: flex;
-	flex-direction: column;
-}
-
-.detail-recommend-header {
-	padding: 20px;
-	border-bottom: 1px solid #f2ece6;
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	background: #fdfaf8;
-	flex-shrink: 0;
-}
-
-.detail-recommend-title {
-	font-weight: 900;
-	color: #5a463d;
-	font-size: 16px;
-	letter-spacing: 0.05em;
-}
-
-.detail-recommend-more {
-	color: #ff9a9e !important;
-	font-size: 12px !important;
-	font-weight: 900 !important;
-	text-transform: none !important;
-	padding: 0 !important;
-	min-width: auto !important;
-}
-
-.detail-recommend-more:hover {
-	text-decoration: underline;
-}
-
-/* 推荐列表垂直均匀分布 */
-.recommendation-list {
-	flex-grow: 1;
-	display: flex;
-	flex-direction: column;
-	justify-content: space-between;
-	padding: 16px;
-}
-
-.recommendation-item {
-	cursor: pointer;
-	margin-bottom: 16px;
-}
-
-.recommendation-item:last-child {
-	margin-bottom: 0;
-}
-
-.recommendation-content {
-	display: flex;
-	gap: 16px;
-	margin-bottom: 8px;
-}
-
-.recommendation-cover {
-	position: relative;
-	width: 80px;
-	height: 112px;
-	flex-shrink: 0;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-/* Book3D 组件样式覆盖 - 推荐区域 */
-.recommendation-cover :deep(.book-3d-container) {
-	width: 100%;
-	height: 100%;
-	margin: 0;
-}
-
-.recommendation-cover :deep(.book-3d-wrapper) {
-	width: 100%;
-	max-width: 80px;
-}
-
-.recommendation-info {
-	flex: 1;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	overflow: hidden;
-	padding: 4px 0;
-}
-
-.recommendation-title {
-	font-weight: 900;
-	font-size: 14px;
-	color: #5a463d;
-	line-height: 1.3;
-	margin-bottom: 8px;
-	transition: color 0.2s ease;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	display: -webkit-box;
-	-webkit-line-clamp: 2;
-	line-clamp: 2;
-	-webkit-box-orient: vertical;
-}
-
-.recommendation-item:hover .recommendation-title {
-	color: #ff758c;
-}
-
-.recommendation-author {
-	position: relative;
-	display: inline-block;
-	max-width: 100%;
-}
-
-.recommendation-by {
-	font-size: 10px;
-	font-weight: 900;
-	color: #ff9a9e;
-	text-transform: uppercase;
-}
-
-.recommendation-author-name {
-	font-size: 12px;
-	font-weight: 900;
-	color: #7d5a5a;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	margin-left: 4px;
-}
-
-.recommendation-underline {
-	height: 2px;
-	margin-top: 2px;
-}
-
-.recommendation-progress {
-	padding: 0 4px;
-}
-
-.recommendation-progress-header {
-	display: flex;
-	justify-content: space-between;
-	font-size: 10px;
-	font-weight: 900;
-	margin-bottom: 4px;
-}
-
-.recommendation-progress-label {
-	color: #9a8471;
-	letter-spacing: -0.02em;
-}
-
-.recommendation-progress-value {
-	color: #ff758c;
-}
-
-.recommendation-progress-bar {
-	height: 6px;
-}
-
 @media (max-width: 960px) {
 	.detail-main-container {
 		flex-direction: column;
@@ -1530,38 +903,7 @@ useSeoMeta({
 	.detail-cover-inner {
 		min-height: 300px;
 	}
-
-	.detail-chapter-grid {
-		grid-template-columns: repeat(2, 1fr);
-	}
 }
-
-.share-dialog-content {
-	background: #fffaf4;
-	border-radius: 22px;
-	padding: 20px;
-	display: flex;
-	flex-direction: column;
-	max-height: calc(100dvh - 32px);
-	overflow: hidden;
-}
-
-.share-dialog-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 16px;
-	flex-shrink: 0;
-	margin-bottom: 16px;
-}
-
-.share-dialog-title {
-	font-size: 18px;
-	font-weight: 900;
-	color: #5a463d;
-	margin: 2px 0 0;
-}
-/* 展开的活页本：两页共用封皮，中缝装订环浮在纸面上。 */
 .detail-main-container {
 	max-width: 1440px;
 }
@@ -1589,12 +931,7 @@ useSeoMeta({
 	box-shadow: inset 0 0 0 1px rgba(177, 142, 107, 0.12);
 }
 .detail-main-card .detail-cover-wrapper {
-	padding: 42px 24px;
 	border-radius: 3px 0 0 3px;
-}
-.detail-main-card .detail-cover-inner {
-	height: 400px;
-	min-height: 400px;
 }
 .detail-main-card .detail-info-wrapper {
 	padding: 32px 28px 28px 34px;
@@ -1639,7 +976,6 @@ useSeoMeta({
 		height: 32px;
 	}
 }
-/* 左页藏书卡：页边无独立内框，封面由四个相片角固定。 */
 .detail-main-card .detail-cover-wrapper {
 	position: relative;
 	border: 0;
@@ -1729,7 +1065,6 @@ useSeoMeta({
 .notebook-page-number {
 	margin-left: auto;
 }
-/* 参考活页本的开启动作：两页绕中缝展开，右页稍慢收稳。 */
 @keyframes notebook-arrive {
 	0% {
 		transform: translate(5%, 15%);
@@ -1795,161 +1130,9 @@ useSeoMeta({
 		animation: notebook-open-rings 1s ease-out both;
 	}
 }
-/* 推荐采用轻量纸质书签栏，避免和主详情重复展示信息。 */
 .detail-right-panel {
 	align-items: flex-start;
 }
-.recommendation-paper {
-	position: relative;
-	height: auto;
-	margin-top: 8px;
-	background: #fffdf8;
-	border: 1px solid #ebe2d6;
-	border-radius: 3px 10px 10px 3px;
-	box-shadow: 2px 5px 14px rgba(108, 82, 57, 0.06);
-}
-.recommendation-paper::before {
-	content: '';
-	position: absolute;
-	top: -9px;
-	left: 22px;
-	width: 21px;
-	height: 31px;
-	background: #c3c6af;
-	clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
-}
-.recommendation-paper .detail-recommend-header {
-	padding: 30px 16px 14px;
-	background: transparent;
-	border-bottom: 1px solid #eee6da;
-	gap: 8px;
-}
-.recommendation-paper .detail-recommend-title {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	font-family: 'Songti SC', 'STSong', serif;
-	font-size: 16px;
-	font-weight: 600;
-	letter-spacing: 0;
-	color: #765b46;
-}
-.recommendation-orange {
-	width: 18px;
-	height: 24px;
-	flex-shrink: 0;
-}
-.recommendation-paper .detail-recommend-more {
-	font-size: 11px !important;
-	font-weight: 400 !important;
-	text-decoration: none;
-	white-space: nowrap;
-	color: #a28b73 !important;
-}
-.recommendation-paper .recommendation-list {
-	padding: 0 16px;
-	justify-content: flex-start;
-}
-.recommendation-paper .recommendation-item {
-	display: block;
-	padding: 17px 0;
-	margin: 0;
-	border-bottom: 1px dashed #e5dacb;
-	text-decoration: none;
-	color: inherit;
-}
-.recommendation-paper .recommendation-item:last-child {
-	border-bottom: 0;
-}
-.recommendation-paper .recommendation-content {
-	gap: 12px;
-	margin: 0;
-}
-.recommendation-paper .recommendation-cover {
-	width: 78px;
-	height: 110px;
-	border-radius: 2px 4px 4px 2px;
-	overflow: hidden;
-	box-shadow: 2px 3px 5px rgba(91, 67, 45, 0.1);
-	transition: transform 180ms ease;
-}
-.recommendation-paper .recommendation-info {
-	padding: 2px 0;
-}
-.recommendation-paper .recommendation-title {
-	font-size: 14px;
-	font-weight: 500;
-	line-height: 1.6;
-	margin-bottom: 8px;
-}
-.recommendation-paper .recommendation-author-name {
-	margin: 0;
-	font-size: 12px;
-	font-weight: 400;
-	color: #aa927b;
-}
-.recommendation-empty {
-	padding: 24px 0;
-	color: #aa927b;
-	font-size: 13px;
-}
-.recommendation-image-placeholder {
-	width: 100%;
-	height: 100%;
-	background: #e9dfd1;
-}
-@media (hover: hover) and (prefers-reduced-motion: no-preference) {
-	.recommendation-paper .recommendation-item:hover .recommendation-cover {
-		transform: translateY(-3px);
-	}
-}
-.recommendation-paper .recommendation-item:focus-visible {
-	outline: 2px solid #c3c6af;
-	outline-offset: 3px;
-}
-.recommendation-meta {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 4px 10px;
-	margin-top: 8px;
-	font-size: 11px;
-	line-height: 1.5;
-	color: #a28b73;
-}
-.recommendation-meta > span:first-child {
-	color: #cc8c91;
-}
-.recommendation-meta > .recommendation-meta--finished:first-child {
-	color: #8d9c7c;
-}
-.recommendation-description {
-	display: -webkit-box;
-	-webkit-box-orient: vertical;
-	-webkit-line-clamp: 2;
-	line-clamp: 2;
-	overflow: hidden;
-	margin: 8px 0 0;
-	font-size: 12px;
-	line-height: 1.7;
-	color: #9b8674;
-	overflow-wrap: anywhere;
-}
-.recommendation-paper .recommendation-cover {
-	overflow: visible;
-	box-shadow: none;
-}
-.recommendation-paper .recommendation-cover :deep(.book-3d-container) {
-	width: 100%;
-	height: 110px;
-	margin: 0;
-}
-.recommendation-paper
-	.recommendation-cover
-	:deep(.book-3d-container.book-3d-home .book-3d-wrapper) {
-	width: 100% !important;
-	max-width: 100%;
-}
-/* 手机沿用同一本活页本，将左右页改为上下页，装订环横排。 */
 .detail-main-container--mobile {
 	flex-direction: column;
 	padding: 24px 12px;
@@ -2048,30 +1231,9 @@ useSeoMeta({
 	right: 18px;
 	bottom: 16px;
 }
-.detail-main-container--mobile .detail-chapter-section {
-	padding: 18px 14px;
-}
 .detail-main-container--mobile .detail-right-panel {
 	width: 100%;
 	padding-left: 0;
-}
-.detail-main-container--mobile .recommendation-paper {
-	margin-top: 0;
-}
-.detail-main-container--mobile .recommendation-list {
-	flex-direction: column;
-	gap: 0;
-	overflow-x: visible;
-	padding: 0 16px;
-}
-.detail-main-container--mobile .recommendation-item {
-	flex: 0 0 auto;
-	width: 100%;
-	min-width: 0;
-	border-bottom: 1px dashed #e5dacb;
-}
-.detail-main-container--mobile .recommendation-item:last-child {
-	border-bottom: 0;
 }
 @keyframes notebook-open-top {
 	from {
@@ -2110,9 +1272,6 @@ useSeoMeta({
 		animation-name: notebook-open-rings-mobile;
 	}
 }
-</style>
-
-<style scoped>
 .detail-main-container--mobile {
 	min-width: 0;
 	max-width: 100%;
@@ -2120,140 +1279,10 @@ useSeoMeta({
 }
 .detail-main-container--mobile .detail-left-panel,
 .detail-main-container--mobile .detail-right-panel,
-.detail-main-container--mobile .detail-main-card,
-.detail-main-container--mobile .detail-chapter-section,
-.detail-main-container--mobile .detail-chapter-content,
-.detail-main-container--mobile .recommendation-paper {
+.detail-main-container--mobile .detail-main-card {
 	min-width: 0;
 	max-width: 100%;
 }
-.detail-main-container--mobile .detail-chapter-grid {
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-.detail-main-container--mobile .detail-chapter-chips {
-	min-width: 0;
-	max-width: 100%;
-}
-</style>
-
-<style scoped>
-.recommendation-paper .recommendation-content {
-	display: grid;
-	grid-template-columns: 104px minmax(0, 1fr);
-	width: 100%;
-	min-width: 0;
-	height: 144px;
-	align-items: center;
-}
-.recommendation-paper .recommendation-info {
-	min-width: 0;
-	height: 144px;
-	display: grid;
-	grid-template-columns: minmax(0, 1fr);
-	grid-template-rows: 45px 18px 17px 41px;
-	justify-content: stretch;
-	text-align: left;
-	width: 100%;
-	gap: 6px;
-	align-content: start;
-	padding: 2px 0;
-}
-.recommendation-paper .recommendation-title {
-	margin: 0;
-	min-height: 3.2em;
-	max-height: 3.2em;
-	overflow-wrap: anywhere;
-}
-.recommendation-paper .recommendation-author-name {
-	line-height: 18px;
-	min-width: 0;
-}
-.recommendation-paper .recommendation-meta {
-	margin: 0;
-	line-height: 17px;
-	flex-wrap: nowrap;
-	white-space: nowrap;
-	overflow: hidden;
-}
-.recommendation-paper .recommendation-description {
-	margin: 0;
-	height: 41px;
-}
-</style>
-
-<style scoped>
-.recommendation-paper .recommendation-cover {
-	width: 104px;
-	height: 144px;
-}
-.recommendation-paper .recommendation-cover :deep(.book-3d-container) {
-	height: 144px;
-}
-@media (max-width: 380px) {
-	.recommendation-paper .recommendation-content {
-		gap: 10px;
-		grid-template-columns: 92px minmax(0, 1fr);
-	}
-	.recommendation-paper .recommendation-cover {
-		width: 92px;
-	}
-}
-</style>
-
-<style scoped>
-.detail-chapter-grid {
-	display: grid;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
-	gap: 12px;
-}
-.detail-chapter-grid .chapter-btn {
-	width: 100%;
-	min-width: 0 !important;
-	height: 56px;
-	padding: 0 24px 0 13px !important;
-	border: 0 !important;
-	border-radius: 0 !important;
-	justify-content: flex-start !important;
-	text-align: left !important;
-	font-weight: 500 !important;
-	color: #90756f !important;
-	background: linear-gradient(145deg, #fffaf4, #f2e5dc) !important;
-	box-shadow: none;
-	clip-path: polygon(0 0, 100% 0, calc(100% - 13px) 50%, 100% 100%, 0 100%);
-}
-@media (hover: hover) {
-	.detail-chapter-grid .chapter-btn:hover {
-		color: white !important;
-		background: linear-gradient(140deg, #ff9baa, #fb758f) !important;
-	}
-}
-.detail-chapter-grid .chapter-btn :deep(.v-btn__content) {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	width: 100%;
-}
-.chapter-bookmark-dot {
-	width: 10px;
-	height: 10px;
-	border: 2px solid currentColor;
-	border-radius: 50%;
-	opacity: 0.55;
-	flex-shrink: 0;
-}
-.detail-chapter-grid .chapter-btn:focus-visible {
-	outline: 2px solid #bd8a79;
-	outline-offset: -3px;
-}
-@media (max-width: 960px) {
-	.detail-chapter-grid {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
-}
-</style>
-
-<style scoped>
-/* 页角涂鸦保留原画颜色；不参与点击，阅读操作仍由按钮承接。 */
 .notebook-doodle {
 	display: block;
 	object-fit: contain;
@@ -2294,53 +1323,6 @@ useSeoMeta({
 .detail-main-container--mobile .notebook-doodle--info {
 	display: none;
 }
-</style>
-
-<style scoped>
-.recommendation-paper .recommendation-content {
-	height: 180px;
-}
-.recommendation-paper .recommendation-info {
-	height: 180px;
-	grid-template-columns: minmax(0, 1fr) 80px;
-	grid-template-rows: 45px 18px 52px 41px;
-	column-gap: 8px;
-}
-.recommendation-title {
-	grid-column: 1 / -1;
-	grid-row: 1;
-}
-.recommendation-author-name {
-	grid-column: 1;
-	grid-row: 2;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-.recommendation-paper .recommendation-meta {
-	grid-column: 1;
-	grid-row: 3;
-	align-self: start;
-	flex-wrap: wrap;
-	gap: 4px 8px;
-	overflow: visible;
-}
-.recommendation-description {
-	grid-column: 1 / -1;
-	grid-row: 4;
-}
-.recommendation-doodle {
-	grid-column: 2;
-	grid-row: 2 / 4;
-	align-self: center;
-	width: 80px;
-	height: 80px;
-	object-fit: contain;
-	pointer-events: none;
-}
-</style>
-
-<style scoped>
 .detail-loading-card {
 	min-height: 560px;
 }
@@ -2372,9 +1354,6 @@ useSeoMeta({
 .detail-main-container--mobile .detail-loading-card {
 	min-height: 0;
 }
-</style>
-
-<style scoped>
 .detail-main-card .detail-cover-wrapper,
 .detail-main-container--mobile .detail-main-card .detail-cover-wrapper {
 	position: relative;
