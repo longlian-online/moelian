@@ -83,10 +83,10 @@ watch(
 .bookshelf-layout .v-application__wrap,
 .bookshelf-layout .v-main,
 .bookshelf-layout .v-main > .v-sheet {
-	background: #eef0e9;
+	background: #eee3d3;
 }
 .bookshelf-layout .v-main {
-	padding-bottom: 16px;
+	padding-bottom: 0;
 }
 .bookshelf-layout .v-pagination {
 	padding: 12px 0;
