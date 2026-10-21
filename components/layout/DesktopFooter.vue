@@ -66,7 +66,7 @@
 				</nav>
 			</div>
 			<div class="footer-colophon">
-				<span>© {{ year }} <strong>moelian</strong> · 夢怜龍華</span>
+				<span>© {{ year }} <strong>moelian</strong></span>
 				<a
 					href="https://beian.miit.gov.cn/"
 					target="_blank"
@@ -325,14 +325,16 @@ const channels = [
 		font-size: 14px;
 	}
 	.footer-colophon {
+		flex-direction: column;
+		align-items: center;
 		justify-content: center;
 		text-align: center;
-		gap: 4px 16px;
+		gap: 5px;
 		padding-top: 14px;
 		font-size: 11px;
 	}
 	.footer-colophon > a {
-		order: 1;
+		order: 0;
 		width: 100%;
 	}
 }
@@ -361,7 +363,7 @@ const channels = [
 	}
 	.footer-invite {
 		flex-direction: column;
-		align-items: flex-start;
+		align-items: center;
 		justify-content: flex-start;
 		gap: 8px;
 	}
@@ -370,7 +372,7 @@ const channels = [
 		line-height: 1.8;
 	}
 	.footer-invite img {
-		align-self: flex-start;
+		align-self: center;
 	}
 }
 @media (max-width: 350px) {
@@ -383,6 +385,27 @@ const channels = [
 	}
 	.footer-invite p {
 		font-size: 12px;
+	}
+}
+
+@media (max-width: 700px) {
+	.footer-brand,
+	.footer-main h3,
+	.footer-invite p {
+		text-align: center;
+	}
+	.footer-illustrations {
+		justify-content: center;
+	}
+	.footer-social {
+		justify-content: center;
+	}
+	.footer-social > span {
+		flex: 0 1 auto;
+		justify-content: center;
+	}
+	.footer-colophon > * {
+		width: 100%;
 	}
 }
 </style>
