@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
-import { useApiFetch } from '~/utils/apiFetch';
+import { useApiFetch } from '~/composables/useApiFetch';
 
 export type AdminTagItem = {
 	id: number;

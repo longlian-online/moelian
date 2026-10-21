@@ -138,10 +138,11 @@
 </template>
 
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 import { useCoverCanvas } from '@/composables/useCoverCanvas';
 import type { VForm } from 'vuetify/components';
 import type { WorkCreateReq, WorkCreateRes } from '~/shared/dto/admin/work';
-import defaultCover from '~/public/default.jpg';
+const defaultCover = publicAssets.defaultCover;
 definePageMeta({
 	layout: 'admin',
 });

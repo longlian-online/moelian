@@ -84,7 +84,7 @@
 							class="notebook-page-footer"
 							aria-hidden="true"
 						>
-							<img src="/moelian-logo.png" class="notebook-logo" alt="" />
+							<img :src="publicAssets.logo" class="notebook-logo" alt="" />
 							<span class="notebook-page-number">01</span>
 						</div>
 					</div>
@@ -334,6 +334,7 @@
 </template>
 
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 import type { WorkDetailRes, WorkListRes } from '~/shared/dto/web/work';
 import type { ReadingProgress } from '~/shared/types/reading-progress';
 import dayjs from 'dayjs';

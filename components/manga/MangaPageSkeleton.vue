@@ -1,11 +1,16 @@
 <template>
 	<div class="manga-page-skeleton" role="status" aria-label="正在加载漫画页面">
 		<div class="skeleton-page">
-			<img src="/moelian-logo.png" alt="" aria-hidden="true" />
+			<img :src="publicAssets.logo" alt="" aria-hidden="true" />
 			<p class="skeleton-loading-text">正在努力加载中…</p>
 		</div>
 	</div>
 </template>
+
+<script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
+</script>
+
 <style scoped>
 .manga-page-skeleton {
 	position: absolute;

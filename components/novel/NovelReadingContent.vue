@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 import type { NovelReadingBlock } from '~/shared/types/novel-content';
 defineProps<{
 	loadedContent: NovelReadingBlock[];
@@ -56,7 +57,7 @@ defineEmits<{ retry: []; share: [quote: string] }>();
 								</template>
 								<template #error>
 									<v-img
-										src="/error-default.jpg"
+										:src="publicAssets.imageError"
 										width="100%"
 										class="rounded-lg"
 									></v-img>

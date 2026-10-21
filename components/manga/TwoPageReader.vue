@@ -30,11 +30,11 @@
 							transition="fade-transition"
 							contain
 							class="h-100 w-100 pa-0"
-							:src="imgUrl || '/error-default.jpg'"
+							:src="imgUrl || publicAssets.imageError"
 						>
 							<template #placeholder><MangaPageSkeleton /></template>
 							<template #error>
-								<v-img src="/error-default.jpg" width="100%" cover>
+								<v-img :src="publicAssets.imageError" width="100%" cover>
 									<div
 										class="d-flex fill-height align-center justify-center bg-black-alpha-50"
 									>
@@ -88,6 +88,7 @@
 </template>
 
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 import type { PropType } from 'vue';
 import type { VWindow } from 'vuetify/components';
 import type { WorkDetailChapterItem } from '~/shared/dto/web/work';

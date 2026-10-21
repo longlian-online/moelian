@@ -53,6 +53,7 @@
 </template>
 
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 import QRCode from 'qrcode';
 import { getNovelPosterLayout, NOVEL_POSTER_METRICS } from '~/utils/novelShare';
 import {
@@ -190,7 +191,7 @@ async function generateCard() {
 		ctx.fill();
 		ctx.shadowColor = 'transparent';
 		try {
-			const hands = await loadImage('/novel-share-yuri-hands.png');
+			const hands = await loadImage(publicAssets.shareHands);
 			const cardHeight = cardBottom - cardTop;
 			ctx.globalCompositeOperation = 'source-over';
 			ctx.globalAlpha = 0.5;
@@ -262,7 +263,7 @@ async function generateCard() {
 		ctx.font = NOVEL_POSTER_METRICS.detailFont;
 		ctx.fillText(chapter, 120, layout.metadataTop + 36);
 		try {
-			const logo = await loadImage('/moelian-logo.png');
+			const logo = await loadImage(publicAssets.logo);
 			const ratio = Math.min(190 / logo.naturalWidth, 58 / logo.naturalHeight);
 			const width = logo.naturalWidth * ratio;
 			const height = logo.naturalHeight * ratio;
@@ -342,7 +343,7 @@ async function generateCard() {
 			NOVEL_POSTER_METRICS.qrSize,
 		);
 		try {
-			const lily = await loadImage('/novel-share-yuri-lily.png');
+			const lily = await loadImage(publicAssets.shareLily);
 			ctx.globalCompositeOperation = 'multiply';
 			ctx.globalAlpha = 0.32;
 			ctx.drawImage(lily, 480, qrY - 4, 170, 143);

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 withDefaults(defineProps<{ fullscreen?: boolean }>(), { fullscreen: false });
 defineEmits<{ home: [] }>();
 </script>
@@ -9,7 +10,7 @@ defineEmits<{ home: [] }>();
 	>
 		<section class="not-found-content" aria-labelledby="not-found-title">
 			<div class="not-found-panel">
-				<img src="/404-error.png" alt="404 Not Found" class="not-found-image" />
+				<img :src="publicAssets.notFound" alt="404 Not Found" class="not-found-image" />
 			</div>
 			<h2>404 Not Found</h2>
 			<p class="not-found-description">抱歉，你访问的页面不存在</p>

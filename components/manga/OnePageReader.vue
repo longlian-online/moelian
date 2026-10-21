@@ -14,7 +14,7 @@
 			@contextmenu.prevent="sheet = !sheet"
 		>
 			<v-img
-				:src="imgUrl || '/error-default.jpg'"
+				:src="imgUrl || publicAssets.imageError"
 				width="100%"
 				:height="loadedPages[imgUrl] ? undefined : '100dvh'"
 				transition="fade-transition"
@@ -24,7 +24,7 @@
 				<template #placeholder><MangaPageSkeleton /></template>
 				<template #error>
 					<v-img
-						src="/error-default.jpg"
+						:src="publicAssets.imageError"
 						width="100%"
 						aspect-ratio="16/9"
 						cover
@@ -86,6 +86,7 @@
 </template>
 
 <script setup lang="ts">
+import { publicAssets } from '~/utils/assets';
 import type { PropType } from 'vue';
 import type { WorkDetailChapterItem } from '~/shared/dto/web/work';
 

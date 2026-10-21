@@ -76,7 +76,8 @@
 </template>
 
 <script setup lang="ts">
-import logo from '@/public/logo2.png';
+import { publicAssets } from '~/utils/assets';
+const logo = publicAssets.loginLogo;
 definePageMeta({
 	layout: 'admin',
 });
