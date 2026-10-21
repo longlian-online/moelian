@@ -69,6 +69,7 @@
 
 		<v-dialog v-model="isShareDialog" max-width="560" scrollable>
 			<NovelQuoteShareCard
+				@close="isShareDialog = false"
 				v-if="shareData"
 				ref="quoteShareCardRef"
 				v-bind="shareData"

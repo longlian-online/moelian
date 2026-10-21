@@ -91,7 +91,7 @@
 							</div>
 						</template>
 						<template #empty
-							><div class="bookshelf-load-status">
+							><div class="bookshelf-load-status bookshelf-end-note" role="status">
 								已经看到最后一本了
 							</div></template
 						>
@@ -260,7 +260,7 @@ if (error.value) {
 	justify-content: center;
 	gap: 10px;
 	padding: 18px 12px;
-	color: #707766;
+	color: #7c6557;
 	font-size: 13px;
 }
 /* 骨架屏样式 - 强制覆盖 */
@@ -358,4 +358,18 @@ html.bookshelf-page-active body {
 }
 
 /* Book3D 组件居中显示 - 移除强制铺满的全局样式 */
+</style>
+
+<style scoped>
+.bookshelf-infinite :deep(.v-infinite-scroll__side:last-child) {
+ padding: 0;
+ background: #eee3d3;
+}
+.bookshelf-end-note {
+ padding: 16px 12px 4px;
+ font-family: 'Noto Serif SC', 'Songti SC', serif;
+ font-size: 12px;
+ letter-spacing: .1em;
+ color: #7c6557;
+}
 </style>

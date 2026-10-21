@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	createNovelShareData,
+	getNovelSelectionMenuPosition,
 	formatNovelChapterLabel,
 	getNovelPosterLayout,
 	normalizeNovelQuote,
@@ -70,5 +71,27 @@ describe('小说选段分享', () => {
 		expect(compact.qrTop + compact.qrBlockHeight / 2).toBe(
 			compact.footerTop + compact.metadataContentCenterY,
 		);
+	});
+});
+
+describe('选段分享菜单位置', () => {
+	it('靠近底部时放在选区上方并留出触摸空间', () => {
+		const position = getNovelSelectionMenuPosition(
+			{ left: 250, right: 370, top: 700, bottom: 740 },
+			390,
+			760,
+		);
+		expect(position.top).toBeLessThan(700);
+		expect(position.left + 136).toBeLessThanOrEqual(378);
+	});
+	it('长选区超出视口时仍保持按钮可见', () => {
+		const position = getNovelSelectionMenuPosition(
+			{ left: 0, right: 320, top: -500, bottom: 1500 },
+			320,
+			500,
+		);
+		expect(position.left).toBeGreaterThanOrEqual(12);
+		expect(position.top).toBeGreaterThanOrEqual(12);
+		expect(position.top + 44).toBeLessThanOrEqual(488);
 	});
 });

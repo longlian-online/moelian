@@ -1,3 +1,22 @@
+export function getNovelSelectionMenuPosition(
+	rect: { left: number; right: number; top: number; bottom: number },
+	viewportWidth: number,
+	viewportHeight: number,
+) {
+	const left = Math.max(
+		12,
+		Math.min(viewportWidth - 148, (rect.left + rect.right - 136) / 2),
+	);
+	const preferredTop =
+		rect.bottom + 8 + 44 <= viewportHeight - 12
+			? rect.bottom + 8
+			: rect.top - 52;
+	return {
+		left,
+		top: Math.max(12, Math.min(viewportHeight - 56, preferredTop)),
+	};
+}
+
 export function normalizeNovelQuote(text: string, maxLength = 300) {
 	const normalized = text
 		.replace(/\r\n?/g, '\n')
