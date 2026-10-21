@@ -1,10 +1,15 @@
 <script setup lang="ts">
 const visible = ref(false);
+const footerOffset = ref(0);
 const route = useRoute();
 
 onMounted(() => {
 	const updateVisibility = () => {
 		visible.value = window.scrollY > Math.max(480, window.innerHeight);
+		const footer = document.querySelector<HTMLElement>('footer.site-footer');
+		footerOffset.value = footer
+			? Math.max(0, window.innerHeight - footer.getBoundingClientRect().top)
+			: 0;
 	};
 	updateVisibility();
 	window.addEventListener('scroll', updateVisibility, { passive: true });
@@ -36,6 +41,7 @@ const backToTop = () => {
 		<v-btn
 			v-if="visible"
 			class="back-to-top"
+			:style="{ '--footer-offset': `${footerOffset}px` }"
 			variant="flat"
 			aria-label="回到顶部"
 			title="回到顶部"
@@ -51,7 +57,9 @@ const backToTop = () => {
 .back-to-top {
 	position: fixed;
 	right: 24px;
-	bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+	bottom: calc(
+		24px + env(safe-area-inset-bottom, 0px) + var(--footer-offset, 0px)
+	);
 	z-index: 1000;
 	width: 52px;
 	min-width: 0;
@@ -90,7 +98,9 @@ const backToTop = () => {
 @media (max-width: 760px) {
 	.back-to-top {
 		right: 16px;
-		bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+		bottom: calc(
+			20px + env(safe-area-inset-bottom, 0px) + var(--footer-offset, 0px)
+		);
 		width: 44px;
 		height: 48px;
 	}
